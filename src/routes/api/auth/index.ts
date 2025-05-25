@@ -47,6 +47,11 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       });
     },
   );
+  fastify.post("/logout", async (request, reply) => {
+    await request.session.destroy();
+    reply.clearCookie("sessionId");
+    return reply.code(StatusCodes.NO_CONTENT).send();
+  });
 };
 
 export default plugin;

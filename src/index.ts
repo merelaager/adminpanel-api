@@ -1,11 +1,13 @@
 import Fastify from "fastify";
+import {prisma} from "./db";
 
 const fastify = Fastify({
     logger: true,
 });
 
 fastify.get("/", async (request, response) => {
-    return ({hello: "world"})
+    const users = await prisma.user.findMany();
+    return ({users})
 })
 
 const start = async () => {

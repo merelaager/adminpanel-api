@@ -2,8 +2,9 @@ import {
   FastifyPluginAsyncTypebox,
   Type,
 } from "@fastify/type-provider-typebox";
-import bcrypt from "bcrypt";
 import { StatusCodes } from "http-status-codes";
+
+import { authenticateUser } from "../../../controllers/auth.controller";
 
 import { CredentialsSchema } from "../../../schemas/auth";
 
@@ -27,22 +28,17 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         },
       },
     },
-    async (request, reply) => {
+    async (request) => {
       const { username, password } = request.body;
-
-      const user = await fastify.prisma.user.findUnique({
-        where: {
-          username: username.trim().toLowerCase(),
-        },
-      });
+      const user = await authenticateUser(
+        { username, password },
+        fastify.prisma,
+      );
 
       if (user) {
-        const isPasswordValid = bcrypt.compareSync(password, user.password);
-        if (isPasswordValid) {
-          request.session.user = { id: user.id };
-          await request.session.save();
-          return { status: "success", data: {} };
-        }
+        request.session.user = { id: user.id };
+        await request.session.save();
+        return { status: "success", data: {} };
       }
 
       return {

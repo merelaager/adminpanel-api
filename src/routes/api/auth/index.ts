@@ -28,7 +28,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         },
       },
     },
-    async (request) => {
+    async (request, reply) => {
       const { username, password } = request.body;
       const user = await authenticateUser(
         { username, password },
@@ -36,15 +36,15 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       );
 
       if (user) {
-        request.session.user = { id: user.id };
+        request.session.user = { userId: user.id };
         await request.session.save();
-        return { status: "success", data: {} };
+        return reply.code(StatusCodes.OK).send({ status: "success", data: {} });
       }
 
-      return {
+      return reply.code(StatusCodes.UNAUTHORIZED).send({
         status: "fail",
         data: { message: "Vale kasutajanimi või parool" },
-      };
+      });
     },
   );
 };

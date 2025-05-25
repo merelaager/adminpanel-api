@@ -50,7 +50,7 @@ model EventInfo {
 
 model Permission {
   id               Int              @id @default(autoincrement()) @db.UnsignedInt
-  permissionName   String?          @db.VarChar(255)
+  permissionName   String           @db.VarChar(255)
   createdAt        DateTime         @default(now()) @db.DateTime
   updatedAt        DateTime         @default(now()) @db.DateTime
   role_permissions RolePermission[]
@@ -80,14 +80,14 @@ model Registration {
   regOrder      Int       @db.UnsignedInt
   isOld         Boolean   @default(true)
   birthday      DateTime? @db.Date
-  tsSize        String?   @db.VarChar(255)
+  tsSize        String    @db.VarChar(255)
   addendum      String?   @db.Text
-  road          String?   @db.VarChar(255)
-  city          String?   @db.VarChar(255)
-  county        String?   @db.VarChar(255)
-  country       String?   @default("Eesti") @db.VarChar(255)
+  road          String    @db.VarChar(255)
+  city          String    @db.VarChar(255)
+  county        String    @db.VarChar(255)
+  country       String    @default("Eesti") @db.VarChar(255)
   contactName   String    @db.VarChar(255)
-  contactNumber String?   @db.VarChar(255)
+  contactNumber String    @db.VarChar(255)
   contactEmail  String    @db.VarChar(255)
   backupTel     String?   @db.VarChar(255)
   pricePaid     Int       @default(0) @db.UnsignedInt
@@ -239,12 +239,12 @@ model Team {
 model UserRoles {
   id        Int      @id @default(autoincrement()) @db.UnsignedInt
   shiftNr   Int      @db.UnsignedInt
-  userId    Int?     @db.UnsignedInt
-  roleId    Int?     @db.UnsignedInt
+  userId    Int      @db.UnsignedInt
+  roleId    Int      @db.UnsignedInt
   createdAt DateTime @default(now()) @db.DateTime
   updatedAt DateTime @default(now()) @db.DateTime
-  users     User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  roles     Role?    @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  users     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roles     Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@index([roleId], map: "roleId")
   @@index([userId], map: "userId")

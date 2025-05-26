@@ -1,11 +1,13 @@
+import type { Registration } from "@prisma/client";
 import { PrismaClient } from "@prisma/client";
+import { PatchRegistrationBody } from "../schemas/registration";
 
-export const fetchShiftRegistrations = async (
+const fetchUserShiftRoles = async (
   userId: number,
   shiftNr: number,
+  permissionPrefix: string,
   prisma: PrismaClient,
 ) => {
-  // Fetch the user's registration view permissions for the given shift.
   const userShiftRolesRaw = await prisma.userRoles.findMany({
     where: { userId, shiftNr },
     select: {
@@ -14,7 +16,7 @@ export const fetchShiftRegistrations = async (
           role_permissions: {
             where: {
               permissions: {
-                permissionName: { startsWith: "registration.view" },
+                permissionName: { startsWith: permissionPrefix },
               },
             },
             select: { permissions: { select: { permissionName: true } } },
@@ -24,13 +26,52 @@ export const fetchShiftRegistrations = async (
     },
   });
 
-  const shiftViewPermissions = new Set<string>();
+  const shiftPermissions = new Set<string>();
   for (const role of userShiftRolesRaw) {
     for (const permission of role.roles.role_permissions) {
-      shiftViewPermissions.add(permission.permissions.permissionName);
+      shiftPermissions.add(permission.permissions.permissionName);
     }
   }
 
+  return shiftPermissions;
+};
+
+const objectHasAllowedKey = <
+  FullModel extends object,
+  Patch extends Partial<FullModel>,
+>(
+  obj: Patch,
+  allowedKeys: readonly (keyof FullModel)[],
+): boolean => {
+  return allowedKeys.some((key) => key in obj);
+};
+
+// Keep this function for potential future use.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const onlyHasAllowedKeys = <
+  FullModel extends object,
+  Patch extends Partial<FullModel>,
+>(
+  obj: Patch,
+  allowedKeys: readonly (keyof FullModel)[],
+): boolean => {
+  return Object.keys(obj).every((key) =>
+    allowedKeys.includes(key as keyof FullModel),
+  );
+};
+
+export const fetchShiftRegistrations = async (
+  userId: number,
+  shiftNr: number,
+  prisma: PrismaClient,
+) => {
+  // Fetch the user's registration view permissions for the given shift.
+  const shiftViewPermissions = await fetchUserShiftRoles(
+    userId,
+    shiftNr,
+    "registration.view",
+    prisma,
+  );
   if (shiftViewPermissions.size === 0) return [];
 
   const canViewPII =
@@ -74,125 +115,68 @@ export const fetchShiftRegistrations = async (
   });
 };
 
-export const fetchAuthorisedRegistrations = async (
+export const patchRegistrationData = async (
   userId: number,
+  regId: number,
+  patchData: PatchRegistrationBody,
   prisma: PrismaClient,
 ) => {
-  // Fetch the user's registration view permissions for all shifts.
-  const userShiftRoles = await prisma.userRoles.findMany({
-    where: { userId },
-    select: {
-      shiftNr: true,
-      roles: {
-        select: {
-          role_permissions: {
-            where: {
-              permissions: {
-                permissionName: {
-                  startsWith: "registration.view.",
-                },
-              },
-            },
-            select: {
-              permissions: {
-                select: {
-                  permissionName: true,
-                },
-              },
-            },
-          },
-        },
-      },
-    },
+  // TODO: avoid an extra request by querying the shift of the registration.
+  // Get the shift of the registration.
+  const regShift = await prisma.registration.findUnique({
+    where: { id: regId },
+    select: { shiftNr: true },
   });
 
-  const shiftViewPermissionsMap = new Map<number, Set<string>>();
-
-  // TODO: ensure that only the most powerful permission is accounted for.
-  // This should not (yet) be a problem in practice since users (currently)
-  // only get one role per shift.
-  for (const { shiftNr, roles } of userShiftRoles) {
-    if (roles === null) continue;
-    for (const rp of roles.role_permissions) {
-      const perm = rp.permissions.permissionName;
-
-      if (!shiftViewPermissionsMap.has(shiftNr)) {
-        shiftViewPermissionsMap.set(shiftNr, new Set<string>());
-      }
-
-      shiftViewPermissionsMap.get(shiftNr)?.add(perm);
-    }
+  if (!regShift) {
+    return false;
   }
 
-  const shiftViewPermissions = Array.from(
-    shiftViewPermissionsMap.entries(),
-  ).map(([shiftNr, permsSet]) => ({
-    shiftNr,
-    permissions: Array.from(permsSet),
-  }));
+  // Fetch the user's registration edit permissions for the given shift.
+  const regEditPermissions = await fetchUserShiftRoles(
+    userId,
+    regShift.shiftNr,
+    "registration.edit",
+    prisma,
+  );
 
-  const shiftsWithViewPermissions = Array.from(shiftViewPermissionsMap.keys());
+  if (regEditPermissions.size === 0) return false;
 
-  // Perform multiple DB queries to avoid parsing fields in software.
-  for (const shiftNr of shiftsWithViewPermissions) {
-    const shiftViewPermission = shiftViewPermissions.find(
-      (el) => el.shiftNr === shiftNr,
-    );
-
-    const registrations = await prisma.registration.findMany({
-      where: { shiftNr },
-    });
+  const canEditPrice = regEditPermissions.has("registration.edit.price");
+  const priceEditKeys = [
+    "pricePaid",
+    "priceToPay",
+  ] as const satisfies readonly (keyof Registration)[];
+  if (!canEditPrice && objectHasAllowedKey(patchData, priceEditKeys)) {
+    return false;
   }
 
-  const registrations = await prisma.registration.findMany({
-    where: {
-      shiftNr: { in: shiftsWithViewPermissions },
-    },
+  const canEditRegistration = regEditPermissions.has(
+    "registration.edit.isRegistered",
+  );
+  const regEditKeys = [
+    "isOld",
+    "isRegistered",
+  ] as const satisfies readonly (keyof Registration)[];
+  if (!canEditRegistration && objectHasAllowedKey(patchData, regEditKeys)) {
+    return false;
+  }
+
+  // Additional manual checking is not necessary, as this is taken
+  // care of by the request validation based on the JSON schema.
+  // Still, keep it here (commented out) for an example or future needs.
+  // const allAllowedKeys = [
+  //   ...priceEditKeys,
+  //   ...regEditKeys,
+  // ] as const satisfies readonly (keyof Registration)[];
+  // if (!onlyHasAllowedKeys(patchData, allAllowedKeys)) {
+  //   return false;
+  // }
+
+  await prisma.registration.update({
+    where: { id: regId },
+    data: patchData,
   });
 
-  const filteredRegistrations = [];
-  for (const registration of registrations) {
-    const filteredRegistration: BaseRegDisplayFields = {
-      id: registration.id,
-      childId: registration.childId,
-      shiftNr: registration.shiftNr,
-      isRegistered: registration.isRegistered,
-      regOrder: registration.regOrder,
-      isOld: registration.isOld,
-      tsSize: registration.tsSize,
-    };
-  }
-
-  return registrations;
-};
-
-type BaseRegDisplayFields = {
-  id: number;
-  childId: number;
-  shiftNr: number;
-  isRegistered: boolean;
-  regOrder: number;
-  isOld: boolean;
-  tsSize: string;
-};
-
-type PersonalInfoDisplayFields = {
-  birthday: Date;
-  road: string;
-  county: string;
-  country: string;
-};
-
-type ContactInfoDisplayFields = {
-  contactName: string;
-  contactNumber: string;
-  contactEmail: string;
-  backupTel: string;
-};
-
-type PriceInfoDisplayFields = {
-  pricePaid: number;
-  priceToPay: number;
-  notifSent: boolean;
-  billId: number;
+  return true;
 };

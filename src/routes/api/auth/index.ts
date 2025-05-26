@@ -15,16 +15,11 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         body: CredentialsSchema,
         response: {
-          [StatusCodes.OK]: {
-            status: "success",
-            data: {},
-          },
-          [StatusCodes.UNAUTHORIZED]: {
-            status: "fail",
-            data: {
-              message: Type.String(),
-            },
-          },
+          [StatusCodes.NO_CONTENT]: {},
+          [StatusCodes.UNAUTHORIZED]: Type.Object({
+            status: Type.Literal("fail"),
+            data: Type.Object({ message: Type.String() }),
+          }),
         },
       },
     },
@@ -38,7 +33,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       if (user) {
         request.session.user = { userId: user.id };
         await request.session.save();
-        return reply.code(StatusCodes.OK).send({ status: "success", data: {} });
+        return reply.code(StatusCodes.NO_CONTENT).send();
       }
 
       return reply.code(StatusCodes.UNAUTHORIZED).send({
@@ -47,11 +42,21 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       });
     },
   );
-  fastify.post("/logout", async (request, reply) => {
-    await request.session.destroy();
-    reply.clearCookie("sessionId");
-    return reply.code(StatusCodes.NO_CONTENT).send();
-  });
+  fastify.post(
+    "/logout",
+    {
+      schema: {
+        response: {
+          [StatusCodes.NO_CONTENT]: {},
+        },
+      },
+    },
+    async (request, reply) => {
+      await request.session.destroy();
+      reply.clearCookie("sessionId");
+      return reply.code(StatusCodes.NO_CONTENT).send();
+    },
+  );
 };
 
 export default plugin;

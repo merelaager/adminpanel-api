@@ -1,10 +1,7 @@
-import { Static } from "@sinclair/typebox";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 
-import { CredentialsSchema } from "../schemas/auth";
-
-export type Credentials = Static<typeof CredentialsSchema>;
+import { Credentials } from "../schemas/auth";
 
 export const authenticateUser = async (
   { username, password }: Credentials,

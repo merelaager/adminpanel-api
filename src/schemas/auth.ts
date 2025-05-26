@@ -5,7 +5,7 @@ export const CredentialsSchema = Type.Object({
   password: Type.String(),
 });
 
-export interface Credentials extends Static<typeof CredentialsSchema> {}
+export type Credentials = Static<typeof CredentialsSchema>;
 
 export interface Auth {
   userId: number;

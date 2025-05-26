@@ -6,6 +6,11 @@ import fastifyAutoload from "@fastify/autoload";
 
 const fastify = Fastify({
   logger: true,
+  ajv: {
+    customOptions: {
+      removeAdditional: false,
+    },
+  },
 });
 
 fastify.register(fastifyAutoload, {

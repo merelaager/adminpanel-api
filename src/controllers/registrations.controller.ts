@@ -1,5 +1,8 @@
 import type { Registration } from "@prisma/client";
 import { PrismaClient } from "@prisma/client";
+
+import { toggleRecord } from "./records.controller";
+
 import { PatchRegistrationBody } from "../schemas/registration";
 
 const fetchUserShiftRoles = async (
@@ -122,10 +125,10 @@ export const patchRegistrationData = async (
   prisma: PrismaClient,
 ) => {
   // TODO: avoid an extra request by querying the shift of the registration.
-  // Get the shift of the registration.
+  // Get the shift of the registration and the child the registration pertains to.
   const regShift = await prisma.registration.findUnique({
     where: { id: regId },
-    select: { shiftNr: true },
+    select: { shiftNr: true, childId: true },
   });
 
   if (!regShift) {
@@ -177,6 +180,23 @@ export const patchRegistrationData = async (
     where: { id: regId },
     data: patchData,
   });
+
+  // If the child is registered, the camp record must be updated accordingly.
+  // Likewise, if the child was de-registered.
+  const isRegisteredKey = "isRegistered" satisfies keyof Registration;
+  if (
+    isRegisteredKey in patchData &&
+    typeof patchData[isRegisteredKey] === "boolean"
+  ) {
+    await toggleRecord(
+      {
+        childId: regShift.childId,
+        shiftNr: regShift.shiftNr,
+      },
+      patchData[isRegisteredKey],
+      prisma,
+    );
+  }
 
   return true;
 };

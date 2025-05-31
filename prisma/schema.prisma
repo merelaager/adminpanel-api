@@ -117,9 +117,9 @@ model Registration {
   updatedAt     DateTime  @default(now()) @db.DateTime(0)
   notifSent     Boolean?  @default(false)
   billId        Int?      @db.UnsignedInt
-  children      Child     @relation(fields: [childId], references: [id], onDelete: NoAction)
-  shifts        ShiftInfo @relation(fields: [shiftNr], references: [id], onDelete: NoAction)
-  bills         bills?    @relation(fields: [billId], references: [id])
+  child         Child     @relation(fields: [childId], references: [id], onDelete: NoAction)
+  shift         ShiftInfo @relation(fields: [shiftNr], references: [id], onDelete: NoAction)
+  bill          Bill?     @relation(fields: [billId], references: [id])
 
   @@index([childId], map: "childId")
   @@index([shiftNr], map: "shiftNr")
@@ -294,7 +294,7 @@ model User {
   @@map("users")
 }
 
-model bills {
+model Bill {
   id            Int            @id @default(autoincrement()) @db.UnsignedInt
   contactName   String         @db.VarChar(255)
   billTotal     Int            @db.UnsignedInt
@@ -302,6 +302,8 @@ model bills {
   createdAt     DateTime       @default(now()) @db.DateTime(0)
   updatedAt     DateTime       @default(now()) @db.DateTime(0)
   registrations Registration[]
+
+  @@map("bills")
 }
 
 model tent_scores {

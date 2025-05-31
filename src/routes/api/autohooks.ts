@@ -7,6 +7,14 @@ export default async function (fastify: FastifyInstance) {
       return;
     }
 
+    // TODO: put registration creation behind authentication.
+    if (
+      request.url.startsWith("/api/registrations") &&
+      request.method === "POST"
+    ) {
+      return;
+    }
+
     if (!request.session.user) {
       return reply.code(StatusCodes.UNAUTHORIZED).send({
         status: "fail",

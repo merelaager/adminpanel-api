@@ -10,7 +10,7 @@ datasource db {
 model Child {
   id            Int            @id @default(autoincrement()) @db.UnsignedInt
   name          String         @db.VarChar(255)
-  gender        Sex
+  sex           Sex
   yearsAtCamp   Int?           @db.UnsignedInt
   notes         String?        @db.Text
   createdAt     DateTime       @default(now()) @db.DateTime(0)

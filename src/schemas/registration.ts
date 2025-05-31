@@ -1,5 +1,34 @@
 import { Static, Type } from "@sinclair/typebox";
 
+const STRING_MAX = 255;
+
+export type CreateRegistrationData = Static<typeof RegistrationCreationSchema>;
+export type PostRegistrationBody = Static<typeof RegistrationsCreationSchema>;
+
+export const RegistrationCreationSchema = Type.Object({
+  name: Type.String(),
+  idCode: Type.Optional(Type.String({ minLength: 11, maxLength: 11 })),
+  sex: Type.Optional(Type.Union([Type.Literal("M"), Type.Literal("F")])),
+  dob: Type.Optional(Type.String({ format: "date-time" })), // TypeBox uses ISO strings for date
+  addendum: Type.Optional(Type.String({ maxLength: STRING_MAX })),
+  shiftNr: Type.Number({ minimum: 1, maximum: 4 }), // TODO: make the shift max dynamic
+  isNew: Type.Boolean(),
+  shirtSize: Type.String({ maxLength: 10 }),
+  road: Type.String({ maxLength: STRING_MAX }),
+  city: Type.String({ maxLength: STRING_MAX }),
+  county: Type.String({ maxLength: STRING_MAX }),
+  country: Type.String({ maxLength: STRING_MAX }),
+  contactName: Type.String({ maxLength: STRING_MAX }),
+  contactEmail: Type.String({ maxLength: STRING_MAX, format: "email" }),
+  contactNumber: Type.String({ maxLength: 25 }),
+  backupTel: Type.Optional(Type.String({ maxLength: 25 })),
+  sendEmail: Type.Optional(Type.Boolean()),
+});
+
+export const RegistrationsCreationSchema = Type.Array(
+  RegistrationCreationSchema,
+);
+
 export const FilteredRegistrationSchema = Type.Object({
   id: Type.Integer(),
   childId: Type.Integer(),
@@ -36,3 +65,9 @@ export const PatchRegistrationSchema = Type.Object(
     additionalProperties: false,
   },
 );
+
+export type EmailReceiptInfo = {
+  name: string;
+  shiftNr: number;
+  contactEmail: string;
+};

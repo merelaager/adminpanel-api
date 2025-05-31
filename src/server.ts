@@ -18,6 +18,10 @@ fastify.register(fastifyAutoload, {
 });
 
 fastify.register(fastifyAutoload, {
+  dir: path.join(__dirname, "plugins/app"),
+});
+
+fastify.register(fastifyAutoload, {
   dir: path.join(__dirname, "routes"),
   autoHooks: true,
   cascadeHooks: true,

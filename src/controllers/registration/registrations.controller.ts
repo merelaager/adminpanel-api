@@ -1,9 +1,9 @@
 import type { Registration } from "@prisma/client";
 import { PrismaClient } from "@prisma/client";
 
-import { toggleRecord } from "./records.controller";
+import { toggleRecord } from "../records.controller";
 
-import { PatchRegistrationBody } from "../schemas/registration";
+import { PatchRegistrationBody } from "../../schemas/registration";
 
 const fetchUserShiftRoles = async (
   userId: number,

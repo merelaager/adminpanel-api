@@ -5,7 +5,7 @@ import { toggleRecord } from "../records.controller";
 
 import { PatchRegistrationBody } from "../../schemas/registration";
 
-const fetchUserShiftRoles = async (
+const fetchUserShiftPermissions = async (
   userId: number,
   shiftNr: number,
   permissionPrefix: string,
@@ -69,7 +69,7 @@ export const fetchShiftRegistrations = async (
   prisma: PrismaClient,
 ) => {
   // Fetch the user's registration view permissions for the given shift.
-  const shiftViewPermissions = await fetchUserShiftRoles(
+  const shiftViewPermissions = await fetchUserShiftPermissions(
     userId,
     shiftNr,
     "registration.view",
@@ -136,7 +136,7 @@ export const patchRegistrationData = async (
   }
 
   // Fetch the user's registration edit permissions for the given shift.
-  const regEditPermissions = await fetchUserShiftRoles(
+  const regEditPermissions = await fetchUserShiftPermissions(
     userId,
     regShift.shiftNr,
     "registration.edit",

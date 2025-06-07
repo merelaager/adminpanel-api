@@ -5,30 +5,65 @@ import { StatusCodes } from "http-status-codes";
 import { Prisma } from "@prisma/client";
 
 import prisma from "../utils/prisma";
+import { isUserBoss } from "../utils/permissions";
 import { generateBillPdf } from "../utils/bill-builder";
 
 import type { JSendResponse } from "../types/jsend";
 import type { BillCreationBody } from "../schemas/bill";
 
-const isUserBoss = async (userId: number) => {
-  const userBossInstances = await prisma.userRoles.findMany({
-    where: {
-      userId,
-      roles: {
-        roleName: "boss",
-      },
-    },
-    select: { id: true },
+export const registrationInclude = {
+  child: {
+    select: { name: true },
+  },
+};
+
+export type CamperBillingInfo = Prisma.RegistrationGetPayload<{
+  include: typeof registrationInclude;
+}>;
+
+const createBillDatabaseEntry = async (
+  contactName: string,
+  billTotal: number,
+) => {
+  const newBill = await prisma.bill.create({
+    data: { contactName, billTotal },
+  });
+  return newBill.id;
+};
+
+export const createAndAssignBill = async (
+  billNr: number,
+  billTotal: number,
+  registeredCampers: CamperBillingInfo[],
+) => {
+  const contact = {
+    name: registeredCampers[0].contactName,
+    email: registeredCampers[0].contactEmail,
+  };
+
+  if (isNaN(billNr)) {
+    billNr = await createBillDatabaseEntry(contact.name, billTotal);
+
+    for (const camper of registeredCampers) {
+      if (camper.billId) continue; // No unnecessary updates.
+      await prisma.registration.update({
+        where: { id: camper.id },
+        data: { billId: billNr },
+      });
+    }
+  }
+
+  const campersBillData = registeredCampers.map((reg) => {
+    return {
+      name: reg.child.name,
+      isOld: reg.isOld,
+      shiftNr: reg.shiftNr,
+      priceToPay: reg.priceToPay,
+    };
   });
 
-  if (userBossInstances.length > 0) return true;
-
-  const userRootInstance = await prisma.user.findUnique({
-    where: { id: userId, role: "root" },
-    select: { id: true },
-  });
-
-  return userRootInstance !== null;
+  await generateBillPdf(campersBillData, contact, billNr);
+  return billNr;
 };
 
 interface ICreateBillHandler extends RouteGenericInterface {
@@ -51,22 +86,12 @@ export const createBillHandler = async (
     });
   }
 
-  const registrationInclude = {
-    child: {
-      select: { name: true },
-    },
-  };
-
   const registrations = await prisma.registration.findMany({
     where: {
       contactEmail: req.body.email,
     },
     include: registrationInclude,
   });
-
-  type CamperBillingInfo = Prisma.RegistrationGetPayload<{
-    include: typeof registrationInclude;
-  }>;
 
   if (registrations.length === 0) {
     return res.status(StatusCodes.NOT_FOUND).send({
@@ -98,40 +123,8 @@ export const createBillHandler = async (
     });
   }
 
-  const contact = {
-    name: registeredCampers[0].contactName,
-    email: registeredCampers[0].contactEmail,
-  };
-
-  if (isNaN(billNr)) {
-    const newBill = await prisma.bill.create({
-      data: {
-        contactName: contact.name,
-        billTotal: billTotal,
-      },
-    });
-
-    billNr = newBill.id;
-
-    for (const camper of registeredCampers) {
-      await prisma.registration.update({
-        where: { id: camper.id },
-        data: { billId: billNr },
-      });
-    }
-  }
-
-  const campersBillData = registeredCampers.map((reg) => {
-    return {
-      name: reg.child.name,
-      isOld: reg.isOld,
-      shiftNr: reg.shiftNr,
-      priceToPay: reg.priceToPay,
-    };
-  });
-
   try {
-    await generateBillPdf(campersBillData, contact, billNr);
+    await createAndAssignBill(billNr, billTotal, registeredCampers);
   } catch (err) {
     console.error(err);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({

@@ -4,7 +4,7 @@ export const isUserBoss = async (userId: number) => {
   const userBossInstances = await prisma.userRoles.findMany({
     where: {
       userId,
-      roles: {
+      role: {
         roleName: "boss",
       },
     },

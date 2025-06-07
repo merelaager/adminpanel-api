@@ -100,7 +100,7 @@ model Registration {
   isRegistered  Boolean   @default(false)
   regOrder      Int       @db.UnsignedInt
   isOld         Boolean   @default(true)
-  birthday      DateTime? @db.Date
+  birthday      DateTime  @db.Date
   tsSize        String    @db.VarChar(255)
   addendum      String?   @db.Text
   road          String    @db.VarChar(255)
@@ -144,8 +144,8 @@ model RolePermission {
   permissionId Int        @db.UnsignedInt
   createdAt    DateTime   @default(now()) @db.DateTime(0)
   updatedAt    DateTime   @default(now()) @db.DateTime(0)
-  roles        Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
-  permissions  Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
   @@id([roleId, permissionId])
   @@unique([roleId, permissionId], map: "roleId_permissionId_unique")
@@ -192,7 +192,7 @@ model ShiftStaff {
   userId    Int?             @db.UnsignedInt
   name      String?          @db.VarChar(255)
   role      shift_staff_role @default(part)
-  users     User?            @relation(fields: [userId], references: [id])
+  user      User?            @relation(fields: [userId], references: [id])
 
   @@index([userId], map: "userId")
   @@map("shift_staff")
@@ -251,8 +251,8 @@ model Team {
   createdAt  DateTime    @default(now()) @db.DateTime(0)
   updatedAt  DateTime    @default(now()) @db.DateTime(0)
   shift_data ShiftData[]
-  children   Child?      @relation(fields: [captainId], references: [id])
-  Record     Record[]
+  captain    Child?      @relation(fields: [captainId], references: [id])
+  records    Record[]
 
   @@index([captainId], map: "captainId")
   @@map("teams")
@@ -265,8 +265,8 @@ model UserRoles {
   roleId    Int      @db.UnsignedInt
   createdAt DateTime @default(now()) @db.DateTime(0)
   updatedAt DateTime @default(now()) @db.DateTime(0)
-  users     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  roles     Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
   @@index([roleId], map: "roleId")
   @@index([userId], map: "userId")

@@ -14,15 +14,15 @@ const fetchUserShiftPermissions = async (
   const userShiftRolesRaw = await prisma.userRoles.findMany({
     where: { userId, shiftNr },
     select: {
-      roles: {
+      role: {
         select: {
           role_permissions: {
             where: {
-              permissions: {
+              permission: {
                 permissionName: { startsWith: permissionPrefix },
               },
             },
-            select: { permissions: { select: { permissionName: true } } },
+            select: { permission: { select: { permissionName: true } } },
           },
         },
       },
@@ -30,9 +30,9 @@ const fetchUserShiftPermissions = async (
   });
 
   const shiftPermissions = new Set<string>();
-  for (const role of userShiftRolesRaw) {
-    for (const permission of role.roles.role_permissions) {
-      shiftPermissions.add(permission.permissions.permissionName);
+  for (const shiftRole of userShiftRolesRaw) {
+    for (const permission of shiftRole.role.role_permissions) {
+      shiftPermissions.add(permission.permission.permissionName);
     }
   }
 

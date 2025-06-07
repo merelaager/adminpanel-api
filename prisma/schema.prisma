@@ -315,6 +315,16 @@ model tent_scores {
   updatedAt DateTime @default(now()) @db.DateTime(0)
 }
 
+model Session {
+  id        String   @id
+  sid       String   @unique
+  data      String   @db.Text
+  expiresAt DateTime @db.DateTime(0)
+  createdAt DateTime @default(now()) @db.DateTime(0)
+
+  @@map("sessions")
+}
+
 enum Sex {
   M
   F

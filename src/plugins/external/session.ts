@@ -3,8 +3,9 @@ import "dotenv/config";
 import fp from "fastify-plugin";
 import fastifySession from "@fastify/session";
 import fastifyCookie from "@fastify/cookie";
+import { PrismaSessionStore } from "@quixo3/prisma-session-store";
 
-import { Auth } from "../../schemas/auth";
+import type { Auth } from "../../schemas/auth";
 
 declare module "fastify" {
   interface Session {
@@ -20,14 +21,24 @@ export default fp(
       throw new Error("Could not find session secret");
     }
 
+    const defaultTTL = 1000 * 60 * 60 * 7;
+
     fastify.register(fastifyCookie);
     fastify.register(fastifySession, {
       secret: sessionSecret,
       cookie: {
-        secure: false,
+        secure: "auto",
+        sameSite: "strict",
         httpOnly: true,
-        maxAge: 1800000,
+        maxAge: defaultTTL,
       },
+      saveUninitialized: false,
+      rolling: true, // Constantly update the cookie, allowing for shorter TTL.
+      store: new PrismaSessionStore(fastify.prisma, {
+        checkPeriod: defaultTTL,
+        dbRecordIdIsSessionId: true,
+        dbRecordIdFunction: undefined,
+      }),
     });
   },
   { name: "session" },

@@ -194,7 +194,6 @@ export const patchRegistrationData = async (
         shiftNr: regShift.shiftNr,
       },
       patchData[isRegisteredKey],
-      prisma,
     );
   }
 

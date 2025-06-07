@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import prisma from "../utils/prisma";
 
 type RecordCreateData = {
   childId: number;
@@ -8,7 +8,6 @@ type RecordCreateData = {
 export const toggleRecord = async (
   recordBasis: RecordCreateData,
   isRegistered: boolean,
-  prisma: PrismaClient,
 ) => {
   const { childId, shiftNr } = recordBasis;
   const currentYear = new Date().getFullYear();

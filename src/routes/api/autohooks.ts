@@ -18,7 +18,7 @@ export default async function (fastify: FastifyInstance) {
     if (!request.session.user) {
       return reply.code(StatusCodes.UNAUTHORIZED).send({
         status: "fail",
-        data: { message: "You must be authenticated to access this route!" },
+        data: { message: "Ligipääsuks pead olema autenditud" },
       });
     }
   });

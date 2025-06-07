@@ -69,7 +69,7 @@ model OldRecord {
   children  Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
 
   @@index([childId], map: "childId")
-  @@map("records")
+  @@map("old_records")
 }
 
 model Record {
@@ -83,13 +83,13 @@ model Record {
   isActive  Boolean  @default(true) // Whether to count the child in the shift.
   createdAt DateTime @default(now()) @db.DateTime(0)
   updatedAt DateTime @default(now()) @db.DateTime(0)
-  children  Child    @relation(fields: [childId], references: [id])
-  teams     Team?    @relation(fields: [teamId], references: [id])
+  child     Child    @relation(fields: [childId], references: [id])
+  team      Team?    @relation(fields: [teamId], references: [id])
 
   @@unique(name: "metaId", [childId, shiftNr, year], map: "record_meta_unique")
   @@index([childId], map: "childId")
   @@index([teamId], map: "teamId")
-  @@map("shift_records")
+  @@map("records")
 }
 
 model Registration {

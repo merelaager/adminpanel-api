@@ -3,6 +3,7 @@ import "dotenv/config";
 
 import Fastify from "fastify";
 import fastifyAutoload from "@fastify/autoload";
+import cors from "@fastify/cors";
 
 const fastify = Fastify({
   logger: true,
@@ -10,6 +11,24 @@ const fastify = Fastify({
     customOptions: {
       removeAdditional: false,
     },
+  },
+});
+
+fastify.register(cors, {
+  credentials: true,
+  origin: (origin, cb) => {
+    if (!origin) {
+      cb(null, true);
+      return;
+    }
+
+    const hostname = new URL(origin).hostname;
+    if (hostname === "localhost") {
+      cb(null, true);
+      return;
+    }
+
+    cb(new Error("Not allowed"), false);
   },
 });
 

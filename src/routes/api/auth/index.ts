@@ -4,18 +4,50 @@ import {
 } from "@fastify/type-provider-typebox";
 import { StatusCodes } from "http-status-codes";
 
-import { authenticateUser } from "../../../controllers/auth.controller";
+import {
+  authenticateUser,
+  userInfoHandler,
+} from "../../../controllers/auth.controller";
 
 import { CredentialsSchema } from "../../../schemas/auth";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
+  fastify.get(
+    "/me",
+    {
+      schema: {
+        response: {
+          [StatusCodes.OK]: Type.Object({
+            status: Type.Literal("success"),
+            data: Type.Object({
+              userId: Type.Number(),
+              name: Type.String(),
+              nickname: Type.String(),
+              email: Type.String(),
+              currentShift: Type.Number(),
+            }),
+          }),
+        },
+      },
+    },
+    userInfoHandler,
+  );
   fastify.post(
     "/login",
     {
       schema: {
         body: CredentialsSchema,
         response: {
-          [StatusCodes.NO_CONTENT]: {},
+          [StatusCodes.OK]: Type.Object({
+            status: Type.Literal("success"),
+            data: Type.Object({
+              userId: Type.Number(),
+              name: Type.String(),
+              nickname: Type.String(),
+              email: Type.String(),
+              currentShift: Type.Number(),
+            }),
+          }),
           [StatusCodes.UNAUTHORIZED]: Type.Object({
             status: Type.Literal("fail"),
             data: Type.Object({ message: Type.String() }),
@@ -33,12 +65,21 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       if (user) {
         request.session.user = { userId: user.id };
         await request.session.save();
-        return reply.code(StatusCodes.NO_CONTENT).send();
+        return reply.code(StatusCodes.OK).send({
+          status: "success",
+          data: {
+            userId: user.id,
+            name: user.name,
+            nickname: user.nickname ?? "",
+            email: user.email ?? "",
+            currentShift: user.currentShift ?? 0,
+          },
+        });
       }
 
       return reply.code(StatusCodes.UNAUTHORIZED).send({
         status: "fail",
-        data: { message: "Vale kasutajanimi või parool" },
+        data: { message: "Vale kasutajanimi või parool." },
       });
     },
   );

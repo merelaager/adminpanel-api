@@ -29,9 +29,26 @@ export const RegistrationsCreationSchema = Type.Array(
   RegistrationCreationSchema,
 );
 
+export type FetchRegistrationsQueryString = Static<
+  typeof RegistrationsFetchSchema
+>;
+
+export const RegistrationsFetchSchema = Type.Object({
+  shiftNr: Type.Integer(),
+});
+
+export type FilteredRegistrationSchema = Static<
+  typeof FilteredRegistrationSchema
+>;
+
 export const FilteredRegistrationSchema = Type.Object({
   id: Type.Integer(),
   childId: Type.Integer(),
+  child: Type.Object({
+    name: Type.String(),
+    sex: Type.Union([Type.Literal("M"), Type.Literal("F")]),
+    currentAge: Type.Number(),
+  }),
   shiftNr: Type.Integer(),
   isRegistered: Type.Boolean(),
   regOrder: Type.Integer(),
@@ -44,11 +61,11 @@ export const FilteredRegistrationSchema = Type.Object({
   pricePaid: Type.Optional(Type.Integer()),
   priceToPay: Type.Optional(Type.Integer()),
   notifSent: Type.Optional(Type.Boolean()),
-  billId: Type.Optional(Type.Integer()),
+  billId: Type.Optional(Type.Union([Type.Integer(), Type.Null()])),
   contactName: Type.Optional(Type.String()),
-  contactNUmber: Type.Optional(Type.String()),
+  contactNumber: Type.Optional(Type.String()),
   contactEmail: Type.Optional(Type.String()),
-  backupTel: Type.Optional(Type.String()),
+  backupTel: Type.Optional(Type.Union([Type.String(), Type.Null()])),
 });
 
 export type PatchRegistrationBody = Static<typeof PatchRegistrationSchema>;

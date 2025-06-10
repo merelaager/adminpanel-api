@@ -6,8 +6,8 @@ import {
 import { StatusCodes } from "http-status-codes";
 
 import {
-  fetchShiftRegistrations,
   patchRegistrationData,
+  registrationsFetchHandler,
 } from "../../../controllers/registration/registrations.controller";
 import { createRegistrationFromParentData } from "../../../controllers/registration/create.registration";
 
@@ -17,59 +17,34 @@ import {
   PatchRegistrationSchema,
   PostRegistrationBody,
   RegistrationsCreationSchema,
+  RegistrationsFetchSchema,
 } from "../../../schemas/registration";
-
-interface RegistrationsQuery {
-  shiftNr: number;
-}
 
 interface PatchParams {
   regId: number;
 }
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
-  const getSchema = <RouteShorthandOptions>{
-    schema: {
-      querystring: Type.Object({ shiftNr: Type.Integer() }), // TODO: fetch registrations also without the filter.
-      response: {
-        [StatusCodes.OK]: Type.Object({
-          status: Type.Literal("success"),
-          data: Type.Object({
-            registrations: Type.Array(FilteredRegistrationSchema),
+  fastify.get(
+    "/",
+    {
+      schema: {
+        querystring: RegistrationsFetchSchema,
+        response: {
+          [StatusCodes.OK]: Type.Object({
+            status: Type.Literal("success"),
+            data: Type.Object({
+              registrations: Type.Array(FilteredRegistrationSchema),
+            }),
           }),
-        }),
-        [StatusCodes.NOT_IMPLEMENTED]: Type.Object({
-          status: Type.Literal("error"),
-          message: Type.String(),
-        }),
+          [StatusCodes.NOT_IMPLEMENTED]: Type.Object({
+            status: Type.Literal("error"),
+            message: Type.String(),
+          }),
+        },
       },
     },
-  };
-
-  fastify.get<{ Querystring: RegistrationsQuery }>(
-    "/",
-    getSchema,
-    async (request, reply) => {
-      const { userId } = request.session.user;
-      const { shiftNr } = request.query;
-
-      if (!shiftNr) {
-        return reply.status(StatusCodes.NOT_IMPLEMENTED).send({
-          status: "error",
-          message: "Provide a query string for the shift, i.e. ?shiftNr=X",
-        });
-      }
-
-      const registrations = await fetchShiftRegistrations(
-        userId,
-        shiftNr,
-        fastify.prisma,
-      );
-
-      return reply
-        .status(StatusCodes.OK)
-        .send({ status: "success", data: { registrations } });
-    },
+    registrationsFetchHandler,
   );
 
   const postSchema = <RouteShorthandOptions>{

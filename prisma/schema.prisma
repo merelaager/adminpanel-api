@@ -115,7 +115,7 @@ model Registration {
   priceToPay    Int       @default(0) @db.UnsignedInt
   createdAt     DateTime  @default(now()) @db.DateTime(0)
   updatedAt     DateTime  @default(now()) @db.DateTime(0)
-  notifSent     Boolean?  @default(false)
+  notifSent     Boolean   @default(false)
   billId        Int?      @db.UnsignedInt
   child         Child     @relation(fields: [childId], references: [id], onDelete: NoAction)
   shift         ShiftInfo @relation(fields: [shiftNr], references: [id], onDelete: NoAction)

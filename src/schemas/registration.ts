@@ -76,7 +76,6 @@ export const PatchRegistrationSchema = Type.Object(
     isOld: Type.Optional(Type.Boolean()),
     pricePaid: Type.Optional(Type.Number()),
     priceToPay: Type.Optional(Type.Number()),
-    kekKok: Type.Optional(Type.Boolean()),
   },
   {
     additionalProperties: false,

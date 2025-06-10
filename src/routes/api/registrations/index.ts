@@ -99,7 +99,9 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       if (!status) {
         return reply.status(StatusCodes.NOT_FOUND).send({
           status: "fail",
-          data: { message: `Registration with id ${regId} not found` },
+          data: {
+            message: `Registreerimist ei leitud või puuduvad piisavad õigused. (id: ${regId})`,
+          },
         });
       }
 

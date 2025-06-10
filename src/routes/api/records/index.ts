@@ -7,14 +7,18 @@ import {
   forceSyncRecordsHandler,
 } from "../../../controllers/records/fetch.record";
 
-import { FlattenedRecord, ForceSyncSchema } from "../../../schemas/record";
+import {
+  FlattenedRecord,
+  ForceSyncSchema,
+  RecordsFetchSchema,
+} from "../../../schemas/record";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(
     "/",
     {
       schema: {
-        querystring: Type.Object({ shiftNr: Type.Integer() }),
+        querystring: RecordsFetchSchema,
         response: {
           [StatusCodes.OK]: Type.Object({
             status: Type.Literal("success"),

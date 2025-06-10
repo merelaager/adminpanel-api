@@ -14,6 +14,11 @@ const fastify = Fastify({
   },
 });
 
+const CORS_METHODS = ["GET", "HEAD", "POST"];
+if (process.env.NODE_ENV === "development") {
+  CORS_METHODS.push("PATCH");
+}
+
 fastify.register(cors, {
   credentials: true,
   origin: (origin, cb) => {
@@ -23,13 +28,14 @@ fastify.register(cors, {
     }
 
     const hostname = new URL(origin).hostname;
-    if (hostname === "localhost") {
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
       cb(null, true);
       return;
     }
 
     cb(new Error("Not allowed"), false);
   },
+  methods: CORS_METHODS,
 });
 
 fastify.register(fastifyAutoload, {

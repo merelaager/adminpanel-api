@@ -14,7 +14,7 @@ import {
 
 import type { JSendResponse } from "../../types/jsend";
 
-const fetchUserShiftPermissions = async (
+export const fetchUserShiftPermissions = async (
   userId: number,
   shiftNr: number,
   permissionPrefix: string,

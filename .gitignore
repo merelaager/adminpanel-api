@@ -6,9 +6,9 @@
 # Secrets
 .env
 
-# Bills
-data/arved/*
-!data/arves/.gitkeep
+# Files
+data/**
+!data/**/.gitkeep
 
 # Node
 /node_modules

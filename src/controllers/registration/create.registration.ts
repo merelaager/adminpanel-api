@@ -8,7 +8,9 @@ import {
   CreateRegistrationData,
   EmailReceiptInfo,
 } from "../../schemas/registration";
-import { JSendResponse } from "../../types/jsend";
+
+import type { JSendResponse } from "../../types/jsend";
+import type { TRegOrder } from "../../plugins/app/regorder";
 
 const validateDate = (year: number, month: number, date: number) => {
   if (month < 0 || month > 11 || date < 0) return false;
@@ -74,6 +76,7 @@ export const createRegistrationFromParentData = async (
   registrations: CreateRegistrationData[],
   prisma: PrismaClient,
   mailer: Transporter,
+  regorder: TRegOrder,
 ): Promise<RegistrationResult> => {
   const resObj = <JSendResponse>{
     status: "success",
@@ -96,9 +99,7 @@ export const createRegistrationFromParentData = async (
   // Keep track of the relative order of registrations.
   // Order numbers are wasted if the registration fails (e.g. the request is malformed)
   // but this is not a problem for the current use case, and it avoids looping twice.
-  const currentOrder = 1;
-  // const currentOrder = GlobalStore.registrationOrder;
-  // ++GlobalStore.registrationOrder;
+  const currentOrder = regorder.getOrder();
 
   const registrationEntries: Prisma.RegistrationCreateManyInput[] = [];
 

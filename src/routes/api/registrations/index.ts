@@ -62,6 +62,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         suppliedData,
         fastify.prisma,
         fastify.mailer,
+        fastify.regorder,
       );
       reply.status(result.code).send(result.response);
     },

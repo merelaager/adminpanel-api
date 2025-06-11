@@ -155,7 +155,7 @@ model RolePermission {
 
 model Role {
   id               Int              @id @default(autoincrement()) @db.UnsignedInt
-  roleName         String?          @db.VarChar(255)
+  roleName         String           @db.VarChar(255)
   createdAt        DateTime         @default(now()) @db.DateTime(0)
   updatedAt        DateTime         @default(now()) @db.DateTime(0)
   role_permissions RolePermission[]
@@ -268,6 +268,10 @@ model UserRoles {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
+  // One user should only have one role per shift.
+  // So far this reflects reality accurately, and simplifies permission assessment.
+  // Hopefully this does not become an obstacle in the future.
+  @@unique([userId, shiftNr], map: "userId_shiftNr_unique")
   @@index([roleId], map: "roleId")
   @@index([userId], map: "userId")
   @@map("user_roles")

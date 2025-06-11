@@ -8,11 +8,16 @@ import {
   generateShiftCamperListPDF,
   PrintEntry,
 } from "../utils/shift-pdf-builder";
+import { isShiftBoss } from "../utils/permissions";
 
 import { fetchUserShiftPermissions } from "./registration/registrations.controller";
 
 import type { JSendResponse } from "../types/jsend";
-import { ShiftPdfFetchParams } from "../schemas/shift";
+import {
+  RoleNameMap,
+  ShiftResourceFetchParams,
+  type UserWithShiftRole,
+} from "../schemas/shift";
 
 interface IFetchShiftsHandler extends RouteGenericInterface {
   Reply: JSendResponse;
@@ -36,7 +41,7 @@ export const fetchShiftsHandler = async (
 };
 
 interface IFetchShiftPdfHandler extends RouteGenericInterface {
-  Params: ShiftPdfFetchParams;
+  Params: ShiftResourceFetchParams;
   Reply: JSendResponse | ReadStream;
 }
 
@@ -114,4 +119,59 @@ export const fetchShiftPdfHandler = async (
   const stream = fs.createReadStream(filePath);
   res.status(StatusCodes.OK).type("application/pdf");
   return res.send(stream);
+};
+
+interface IFetchShiftUsers extends RouteGenericInterface {
+  Params: ShiftResourceFetchParams;
+  Reply: JSendResponse;
+}
+
+export const fetchShiftUsersHandler = async (
+  req: FastifyRequest<IFetchShiftUsers>,
+  res: FastifyReply<IFetchShiftUsers>,
+): Promise<never> => {
+  const { shiftNr } = req.params;
+  const { userId } = req.session.user;
+
+  const isAuthorised = await isShiftBoss(userId, shiftNr);
+  if (!isAuthorised) {
+    return res.status(StatusCodes.FORBIDDEN).send({
+      status: "fail",
+      data: { permissions: "Puuduvad õigused päringuks." },
+    });
+  }
+
+  const rawUsersAndPermissions = await prisma.userRoles.findMany({
+    where: { shiftNr },
+    select: {
+      role: {
+        select: {
+          roleName: true,
+          id: true,
+          role_permissions: {
+            select: { permission: { select: { permissionName: true } } },
+          },
+        },
+      },
+      user: { select: { name: true, id: true } },
+    },
+  });
+
+  const usersWithShiftRole: UserWithShiftRole[] = [];
+  rawUsersAndPermissions.forEach((obj) => {
+    usersWithShiftRole.push({
+      userId: obj.user.id,
+      name: obj.user.name,
+      shiftNr,
+      role: RoleNameMap[obj.role.roleName] ?? obj.role.roleName,
+      roleId: obj.role.id,
+    });
+  });
+
+  return res.status(StatusCodes.OK).send({
+    status: "success",
+    data: {
+      users: usersWithShiftRole,
+    },
+  });
 };

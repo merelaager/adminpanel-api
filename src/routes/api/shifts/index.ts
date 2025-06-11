@@ -5,8 +5,13 @@ import { StatusCodes } from "http-status-codes";
 import {
   fetchShiftPdfHandler,
   fetchShiftsHandler,
+  fetchShiftUsersHandler,
 } from "../../../controllers/shifts.controller";
-import { ShiftPdfFetchSchema } from "../../../schemas/shift";
+
+import {
+  ShiftResourceFetchParams,
+  UserWithShiftRoleSchema,
+} from "../../../schemas/shift";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(
@@ -29,7 +34,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
     "/:shiftNr/pdf",
     {
       schema: {
-        params: ShiftPdfFetchSchema,
+        params: ShiftResourceFetchParams,
         response: {
           [StatusCodes.NOT_FOUND]: Type.Object({
             status: Type.Literal("fail"),
@@ -51,6 +56,29 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       },
     },
     fetchShiftPdfHandler,
+  );
+  fastify.get(
+    "/:shiftNr/users",
+    {
+      schema: {
+        params: ShiftResourceFetchParams,
+        response: {
+          [StatusCodes.OK]: Type.Object({
+            status: Type.Literal("success"),
+            data: Type.Object({
+              users: Type.Array(UserWithShiftRoleSchema),
+            }),
+          }),
+          [StatusCodes.FORBIDDEN]: Type.Object({
+            status: Type.Literal("fail"),
+            data: Type.Object({
+              permissions: Type.String(),
+            }),
+          }),
+        },
+      },
+    },
+    fetchShiftUsersHandler,
   );
 };
 

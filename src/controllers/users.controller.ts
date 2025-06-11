@@ -21,6 +21,7 @@ export const createUser = async (
       email: userData.email,
       password: userData.password,
       nickname: userData.nickname,
+      currentShift: userData.initialShift ?? 0,
     },
   };
 

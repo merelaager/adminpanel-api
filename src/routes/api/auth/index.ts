@@ -10,6 +10,7 @@ import {
 } from "../../../controllers/auth.controller";
 
 import { CredentialsSchema } from "../../../schemas/auth";
+import { UserInfoSchema } from "../../../schemas/user";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(
@@ -19,13 +20,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         response: {
           [StatusCodes.OK]: Type.Object({
             status: Type.Literal("success"),
-            data: Type.Object({
-              userId: Type.Number(),
-              name: Type.String(),
-              nickname: Type.String(),
-              email: Type.String(),
-              currentShift: Type.Number(),
-            }),
+            data: UserInfoSchema,
           }),
         },
       },
@@ -40,13 +35,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         response: {
           [StatusCodes.OK]: Type.Object({
             status: Type.Literal("success"),
-            data: Type.Object({
-              userId: Type.Number(),
-              name: Type.String(),
-              nickname: Type.String(),
-              email: Type.String(),
-              currentShift: Type.Number(),
-            }),
+            data: UserInfoSchema,
           }),
           [StatusCodes.UNAUTHORIZED]: Type.Object({
             status: Type.Literal("fail"),
@@ -72,7 +61,8 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
             name: user.name,
             nickname: user.nickname ?? "",
             email: user.email ?? "",
-            currentShift: user.currentShift ?? 0,
+            currentShift: user.currentShift,
+            isRoot: user.role === "root",
           },
         });
       }

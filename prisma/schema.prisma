@@ -276,7 +276,7 @@ model UserRoles {
 model User {
   id           Int          @id @default(autoincrement()) @db.UnsignedInt
   username     String       @unique(map: "username") @db.VarChar(255)
-  currentShift Int?         @db.UnsignedInt
+  currentShift Int          @db.UnsignedInt
   name         String       @db.VarChar(255)
   email        String?      @unique(map: "email") @db.VarChar(255)
   nickname     String?      @db.VarChar(255)

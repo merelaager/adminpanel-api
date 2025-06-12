@@ -8,7 +8,7 @@ import {
   generateShiftCamperListPDF,
   PrintEntry,
 } from "../utils/shift-pdf-builder";
-import { isShiftBoss } from "../utils/permissions";
+import { isShiftBoss, isShiftMember } from "../utils/permissions";
 
 import { fetchUserShiftPermissions } from "./registration/registrations.controller";
 
@@ -18,6 +18,7 @@ import {
   ShiftResourceFetchParams,
   type UserWithShiftRole,
 } from "../schemas/shift";
+import type { CamperRecord } from "../schemas/user";
 
 interface IFetchShiftsHandler extends RouteGenericInterface {
   Reply: JSendResponse;
@@ -173,5 +174,58 @@ export const fetchShiftUsersHandler = async (
     data: {
       users: usersWithShiftRole,
     },
+  });
+};
+
+interface IFetchShiftCampers extends RouteGenericInterface {
+  Params: ShiftResourceFetchParams;
+  Reply: JSendResponse;
+}
+
+export const fetchShiftCampersHandler = async (
+  req: FastifyRequest<IFetchShiftCampers>,
+  res: FastifyReply<IFetchShiftCampers>,
+): Promise<never> => {
+  const { shiftNr } = req.params;
+  const { userId } = req.session.user;
+
+  const isAuthorised = await isShiftMember(userId, shiftNr);
+  if (!isAuthorised) {
+    return res.status(StatusCodes.FORBIDDEN).send({
+      status: "fail",
+      data: { permissions: "Puuduvad õigused päringuks." },
+    });
+  }
+
+  const currentYear = new Date().getUTCFullYear();
+
+  const rawRecords = await prisma.record.findMany({
+    where: { shiftNr, year: currentYear, isActive: true },
+    include: {
+      child: {
+        select: { name: true, sex: true },
+      },
+    },
+    omit: { createdAt: true, updatedAt: true, isActive: true },
+  });
+
+  const camperRecords: CamperRecord[] = [];
+  rawRecords.forEach((record) => {
+    camperRecords.push({
+      id: record.id,
+      childId: record.childId,
+      childName: record.child.name,
+      childSex: record.child.sex,
+      shiftNr: record.shiftNr,
+      year: record.year,
+      tentNr: record.tentNr,
+      teamId: record.teamId,
+      isPresent: record.isPresent,
+    });
+  });
+
+  return res.status(StatusCodes.OK).send({
+    status: "success",
+    data: { records: camperRecords },
   });
 };

@@ -38,3 +38,19 @@ export const isShiftBoss = async (userId: number, shiftNr: number) => {
 
   return userShiftBossInstances.length > 0;
 };
+
+export const isShiftMember = async (userId: number, shiftNr: number) => {
+  const userShiftRoles = await prisma.userRoles.findMany({
+    where: {
+      userId,
+      shiftNr,
+      role: {
+        roleName: {
+          in: ["boss", "root", "instructor", "helper"],
+        },
+      },
+    },
+  });
+
+  return userShiftRoles.length > 0;
+};

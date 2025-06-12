@@ -10,8 +10,11 @@ import {
 import {
   FlattenedRecord,
   ForceSyncSchema,
+  PatchRecordSchema,
+  RecordParamsSchema,
   RecordsFetchSchema,
 } from "../../../schemas/record";
+import { patchRecordHandler } from "../../../controllers/records.controller";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(
@@ -45,6 +48,39 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       },
     },
     forceSyncRecordsHandler,
+  );
+  fastify.patch(
+    "/:recordId",
+    {
+      schema: {
+        params: RecordParamsSchema,
+        body: PatchRecordSchema,
+        response: {
+          [StatusCodes.NOT_FOUND]: Type.Object({
+            status: Type.Literal("fail"),
+            data: Type.Object({
+              recordId: Type.String(),
+            }),
+          }),
+          [StatusCodes.UNPROCESSABLE_ENTITY]: Type.Object({
+            status: Type.Literal("fail"),
+            data: Type.Partial(
+              Type.Object({
+                tentNr: Type.String(),
+                teamId: Type.String(),
+              }),
+            ),
+          }),
+          [StatusCodes.FORBIDDEN]: Type.Object({
+            status: Type.Literal("fail"),
+            data: Type.Object({
+              permissions: Type.String(),
+            }),
+          }),
+        },
+      },
+    },
+    patchRecordHandler,
   );
 };
 

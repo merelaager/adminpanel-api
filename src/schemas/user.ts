@@ -20,3 +20,17 @@ export const UserInfoSchema = Type.Object({
   currentShift: Type.Number(),
   isRoot: Type.Boolean(),
 });
+
+export type CamperRecord = Static<typeof CamperRecordSchema>;
+
+export const CamperRecordSchema = Type.Object({
+  id: Type.Number(),
+  childId: Type.Number(),
+  childName: Type.String(),
+  childSex: Type.Union([Type.Literal("M"), Type.Literal("F")]),
+  shiftNr: Type.Integer(),
+  year: Type.Integer(),
+  tentNr: Type.Union([Type.Integer(), Type.Null()]),
+  teamId: Type.Union([Type.Integer(), Type.Null()]),
+  isPresent: Type.Boolean(),
+});

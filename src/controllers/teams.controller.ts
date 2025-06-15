@@ -8,7 +8,11 @@ import { StatusCodes } from "http-status-codes";
 import prisma from "../utils/prisma";
 
 import type { JSendResponse } from "../types/jsend";
-import type { FetchTeamsQueryString, TeamRecord } from "../schemas/team";
+import type {
+  FetchTeamsQueryString,
+  TeamCreationBody,
+  TeamRecord,
+} from "../schemas/team";
 
 interface IFetchTeamsHandler extends RouteGenericInterface {
   Querystring: FetchTeamsQueryString;
@@ -37,4 +41,32 @@ export const fetchTeamsHandler = async (
     status: "success",
     data: { teams },
   });
+};
+
+interface ITeamCreationHandler extends RouteGenericInterface {
+  Body: TeamCreationBody;
+  Reply: JSendResponse | void;
+}
+
+export const teamCreationHandler = async (
+  req: FastifyRequest<ITeamCreationHandler>,
+  res: FastifyReply<ITeamCreationHandler>,
+): Promise<never> => {
+  const { shiftNr, name } = req.body;
+  const year = new Date().getUTCFullYear();
+
+  if (name.length < 1) {
+    return res.status(StatusCodes.UNPROCESSABLE_ENTITY).send({
+      status: "fail",
+      data: {
+        name: "Meeskonna nimi ei tohi olla tühi",
+      },
+    });
+  }
+
+  await prisma.team.create({
+    data: { shiftNr, name, year },
+  });
+
+  return res.status(StatusCodes.CREATED).send();
 };

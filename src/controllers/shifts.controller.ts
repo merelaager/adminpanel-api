@@ -229,3 +229,125 @@ export const fetchShiftCampersHandler = async (
     data: { records: camperRecords },
   });
 };
+
+interface IFetchShiftBillingInfo extends RouteGenericInterface {
+  Params: ShiftResourceFetchParams;
+  Reply: JSendResponse;
+}
+
+export const fetchShiftBillingHandler = async (
+  req: FastifyRequest<IFetchShiftBillingInfo>,
+  res: FastifyReply<IFetchShiftBillingInfo>,
+): Promise<never> => {
+  const { shiftNr } = req.params;
+  const { userId } = req.session.user;
+
+  const isAuthorised = await isShiftBoss(userId, shiftNr);
+  if (!isAuthorised) {
+    return res.status(StatusCodes.FORBIDDEN).send({
+      status: "fail",
+      data: { permissions: "Puuduvad õigused päringuks." },
+    });
+  }
+
+  type BillChildRecord = {
+    childName: string;
+    pricePaid: number;
+    priceToPay: number;
+    shiftNr: number;
+  };
+
+  // Currently, an email should be associated with (at most) one bill number.
+  // Therefore, grouping by email includes bill groups as well, with the added
+  // benefit of including children based on whom the bill has not been issued/updated yet.
+  type EmailRecordGroup = {
+    name: string;
+    email: string;
+    billNr: number | null;
+    records: BillChildRecord[];
+  };
+
+  const rawRegistrations = await prisma.registration.findMany({
+    where: { shiftNr, isRegistered: true },
+    select: {
+      billId: true,
+      contactName: true,
+      contactEmail: true,
+      pricePaid: true,
+      priceToPay: true,
+      shiftNr: true,
+      child: {
+        select: { name: true },
+      },
+    },
+  });
+
+  const registrationMap = new Map<string, EmailRecordGroup>();
+  const relevantBillIds: number[] = [];
+
+  rawRegistrations.forEach((registration) => {
+    const data = {
+      childName: registration.child.name,
+      pricePaid: registration.pricePaid,
+      priceToPay: registration.priceToPay,
+      billNr: registration.billId,
+      shiftNr: registration.shiftNr,
+    };
+
+    const childGroupWithoutActiveBill = registrationMap.get(
+      registration.contactEmail,
+    );
+
+    if (childGroupWithoutActiveBill) {
+      childGroupWithoutActiveBill.records.push(data);
+      if (registration.billId)
+        childGroupWithoutActiveBill.billNr = registration.billId;
+    } else {
+      registrationMap.set(registration.contactEmail, {
+        name: registration.contactName,
+        email: registration.contactEmail,
+        billNr: registration.billId,
+        records: [data],
+      });
+    }
+
+    if (registration.billId !== null) relevantBillIds.push(registration.billId);
+  });
+
+  const addendumRegistrations = await prisma.registration.findMany({
+    where: { billId: { in: relevantBillIds }, shiftNr: { not: shiftNr } },
+    select: {
+      billId: true,
+      contactName: true,
+      contactEmail: true,
+      pricePaid: true,
+      priceToPay: true,
+      shiftNr: true,
+      child: {
+        select: { name: true },
+      },
+    },
+  });
+
+  addendumRegistrations.forEach((registration) => {
+    const data = {
+      childName: registration.child.name,
+      pricePaid: registration.pricePaid,
+      priceToPay: registration.priceToPay,
+      billNr: registration.billId,
+      shiftNr: registration.shiftNr,
+    };
+
+    const childGroupWithoutActiveBill = registrationMap.get(
+      registration.contactEmail,
+    );
+    childGroupWithoutActiveBill?.records.push(data);
+  });
+
+  return res.status(StatusCodes.OK).send({
+    status: "success",
+    data: {
+      records: Array.from(registrationMap.values()),
+    },
+  });
+};

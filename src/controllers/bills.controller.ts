@@ -168,7 +168,7 @@ export const fetchBillHandler = async (
     return res.status(StatusCodes.NOT_FOUND).send({
       status: "fail",
       data: {
-        billId: "Arvet ei ole olemas",
+        billId: "Arvet ei ole olemas.",
       },
     });
   }

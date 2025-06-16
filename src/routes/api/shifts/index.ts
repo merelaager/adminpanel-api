@@ -3,6 +3,7 @@ import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import { StatusCodes } from "http-status-codes";
 
 import {
+  fetchShiftBillingHandler,
   fetchShiftCampersHandler,
   fetchShiftPdfHandler,
   fetchShiftsHandler,
@@ -14,6 +15,7 @@ import {
   UserWithShiftRoleSchema,
 } from "../../../schemas/shift";
 import { CamperRecordSchema } from "../../../schemas/user";
+import { ParentBillSchema } from "../../../schemas/billing";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(
@@ -81,6 +83,29 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       },
     },
     fetchShiftUsersHandler,
+  );
+  fastify.get(
+    "/:shiftNr/billing",
+    {
+      schema: {
+        params: ShiftResourceFetchParams,
+        response: {
+          [StatusCodes.OK]: Type.Object({
+            status: Type.Literal("success"),
+            data: Type.Object({
+              records: Type.Array(ParentBillSchema),
+            }),
+          }),
+          [StatusCodes.FORBIDDEN]: Type.Object({
+            status: Type.Literal("fail"),
+            data: Type.Object({
+              permissions: Type.String(),
+            }),
+          }),
+        },
+      },
+    },
+    fetchShiftBillingHandler,
   );
   fastify.get(
     "/:shiftNr/records",

@@ -14,26 +14,27 @@ const fastify = Fastify({
   },
 });
 
-const CORS_METHODS = ["GET", "HEAD", "POST"];
-if (process.env.NODE_ENV === "development") {
-  CORS_METHODS.push("PATCH");
-}
+const CORS_METHODS = ["GET", "HEAD", "POST", "PATCH"];
+
+const allowedStaticOrigins = [
+  "https://dev.merelaager.ee",
+  "https://sild.merelaager.ee",
+];
+const allowedDomainPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 
 fastify.register(cors, {
   credentials: true,
   origin: (origin, cb) => {
-    if (!origin) {
+    if (
+      !origin ||
+      allowedStaticOrigins.includes(origin) ||
+      allowedDomainPattern.test(origin)
+    ) {
       cb(null, true);
       return;
     }
 
-    const hostname = new URL(origin).hostname;
-    if (hostname === "localhost" || hostname === "127.0.0.1") {
-      cb(null, true);
-      return;
-    }
-
-    cb(new Error("Not allowed"), false);
+    cb(new Error("Not allowed by CORS"), false);
   },
   methods: CORS_METHODS,
 });

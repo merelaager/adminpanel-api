@@ -5,7 +5,7 @@ import {
 import { StatusCodes } from "http-status-codes";
 
 import {
-  authenticateUser,
+  loginHandler,
   userInfoHandler,
 } from "../../../controllers/auth.controller";
 
@@ -44,34 +44,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         },
       },
     },
-    async (request, reply) => {
-      const { username, password } = request.body;
-      const user = await authenticateUser(
-        { username, password },
-        fastify.prisma,
-      );
-
-      if (user) {
-        request.session.user = { userId: user.id };
-        await request.session.save();
-        return reply.code(StatusCodes.OK).send({
-          status: "success",
-          data: {
-            userId: user.id,
-            name: user.name,
-            nickname: user.nickname ?? "",
-            email: user.email ?? "",
-            currentShift: user.currentShift,
-            isRoot: user.role === "root",
-          },
-        });
-      }
-
-      return reply.code(StatusCodes.UNAUTHORIZED).send({
-        status: "fail",
-        data: { message: "Vale kasutajanimi või parool." },
-      });
-    },
+    loginHandler,
   );
   fastify.post(
     "/logout",

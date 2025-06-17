@@ -13,12 +13,13 @@ export const UserCreateSchema = Type.Object({
 export type UserInfo = Static<typeof UserInfoSchema>;
 
 export const UserInfoSchema = Type.Object({
-  userId: Type.Number(),
+  userId: Type.Integer(),
   name: Type.String(),
   nickname: Type.Union([Type.String(), Type.Null()]),
   email: Type.Union([Type.String(), Type.Null()]),
-  currentShift: Type.Number(),
+  currentShift: Type.Integer(),
   isRoot: Type.Boolean(),
+  managedShifts: Type.Array(Type.Integer()),
 });
 
 export type CamperRecord = Static<typeof CamperRecordSchema>;

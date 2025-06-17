@@ -1,12 +1,12 @@
-import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { FastifyReply, FastifyRequest, RouteGenericInterface } from "fastify";
 import { StatusCodes } from "http-status-codes";
 
 import prisma from "../utils/prisma";
+import type { User } from "@prisma/client";
 
 import type { JSendResponse } from "../types/jsend";
-import type { Credentials } from "../schemas/auth";
+import type { LoginBody } from "../schemas/auth";
 import type { UserInfo } from "../schemas/user";
 
 interface IUserInfoHandler extends RouteGenericInterface {
@@ -25,33 +25,70 @@ export const userInfoHandler = async (
     return res.status(StatusCodes.FORBIDDEN).send();
   }
 
-  const userInfo: UserInfo = {
-    userId,
-    name: user.name,
-    nickname: user.nickname,
-    email: user.email,
-    currentShift: user.currentShift,
-    isRoot: user.role === "root",
-  };
-
   return res.status(StatusCodes.OK).send({
     status: "success",
-    data: userInfo,
+    data: await formatUserInfo(user),
   });
 };
 
-export const authenticateUser = async (
-  { username, password }: Credentials,
-  prisma: PrismaClient,
+interface ILoginHandler extends RouteGenericInterface {
+  Body: LoginBody;
+  Reply: JSendResponse;
+}
+
+export const loginHandler = async (
+  req: FastifyRequest<ILoginHandler>,
+  res: FastifyReply<ILoginHandler>,
 ) => {
+  const { username, password } = req.body;
+
   const user = await prisma.user.findUnique({
     where: {
       username: username.trim().toLowerCase(),
     },
   });
 
-  if (!user) return null;
-  if (!bcrypt.compareSync(password, user.password)) return null;
+  if (!user || !bcrypt.compareSync(password, user.password)) {
+    return res.code(StatusCodes.UNAUTHORIZED).send({
+      status: "fail",
+      data: { message: "Vale kasutajanimi või parool." },
+    });
+  }
 
-  return user;
+  req.session.user = { userId: user.id };
+  await req.session.save();
+
+  return res.code(StatusCodes.OK).send({
+    status: "success",
+    data: await formatUserInfo(user),
+  });
+};
+
+const formatUserInfo = async (user: User): Promise<UserInfo> => {
+  const shifts = await prisma.userRoles.findMany({
+    where: { userId: user.id },
+    select: {
+      role: { select: { roleName: true } },
+      shiftNr: true,
+    },
+  });
+
+  const managedShifts: number[] = [];
+  const managedRoles = ["root", "boss", "instructor", "helper"];
+
+  shifts.forEach((shift) => {
+    if (managedRoles.includes(shift.role.roleName)) {
+      managedShifts.push(shift.shiftNr);
+    }
+  });
+
+  return {
+    userId: user.id,
+    name: user.name,
+    nickname: user.nickname,
+    email: user.email,
+    currentShift: user.currentShift,
+    isRoot: user.role === "root",
+    managedShifts,
+  };
 };

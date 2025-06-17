@@ -53,8 +53,9 @@ fastify.register(fastifyAutoload, {
 });
 
 const start = async () => {
+  const serverPort = process.env.PORT ? parseInt(process.env.PORT) : 4000;
   try {
-    await fastify.listen({ port: 4000 });
+    await fastify.listen({ port: serverPort });
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);

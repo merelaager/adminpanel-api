@@ -14,7 +14,7 @@ model Child {
   yearsAtCamp   Int?           @db.UnsignedInt
   notes         String?        @db.Text
   createdAt     DateTime       @default(now()) @db.DateTime(0)
-  updatedAt     DateTime       @default(now()) @db.DateTime(0)
+  updatedAt     DateTime       @updatedAt @db.DateTime(0)
   oldRecords    OldRecord[]
   registrations Registration[]
   shift_data    ShiftData[]
@@ -31,7 +31,7 @@ model Document {
   name        String?  @db.Text
   ownerId     Int?     @db.UnsignedInt
   createdAt   DateTime @default(now()) @db.DateTime(0)
-  updatedAt   DateTime @default(now()) @db.DateTime(0)
+  updatedAt   DateTime @updatedAt @db.DateTime(0)
   users       User?    @relation(fields: [ownerId], references: [id])
 
   @@index([ownerId], map: "ownerId")
@@ -44,7 +44,7 @@ model EventInfo {
   year      Int      @default(2023) @db.UnsignedInt
   shiftNr   Int      @db.UnsignedInt
   createdAt DateTime @default(now()) @db.DateTime(0)
-  updatedAt DateTime @default(now()) @db.DateTime(0)
+  updatedAt DateTime @updatedAt @db.DateTime(0)
 
   @@map("event_info")
 }
@@ -53,7 +53,7 @@ model Permission {
   id               Int              @id @default(autoincrement()) @db.UnsignedInt
   permissionName   String           @db.VarChar(255)
   createdAt        DateTime         @default(now()) @db.DateTime(0)
-  updatedAt        DateTime         @default(now()) @db.DateTime(0)
+  updatedAt        DateTime         @updatedAt @db.DateTime(0)
   role_permissions RolePermission[]
 
   @@map("permissions")
@@ -64,7 +64,7 @@ model OldRecord {
   shiftNr   Int      @db.UnsignedInt
   year      Int      @default(2023) @db.UnsignedInt
   createdAt DateTime @default(now()) @db.DateTime(0)
-  updatedAt DateTime @default(now()) @db.DateTime(0)
+  updatedAt DateTime @updatedAt @db.DateTime(0)
   childId   Int      @db.UnsignedInt
   children  Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
 
@@ -82,7 +82,7 @@ model Record {
   isPresent Boolean  @default(false) // Whether the child is currently physically present.
   isActive  Boolean  @default(true) // Whether to count the child in the shift.
   createdAt DateTime @default(now()) @db.DateTime(0)
-  updatedAt DateTime @default(now()) @db.DateTime(0)
+  updatedAt DateTime @updatedAt @db.DateTime(0)
   child     Child    @relation(fields: [childId], references: [id])
   team      Team?    @relation(fields: [teamId], references: [id])
 
@@ -114,7 +114,7 @@ model Registration {
   pricePaid     Int       @default(0) @db.UnsignedInt
   priceToPay    Int       @default(0) @db.UnsignedInt
   createdAt     DateTime  @default(now()) @db.DateTime(0)
-  updatedAt     DateTime  @default(now()) @db.DateTime(0)
+  updatedAt     DateTime  @updatedAt @db.DateTime(0)
   notifSent     Boolean   @default(false)
   billId        Int?      @db.UnsignedInt
   child         Child     @relation(fields: [childId], references: [id], onDelete: NoAction)
@@ -131,7 +131,7 @@ model ResetToken {
   token     String   @id @db.VarChar(255)
   isExpired Boolean  @default(false)
   createdAt DateTime @default(now()) @db.DateTime(0)
-  updatedAt DateTime @default(now()) @db.DateTime(0)
+  updatedAt DateTime @updatedAt @db.DateTime(0)
   userId    Int      @db.UnsignedInt
   users     User     @relation(fields: [userId], references: [id], onDelete: NoAction)
 
@@ -143,7 +143,7 @@ model RolePermission {
   roleId       Int        @db.UnsignedInt
   permissionId Int        @db.UnsignedInt
   createdAt    DateTime   @default(now()) @db.DateTime(0)
-  updatedAt    DateTime   @default(now()) @db.DateTime(0)
+  updatedAt    DateTime   @updatedAt @db.DateTime(0)
   role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
   permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
 
@@ -157,7 +157,7 @@ model Role {
   id               Int              @id @default(autoincrement()) @db.UnsignedInt
   roleName         String           @db.VarChar(255)
   createdAt        DateTime         @default(now()) @db.DateTime(0)
-  updatedAt        DateTime         @default(now()) @db.DateTime(0)
+  updatedAt        DateTime         @updatedAt @db.DateTime(0)
   role_permissions RolePermission[]
   user_roles       UserRoles[]
 
@@ -171,7 +171,7 @@ model ShiftData {
   parentNotes String?  @db.Text
   isPresent   Boolean  @default(false)
   createdAt   DateTime @default(now()) @db.DateTime(0)
-  updatedAt   DateTime @default(now()) @db.DateTime(0)
+  updatedAt   DateTime @updatedAt @db.DateTime(0)
   childId     Int      @db.UnsignedInt
   teamId      Int?     @db.UnsignedInt
   isActive    Boolean  @default(true)
@@ -188,7 +188,7 @@ model ShiftStaff {
   shiftNr   Int              @db.UnsignedInt
   year      Int              @default(2023) @db.UnsignedInt
   createdAt DateTime         @default(now()) @db.DateTime(0)
-  updatedAt DateTime         @default(now()) @db.DateTime(0)
+  updatedAt DateTime         @updatedAt @db.DateTime(0)
   userId    Int?             @db.UnsignedInt
   name      String?          @db.VarChar(255)
   role      shift_staff_role @default(part)
@@ -214,7 +214,7 @@ model ShiftInfo {
   startDate        DateTime       @db.Date
   length           Int            @db.UnsignedInt
   createdAt        DateTime       @default(now()) @db.DateTime(0)
-  updatedAt        DateTime       @default(now()) @db.DateTime(0)
+  updatedAt        DateTime       @updatedAt @db.DateTime(0)
   bossId           Int?           @db.UnsignedInt
   boySlots         Int            @default(20) @db.UnsignedInt
   girlSlots        Int            @default(20) @db.UnsignedInt
@@ -236,7 +236,7 @@ model SignupToken {
   role      signup_tokens_role @default(part)
   usedDate  DateTime?          @db.DateTime(0)
   createdAt DateTime           @default(now()) @db.DateTime(0)
-  updatedAt DateTime           @default(now()) @db.DateTime(0)
+  updatedAt DateTime           @updatedAt @db.DateTime(0)
 
   @@map("signup_tokens")
 }
@@ -249,7 +249,7 @@ model Team {
   place      Int?        @db.UnsignedInt
   captainId  Int?        @db.UnsignedInt
   createdAt  DateTime    @default(now()) @db.DateTime(0)
-  updatedAt  DateTime    @default(now()) @db.DateTime(0)
+  updatedAt  DateTime    @updatedAt @db.DateTime(0)
   shift_data ShiftData[]
   captain    Child?      @relation(fields: [captainId], references: [id])
   records    Record[]
@@ -264,7 +264,7 @@ model UserRoles {
   userId    Int      @db.UnsignedInt
   roleId    Int      @db.UnsignedInt
   createdAt DateTime @default(now()) @db.DateTime(0)
-  updatedAt DateTime @default(now()) @db.DateTime(0)
+  updatedAt DateTime @updatedAt @db.DateTime(0)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   role      Role     @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
@@ -288,7 +288,7 @@ model User {
   password     String       @db.VarChar(255)
   refreshToken String?      @db.VarChar(255)
   createdAt    DateTime     @default(now()) @db.DateTime(0)
-  updatedAt    DateTime     @default(now()) @db.DateTime(0)
+  updatedAt    DateTime     @updatedAt @db.DateTime(0)
   documents    Document[]
   reset_tokens ResetToken[]
   shift_staff  ShiftStaff[]
@@ -304,7 +304,7 @@ model Bill {
   billTotal     Int            @db.UnsignedInt
   isPaid        Boolean        @default(false)
   createdAt     DateTime       @default(now()) @db.DateTime(0)
-  updatedAt     DateTime       @default(now()) @db.DateTime(0)
+  updatedAt     DateTime       @updatedAt @db.DateTime(0)
   registrations Registration[]
 
   @@map("bills")
@@ -316,7 +316,7 @@ model tent_scores {
   tentNr    Int      @db.UnsignedInt
   score     Int      @db.UnsignedTinyInt
   createdAt DateTime @default(now()) @db.DateTime(0)
-  updatedAt DateTime @default(now()) @db.DateTime(0)
+  updatedAt DateTime @updatedAt @db.DateTime(0)
 }
 
 model Session {

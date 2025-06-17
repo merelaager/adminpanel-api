@@ -16,6 +16,7 @@ declare module "fastify" {
 export default fp(
   async (fastify) => {
     const sessionSecret = process.env.COOKIE_SECRET;
+    const cookieDomain = process.env.COOKIE_DOMAIN;
 
     if (!sessionSecret) {
       throw new Error("Could not find session secret");
@@ -28,6 +29,7 @@ export default fp(
       secret: sessionSecret,
       cookie: {
         secure: "auto",
+        domain: cookieDomain,
         sameSite: "lax",
         httpOnly: true,
         maxAge: defaultTTL,

@@ -1,7 +1,17 @@
-import { Prisma, PrismaClient } from "@prisma/client";
+import { FastifyReply, FastifyRequest, RouteGenericInterface } from "fastify";
 import { Static } from "@sinclair/typebox";
+import { StatusCodes } from "http-status-codes";
 
-import { UserCreateSchema } from "../schemas/user";
+import { isShiftMember } from "../utils/permissions";
+import prisma from "../utils/prisma";
+import { Prisma, type PrismaClient } from "@prisma/client";
+
+import {
+  type PatchUserBody,
+  UserCreateSchema,
+  type UserParams,
+} from "../schemas/user";
+import type { JSendResponse } from "../types/jsend";
 
 export type UserCreateBasis = Static<typeof UserCreateSchema>;
 
@@ -53,4 +63,44 @@ export const createUser = async (
 
     return { success: false, userError: isUserError, error: errorMessage };
   }
+};
+
+interface IPatchUserHandler extends RouteGenericInterface {
+  Params: UserParams;
+  Body: PatchUserBody;
+  Reply: JSendResponse | null;
+}
+
+export const patchUserHandler = async (
+  req: FastifyRequest<IPatchUserHandler>,
+  res: FastifyReply<IPatchUserHandler>,
+): Promise<never> => {
+  const { userId } = req.params;
+  const requesterId = req.session.user.userId;
+
+  if (userId !== requesterId) {
+    return res.status(StatusCodes.FORBIDDEN).send({
+      status: "fail",
+      data: { userId: "Muuta saab ainult enda kasutajat." },
+    });
+  }
+
+  const currentShift = req.body.currentShift;
+  if (currentShift !== undefined) {
+    if (!(await isShiftMember(requesterId, currentShift))) {
+      return res.status(StatusCodes.FORBIDDEN).send({
+        status: "fail",
+        data: {
+          currentShift: `Kasutaja pole vahetuse liige. (shiftNr: ${currentShift})`,
+        },
+      });
+    }
+
+    await prisma.user.update({
+      where: { id: requesterId },
+      data: req.body,
+    });
+  }
+
+  return res.status(StatusCodes.NO_CONTENT).send();
 };

@@ -35,3 +35,22 @@ export const CamperRecordSchema = Type.Object({
   teamId: Type.Union([Type.Integer(), Type.Null()]),
   isPresent: Type.Boolean(),
 });
+
+export type UserParams = Static<typeof UserParamsSchema>;
+
+export const UserParamsSchema = Type.Object({
+  userId: Type.Integer(),
+});
+
+export const PatchUserSchema = Type.Partial(
+  Type.Object(
+    {
+      currentShift: Type.Integer(),
+    },
+    {
+      additionalProperties: false,
+    },
+  ),
+);
+
+export type PatchUserBody = Static<typeof PatchUserSchema>;

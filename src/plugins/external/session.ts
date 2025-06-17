@@ -28,7 +28,7 @@ export default fp(
       secret: sessionSecret,
       cookie: {
         secure: "auto",
-        sameSite: "strict",
+        sameSite: "lax",
         httpOnly: true,
         maxAge: defaultTTL,
       },

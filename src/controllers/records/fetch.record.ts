@@ -38,7 +38,11 @@ export const forceSyncRecordsHandler = async (
     orderBy: [{ childId: "asc" }],
   });
 
-  const childrenToRecord: Prisma.RecordCreateManyInput[] = [];
+  // Use a map to store the unique entries of children to record.
+  // The records must be unique due to the database constraint.
+  // A Set does not work since shallowly identical objects are not the same object.
+  const childrenToRecord = new Map<number, Prisma.RecordCreateManyInput>();
+
   const recordsToActivate: number[] = [];
   const recordsToDeactivate: number[] = [];
 
@@ -55,12 +59,18 @@ export const forceSyncRecordsHandler = async (
 
     // No shift record exists but should, as the camper is registered.
     if (!record && registration.isRegistered) {
-      childrenToRecord.push({ childId: registration.childId, shiftNr, year });
+      childrenToRecord.set(registration.childId, {
+        childId: registration.childId,
+        shiftNr,
+        year,
+      });
     }
   });
 
-  if (childrenToRecord.length > 0) {
-    await prisma.record.createMany({ data: childrenToRecord });
+  if (childrenToRecord.size > 0) {
+    await prisma.record.createMany({
+      data: Array.from(childrenToRecord.values()),
+    });
   }
 
   if (recordsToActivate.length > 0) {

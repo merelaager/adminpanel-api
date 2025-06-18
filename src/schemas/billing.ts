@@ -6,6 +6,7 @@ export const ChildBillSchema = Type.Object({
   priceToPay: Type.Integer(),
   billNr: Type.Integer(),
   shiftNr: Type.Integer(),
+  billSent: Type.Boolean(),
 });
 
 export const ParentBillSchema = Type.Object({

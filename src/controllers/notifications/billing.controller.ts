@@ -33,7 +33,7 @@ export const sendBillHandler = async (
     return res.status(StatusCodes.FORBIDDEN).send({
       status: "fail",
       data: {
-        permissions: "Puuduvad arve saatmise õigused",
+        permissions: "Puuduvad arve saatmise õigused.",
       },
     });
   }
@@ -49,30 +49,32 @@ export const sendBillHandler = async (
     return res.status(StatusCodes.NOT_FOUND).send({
       status: "fail",
       data: {
-        email: "Tundmatu meiliaadress",
+        email: "Tundmatu meiliaadress.",
       },
     });
   }
 
   const regCampers: CamperBillingInfo[] = [];
   const resCampers: CamperBillingInfo[] = [];
+  const notifiedRegistrationIDs: number[] = [];
 
   let billTotal = 0;
   let billNr = NaN;
 
-  registrations.forEach((camper) => {
-    if (camper.isRegistered) {
-      if (isNaN(billNr) && camper.billId) billNr = camper.billId;
-      regCampers.push(camper);
-      billTotal += camper.priceToPay;
-    } else resCampers.push(camper);
+  registrations.forEach((registration) => {
+    if (registration.isRegistered) {
+      if (isNaN(billNr) && registration.billId) billNr = registration.billId;
+      regCampers.push(registration);
+      notifiedRegistrationIDs.push(registration.id);
+      billTotal += registration.priceToPay;
+    } else resCampers.push(registration);
   });
 
   if (regCampers.length === 0) {
     return res.status(StatusCodes.NOT_FOUND).send({
       status: "fail",
       data: {
-        registrations: "Puuduvad registreeritud lapsed",
+        registrations: "Puuduvad registreeritud lapsed.",
       },
     });
   }
@@ -83,19 +85,28 @@ export const sendBillHandler = async (
     console.error(err);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       status: "error",
-      message: "Ootamatu viga arve genereerimisel",
+      message: "Ootamatu viga arve genereerimisel.",
     });
   }
 
   const mailService = new MailService(req.server.mailer);
   try {
     await mailService.sendBill(email, billNr, regCampers, resCampers);
+
+    await prisma.registration.updateMany({
+      where: {
+        id: { in: notifiedRegistrationIDs },
+      },
+      data: {
+        notifSent: true,
+      },
+    });
   } catch (err) {
     console.error("Email was", email);
     console.error(err);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       status: "error",
-      message: "Ootamatu viga arve saatmisel",
+      message: "Ootamatu viga arve saatmise.",
     });
   }
 

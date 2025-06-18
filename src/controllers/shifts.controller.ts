@@ -255,6 +255,7 @@ export const fetchShiftBillingHandler = async (
     pricePaid: number;
     priceToPay: number;
     shiftNr: number;
+    billSent: boolean;
   };
 
   // Currently, an email should be associated with (at most) one bill number.
@@ -276,6 +277,7 @@ export const fetchShiftBillingHandler = async (
       pricePaid: true,
       priceToPay: true,
       shiftNr: true,
+      notifSent: true,
       child: {
         select: { name: true },
       },
@@ -292,6 +294,7 @@ export const fetchShiftBillingHandler = async (
       priceToPay: registration.priceToPay,
       billNr: registration.billId,
       shiftNr: registration.shiftNr,
+      billSent: registration.notifSent,
     };
 
     const childGroupWithoutActiveBill = registrationMap.get(
@@ -323,6 +326,7 @@ export const fetchShiftBillingHandler = async (
       pricePaid: true,
       priceToPay: true,
       shiftNr: true,
+      notifSent: true,
       child: {
         select: { name: true },
       },
@@ -336,6 +340,7 @@ export const fetchShiftBillingHandler = async (
       priceToPay: registration.priceToPay,
       billNr: registration.billId,
       shiftNr: registration.shiftNr,
+      billSent: registration.notifSent,
     };
 
     const childGroupWithoutActiveBill = registrationMap.get(

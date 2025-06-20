@@ -190,7 +190,7 @@ model ShiftStaff {
   createdAt DateTime         @default(now()) @db.DateTime(0)
   updatedAt DateTime         @updatedAt @db.DateTime(0)
   userId    Int?             @db.UnsignedInt
-  name      String?          @db.VarChar(255)
+  name      String           @db.VarChar(255)
   role      shift_staff_role @default(part)
   user      User?            @relation(fields: [userId], references: [id])
 

@@ -4,11 +4,13 @@ import { StatusCodes } from "http-status-codes";
 
 import {
   fetchShiftBillingHandler,
-  fetchShiftCampersHandler, fetchShiftEmailsHandler,
+  fetchShiftCampersHandler,
+  fetchShiftEmailsHandler,
   fetchShiftPdfHandler,
   fetchShiftsHandler,
   fetchShiftUsersHandler,
 } from "../../../controllers/shifts.controller";
+import { fetchShiftStaff } from "../../../controllers/staff/fetch.staff";
 
 import {
   ShiftResourceFetchParams,
@@ -16,6 +18,7 @@ import {
 } from "../../../schemas/shift";
 import { CamperRecordSchema } from "../../../schemas/user";
 import { ParentBillSchema } from "../../../schemas/billing";
+import { ShiftStaffSchema } from "../../../schemas/staff";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(
@@ -152,6 +155,29 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       },
     },
     fetchShiftEmailsHandler,
+  );
+  fastify.get(
+    "/:shiftNr/staff",
+    {
+      schema: {
+        params: ShiftResourceFetchParams,
+        response: {
+          [StatusCodes.OK]: Type.Object({
+            status: Type.Literal("success"),
+            data: Type.Object({
+              staff: Type.Array(ShiftStaffSchema),
+            }),
+          }),
+          [StatusCodes.FORBIDDEN]: Type.Object({
+            status: Type.Literal("fail"),
+            data: Type.Object({
+              permissions: Type.String(),
+            }),
+          }),
+        },
+      },
+    },
+    fetchShiftStaff,
   );
 };
 

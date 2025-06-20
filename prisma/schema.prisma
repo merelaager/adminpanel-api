@@ -160,6 +160,7 @@ model Role {
   updatedAt        DateTime         @updatedAt @db.DateTime(0)
   role_permissions RolePermission[]
   user_roles       UserRoles[]
+  SignupToken      SignupToken[]
 
   @@map("roles")
 }
@@ -229,15 +230,18 @@ model ShiftInfo {
 }
 
 model SignupToken {
-  token     String             @id @db.Char(36)
-  email     String             @db.VarChar(255)
-  isExpired Boolean            @default(false)
-  shiftNr   Int                @db.UnsignedInt
-  role      signup_tokens_role @default(part)
-  usedDate  DateTime?          @db.DateTime(0)
-  createdAt DateTime           @default(now()) @db.DateTime(0)
-  updatedAt DateTime           @updatedAt @db.DateTime(0)
+  token       String           @id @db.Char(36)
+  email       String           @db.VarChar(255)
+  isExpired   Boolean          @default(false)
+  shiftNr     Int              @db.UnsignedInt
+  roleId      Int?             @db.UnsignedInt
+  displayRole shift_staff_role @default(part)
+  usedDate    DateTime?        @db.DateTime(0)
+  createdAt   DateTime         @default(now()) @db.DateTime(0)
+  updatedAt   DateTime         @updatedAt @db.DateTime(0)
+  role        Role?            @relation(fields: [roleId], references: [id])
 
+  @@index([roleId], map: "roleId")
   @@map("signup_tokens")
 }
 
@@ -332,13 +336,6 @@ model Session {
 enum Sex {
   M
   F
-}
-
-enum signup_tokens_role {
-  boss
-  full
-  part
-  guest
 }
 
 enum users_role {

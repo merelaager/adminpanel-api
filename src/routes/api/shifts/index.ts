@@ -4,7 +4,7 @@ import { StatusCodes } from "http-status-codes";
 
 import {
   fetchShiftBillingHandler,
-  fetchShiftCampersHandler,
+  fetchShiftCampersHandler, fetchShiftEmailsHandler,
   fetchShiftPdfHandler,
   fetchShiftsHandler,
   fetchShiftUsersHandler,
@@ -129,6 +129,29 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       },
     },
     fetchShiftCampersHandler,
+  );
+  fastify.get(
+    "/:shiftNr/emails",
+    {
+      schema: {
+        params: ShiftResourceFetchParams,
+        response: {
+          [StatusCodes.OK]: Type.Object({
+            status: Type.Literal("success"),
+            data: Type.Object({
+              emails: Type.Array(Type.String()),
+            }),
+          }),
+          [StatusCodes.FORBIDDEN]: Type.Object({
+            status: Type.Literal("fail"),
+            data: Type.Object({
+              permissions: Type.String(),
+            }),
+          }),
+        },
+      },
+    },
+    fetchShiftEmailsHandler,
   );
 };
 

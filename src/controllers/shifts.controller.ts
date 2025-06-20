@@ -230,6 +230,44 @@ export const fetchShiftCampersHandler = async (
   });
 };
 
+interface IFetchShiftEmails extends RouteGenericInterface {
+  Params: ShiftResourceFetchParams;
+  Reply: JSendResponse;
+}
+
+export const fetchShiftEmailsHandler = async (
+  req: FastifyRequest<IFetchShiftEmails>,
+  res: FastifyReply<IFetchShiftEmails>,
+): Promise<never> => {
+  const { shiftNr } = req.params;
+  const { userId } = req.session.user;
+
+  const isAuthorised = await isShiftBoss(userId, shiftNr);
+  if (!isAuthorised) {
+    return res.status(StatusCodes.FORBIDDEN).send({
+      status: "fail",
+      data: { permissions: "Puuduvad õigused päringuks." },
+    });
+  }
+
+  const currentYear = new Date().getUTCFullYear();
+
+  const data = await prisma.registration.findMany({
+    where: { shiftNr, isRegistered: true },
+    select: { contactEmail: true },
+  });
+
+  const emails = new Set<string>();
+  data.forEach((registration) => {
+    emails.add(registration.contactEmail);
+  });
+
+  return res.status(StatusCodes.OK).send({
+    status: "success",
+    data: { emails: Array.from(emails.values()) },
+  });
+};
+
 interface IFetchShiftBillingInfo extends RouteGenericInterface {
   Params: ShiftResourceFetchParams;
   Reply: JSendResponse;

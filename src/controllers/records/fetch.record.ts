@@ -155,6 +155,7 @@ export const fetchRecordsHandler = async (
       teamName: record.team?.name ?? null,
       tentNr: record.tentNr,
       isPresent: record.isPresent,
+      ageAtCamp: record.ageAtCamp,
     });
   });
 

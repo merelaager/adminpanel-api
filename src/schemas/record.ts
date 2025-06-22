@@ -23,6 +23,7 @@ export const FlattenedRecord = Type.Object({
   teamName: Type.Union([Type.String(), Type.Null()]),
   tentNr: Type.Union([Type.Number(), Type.Null()]),
   isPresent: Type.Boolean(),
+  ageAtCamp: Type.Integer(),
 });
 
 export type RecordParams = Static<typeof RecordParamsSchema>;

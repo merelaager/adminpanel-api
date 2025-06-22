@@ -282,24 +282,40 @@ model UserRoles {
 }
 
 model User {
-  id           Int          @id @default(autoincrement()) @db.UnsignedInt
-  username     String       @unique(map: "username") @db.VarChar(255)
-  currentShift Int          @db.UnsignedInt
-  name         String       @db.VarChar(255)
-  email        String?      @unique(map: "email") @db.VarChar(255)
-  nickname     String?      @db.VarChar(255)
-  role         users_role   @default(std)
-  password     String       @db.VarChar(255)
-  refreshToken String?      @db.VarChar(255)
-  createdAt    DateTime     @default(now()) @db.DateTime(0)
-  updatedAt    DateTime     @updatedAt @db.DateTime(0)
+  id           Int           @id @default(autoincrement()) @db.UnsignedInt
+  username     String        @unique(map: "username") @db.VarChar(255)
+  currentShift Int           @db.UnsignedInt
+  name         String        @db.VarChar(255)
+  email        String?       @unique(map: "email") @db.VarChar(255)
+  nickname     String?       @db.VarChar(255)
+  role         users_role    @default(std)
+  password     String        @db.VarChar(255)
+  refreshToken String?       @db.VarChar(255)
+  createdAt    DateTime      @default(now()) @db.DateTime(0)
+  updatedAt    DateTime      @updatedAt @db.DateTime(0)
   documents    Document[]
   reset_tokens ResetToken[]
   shift_staff  ShiftStaff[]
   shifts       ShiftInfo[]
   user_roles   UserRoles[]
+  certificates Certificate[]
 
   @@map("users")
+}
+
+model Certificate {
+  id        Int       @id @default(autoincrement()) @db.UnsignedInt
+  name      String    @db.VarChar(255)
+  certId    String    @unique(map: "certId") @db.VarChar(36)
+  urlId     String    @unique(map: "urlId") @db.VarChar(36)
+  userId    Int       @db.UnsignedInt
+  issuedAt  DateTime  @db.DateTime(0)
+  expiresAt DateTime? @db.DateTime(0)
+  isExpired Boolean   @default(false)
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@index([userId], map: "userId")
+  @@map("certificates")
 }
 
 model Bill {

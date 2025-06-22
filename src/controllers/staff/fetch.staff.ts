@@ -10,6 +10,7 @@ import { canViewShiftStaff } from "../../utils/permissions";
 
 import { ShiftResourceFetchParams } from "../../schemas/shift";
 import type { JSendResponse } from "../../types/jsend";
+import type { ShiftStaffMember } from "../../schemas/staff";
 
 interface IFetchShiftStaff extends RouteGenericInterface {
   Params: ShiftResourceFetchParams;
@@ -32,7 +33,7 @@ export const fetchShiftStaff = async (
   }
 
   const currentYear = new Date().getUTCFullYear();
-  const shiftStaff = await prisma.shiftStaff.findMany({
+  const rawShiftStaff = await prisma.shiftStaff.findMany({
     where: { year: currentYear, shiftNr },
     orderBy: {
       name: "asc",
@@ -44,7 +45,34 @@ export const fetchShiftStaff = async (
       name: true,
       role: true,
       userId: true,
+      user: {
+        select: {
+          certificates: {
+            where: {
+              isExpired: false,
+            },
+            select: {
+              name: true,
+              certId: true,
+              urlId: true,
+            },
+          },
+        },
+      },
     },
+  });
+
+  const shiftStaff: ShiftStaffMember[] = [];
+  rawShiftStaff.forEach((staffMember) => {
+    shiftStaff.push({
+      id: staffMember.id,
+      shiftNr: staffMember.shiftNr,
+      year: staffMember.year,
+      name: staffMember.name,
+      role: staffMember.role,
+      userId: staffMember.userId,
+      certificates: staffMember.user?.certificates ?? [],
+    });
   });
 
   return res.status(StatusCodes.OK).send({

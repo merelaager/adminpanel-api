@@ -1,6 +1,10 @@
-import {Static, Type} from "@sinclair/typebox";
+import { Static, Type } from "@sinclair/typebox";
 
-export type ShiftStaffMember = Static<typeof ShiftStaffSchema>
+export const CertificateSchema = Type.Object({
+  name: Type.String(),
+  certId: Type.String(),
+  urlId: Type.String(),
+});
 
 export const ShiftStaffSchema = Type.Object({
   id: Type.Integer(),
@@ -9,4 +13,8 @@ export const ShiftStaffSchema = Type.Object({
   name: Type.String(),
   role: Type.String(),
   userId: Type.Union([Type.Null(), Type.Integer()]),
+  certificates: Type.Array(CertificateSchema),
 });
+
+export type StaffCertificate = Static<typeof CertificateSchema>;
+export type ShiftStaffMember = Static<typeof ShiftStaffSchema>;

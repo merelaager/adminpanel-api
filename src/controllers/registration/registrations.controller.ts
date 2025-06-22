@@ -135,6 +135,7 @@ export const registrationsFetchHandler = async (
       road: canViewPII,
       county: canViewPII,
       country: canViewPII,
+      addendum: canViewPII,
       // Financial permission needed
       pricePaid: canViewFinancial,
       priceToPay: canViewFinancial,

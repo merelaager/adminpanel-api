@@ -58,6 +58,7 @@ export const FilteredRegistrationSchema = Type.Object({
   road: Type.Optional(Type.String()),
   county: Type.Optional(Type.String()),
   country: Type.Optional(Type.String()),
+  addendum: Type.Optional(Type.Union([Type.Null(), Type.String()])),
   pricePaid: Type.Optional(Type.Integer()),
   priceToPay: Type.Optional(Type.Integer()),
   notifSent: Type.Optional(Type.Boolean()),

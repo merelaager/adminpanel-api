@@ -3,6 +3,7 @@ import { StatusCodes } from "http-status-codes";
 
 import { Prisma } from "@prisma/client";
 import prisma from "../../utils/prisma";
+import { getAgeAtDate } from "../../utils/age";
 
 import type { JSendResponse } from "../../types/jsend";
 import type {
@@ -28,7 +29,7 @@ export const forceSyncRecordsHandler = async (
 
   const registrations = await prisma.registration.findMany({
     where: { shiftNr },
-    select: { childId: true, isRegistered: true },
+    select: { childId: true, isRegistered: true, birthday: true },
     orderBy: [{ childId: "asc" }],
   });
 
@@ -45,6 +46,17 @@ export const forceSyncRecordsHandler = async (
 
   const recordsToActivate: number[] = [];
   const recordsToDeactivate: number[] = [];
+
+  const shiftInfo = await prisma.shiftInfo.findUnique({
+    where: { id: shiftNr },
+    select: { startDate: true },
+  });
+
+  if (!shiftInfo) {
+    return res.status(StatusCodes.NOT_FOUND).send();
+  }
+
+  const shiftStartDate = shiftInfo.startDate;
 
   registrations.forEach((registration) => {
     const record = records.find(
@@ -63,6 +75,7 @@ export const forceSyncRecordsHandler = async (
         childId: registration.childId,
         shiftNr,
         year,
+        ageAtCamp: getAgeAtDate(registration.birthday, shiftStartDate),
       });
     }
   });

@@ -81,6 +81,7 @@ model Record {
   teamId    Int?     @db.UnsignedInt
   isPresent Boolean  @default(false) // Whether the child is currently physically present.
   isActive  Boolean  @default(true) // Whether to count the child in the shift.
+  ageAtCamp Int      @db.UnsignedInt // Age the child will have at the start of camp.
   createdAt DateTime @default(now()) @db.DateTime(0)
   updatedAt DateTime @updatedAt @db.DateTime(0)
   child     Child    @relation(fields: [childId], references: [id])

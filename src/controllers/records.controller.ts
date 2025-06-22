@@ -6,6 +6,7 @@ import { isShiftMember } from "../utils/permissions";
 
 import type { JSendResponse } from "../types/jsend";
 import type { PatchRecordBody, RecordParams } from "../schemas/record";
+import { getChildAgeAtShiftStart } from "../utils/age";
 
 type RecordCreateData = {
   childId: number;
@@ -36,6 +37,7 @@ export const toggleRecord = async (
       childId,
       shiftNr,
       year: currentYear,
+      ageAtCamp: await getChildAgeAtShiftStart(childId, shiftNr),
     },
   });
 };

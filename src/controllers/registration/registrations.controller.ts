@@ -3,6 +3,7 @@ import { StatusCodes } from "http-status-codes";
 import type { PrismaClient, Registration } from "@prisma/client";
 
 import prisma from "../../utils/prisma";
+import { getAgeAtDate } from "../../utils/age";
 
 import { toggleRecord } from "../records.controller";
 
@@ -153,27 +154,19 @@ export const registrationsFetchHandler = async (
 
   const registrations: FilteredRegistrationSchema[] = rawRegistrations.map(
     (registration) => {
-      const birthday = registration.birthday;
-      let age = currentDate.getUTCFullYear() - birthday.getUTCFullYear();
-      if (birthday.getUTCMonth() < currentDate.getUTCMonth()) {
-        age -= 1;
-      } else if (
-        birthday.getUTCMonth() === currentDate.getUTCMonth() &&
-        birthday.getUTCDate() < currentDate.getUTCDate()
-      ) {
-        age -= 1;
-      }
-
       // TODO: in the future, compute the age that the child will have at camp during registration.
       // Then we can simply fetch this from the database later on.
 
       // Quite inelegant to have to reconstruct the object this way,
       // but it is necessary to expose the age of campers without exposing their birthday,
       // which could be considered more sensitive.
-      const child = { ...registration.child, currentAge: age };
+      const child = {
+        ...registration.child,
+        currentAge: getAgeAtDate(registration.birthday, currentDate),
+      };
       const newRegistration: FilteredRegistrationSchema = {
         ...registration,
-        birthday: birthday.toISOString(),
+        birthday: registration.birthday.toISOString(),
         child,
       };
       if (!canViewPII) {

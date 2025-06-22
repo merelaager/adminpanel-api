@@ -3,7 +3,7 @@ import { Static, Type } from "@sinclair/typebox";
 export const CertificateSchema = Type.Object({
   name: Type.String(),
   certId: Type.String(),
-  urlId: Type.String(),
+  urlId: Type.Union([Type.Null(), Type.String()]),
 });
 
 export const ShiftStaffSchema = Type.Object({

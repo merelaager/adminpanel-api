@@ -307,7 +307,7 @@ model Certificate {
   id        Int       @id @default(autoincrement()) @db.UnsignedInt
   name      String    @db.VarChar(255)
   certId    String    @unique(map: "certId") @db.VarChar(36)
-  urlId     String    @unique(map: "urlId") @db.VarChar(36)
+  urlId     String?   @db.VarChar(36)
   userId    Int       @db.UnsignedInt
   issuedAt  DateTime  @db.DateTime(0)
   expiresAt DateTime? @db.DateTime(0)

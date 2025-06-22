@@ -221,6 +221,7 @@ export const fetchShiftCampersHandler = async (
       tentNr: record.tentNr,
       teamId: record.teamId,
       isPresent: record.isPresent,
+      ageAtCamp: record.ageAtCamp,
     });
   });
 
@@ -249,8 +250,6 @@ export const fetchShiftEmailsHandler = async (
       data: { permissions: "Puuduvad õigused päringuks." },
     });
   }
-
-  const currentYear = new Date().getUTCFullYear();
 
   const data = await prisma.registration.findMany({
     where: { shiftNr, isRegistered: true },

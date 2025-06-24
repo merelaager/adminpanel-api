@@ -144,6 +144,43 @@ export const inviteUserHandler = async (
     });
   }
 
+  // TODO: find a more elegant and flexible way to do this.
+  const displayRole = desiredRole === "instructor" ? "full" : "part";
+  const currentYear = new Date().getUTCFullYear();
+
+  // Register the user as a staff member, if not already.
+  const staffMember = await prisma.shiftStaff.findUnique({
+    where: {
+      shiftNr_year_name: { shiftNr, year: currentYear, name: req.body.name },
+    },
+  });
+
+  const user = await prisma.user.findUnique({
+    where: { email: req.body.email },
+    select: { id: true },
+  });
+
+  if (!staffMember) {
+    await prisma.shiftStaff.create({
+      data: {
+        shiftNr,
+        year: currentYear,
+        name: req.body.name,
+        role: displayRole,
+        userId: user?.id ?? null,
+      },
+    });
+  } else if (user) {
+    // Link the existing staff entry with the existing user.
+    await prisma.shiftStaff.update({
+      where: { id: staffMember.id },
+      data: { userId: user.id },
+    });
+  }
+
+  // Do not send an account creation email if the user already exists.
+  if (user) return res.status(StatusCodes.NO_CONTENT).send();
+
   const dbRole = await prisma.role.findUnique({
     where: { roleName: permissionRoleMap[desiredRole as PermissionRole] },
     select: { id: true },
@@ -155,44 +192,14 @@ export const inviteUserHandler = async (
     });
   }
 
-  // TODO: find a more elegant and flexible way to do this.
-  const displayRole = desiredRole === "instructor" ? "full" : "part";
-
   const token = uuidv4();
   await prisma.signupToken.create({
     data: { token, email, shiftNr, displayRole, roleId: dbRole.id },
   });
 
-  const currentYear = new Date().getUTCFullYear();
-
-  // Register the user as a staff member, if not already.
-  const staffMember = await prisma.shiftStaff.findUnique({
-    where: {
-      shiftNr_year_name: { shiftNr, year: currentYear, name: req.body.name },
-    },
-  });
-
-  if (!staffMember) {
-    // Link the staff member with a user, if already existing.
-    const user = await prisma.user.findUnique({
-      where: { email: req.body.email },
-      select: { id: true },
-    });
-
-    await prisma.shiftStaff.create({
-      data: {
-        shiftNr,
-        year: currentYear,
-        name: req.body.name,
-        role: displayRole,
-        userId: user?.id ?? null,
-      },
-    });
-  }
-
   const mailService = new MailService(req.server.mailer);
   try {
-    await mailService.sendSignupToken(email, token);
+    await mailService.sendSignupToken(email, token, req.body.name);
   } catch (err) {
     console.error("Email was", email);
     console.error(err);
@@ -202,7 +209,7 @@ export const inviteUserHandler = async (
     });
   }
 
-  return res.status(StatusCodes.CREATED).send();
+  return res.status(StatusCodes.NO_CONTENT).send();
 };
 
 interface ISignupUserHandler extends RouteGenericInterface {

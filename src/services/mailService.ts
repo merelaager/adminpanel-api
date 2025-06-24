@@ -54,8 +54,10 @@ class MailService {
     });
   }
 
-  async sendSignupToken(email: string, token: string) {
-    const link = `https://sild.merelaager.ee/signup?token=${token}`;
+  async sendSignupToken(email: string, token: string, name: string) {
+    const safeEmail = encodeURIComponent(email);
+    const safeName = encodeURIComponent(name);
+    const link = `https://sild.merelaager.ee/signup?token=${token}&email=${safeEmail}&name=${safeName}`;
     return this.transporter.sendMail({
       from: {
         name: "Merelaager — süsteem",

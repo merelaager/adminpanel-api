@@ -55,3 +55,12 @@ export const PatchUserSchema = Type.Partial(
 );
 
 export type PatchUserBody = Static<typeof PatchUserSchema>;
+
+export const CreateInviteSchema = Type.Object({
+  email: Type.String({ format: "email" }),
+  name: Type.String(),
+  shiftNr: Type.Integer(),
+  role: Type.String(),
+});
+
+export type CreateInviteBody = Static<typeof CreateInviteSchema>;

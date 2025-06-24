@@ -2,9 +2,16 @@ import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import { Type } from "@sinclair/typebox";
 import { StatusCodes } from "http-status-codes";
 
-import { patchUserHandler } from "../../../controllers/users.controller";
+import {
+  inviteUserHandler,
+  patchUserHandler,
+} from "../../../controllers/users.controller";
 
-import { PatchUserSchema, UserParamsSchema } from "../../../schemas/user";
+import {
+  CreateInviteSchema,
+  PatchUserSchema,
+  UserParamsSchema,
+} from "../../../schemas/user";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.patch(
@@ -27,6 +34,33 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       },
     },
     patchUserHandler,
+  );
+  fastify.post(
+    "/invites",
+    {
+      schema: {
+        body: CreateInviteSchema,
+        response: {
+          [StatusCodes.UNPROCESSABLE_ENTITY]: Type.Object({
+            status: Type.Literal("fail"),
+            data: Type.Object({
+              role: Type.String(),
+            }),
+          }),
+          [StatusCodes.FORBIDDEN]: Type.Object({
+            status: Type.Literal("fail"),
+            data: Type.Object({
+              permissions: Type.String(),
+            }),
+          }),
+          [StatusCodes.INTERNAL_SERVER_ERROR]: Type.Object({
+            status: Type.Literal("error"),
+            message: Type.String(),
+          }),
+        },
+      },
+    },
+    inviteUserHandler,
   );
   // fastify.get("/users", async (request, reply) => {
   //   const users = await getUsers(fastify.prisma);

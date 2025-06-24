@@ -156,12 +156,12 @@ model RolePermission {
 
 model Role {
   id               Int              @id @default(autoincrement()) @db.UnsignedInt
-  roleName         String           @db.VarChar(255)
+  roleName         String           @unique @db.VarChar(255)
   createdAt        DateTime         @default(now()) @db.DateTime(0)
   updatedAt        DateTime         @updatedAt @db.DateTime(0)
   role_permissions RolePermission[]
   user_roles       UserRoles[]
-  SignupToken      SignupToken[]
+  signupToken      SignupToken[]
 
   @@map("roles")
 }
@@ -188,7 +188,7 @@ model ShiftData {
 model ShiftStaff {
   id        Int              @id @default(autoincrement()) @db.UnsignedInt
   shiftNr   Int              @db.UnsignedInt
-  year      Int              @default(2023) @db.UnsignedInt
+  year      Int              @default(2025) @db.UnsignedInt
   createdAt DateTime         @default(now()) @db.DateTime(0)
   updatedAt DateTime         @updatedAt @db.DateTime(0)
   userId    Int?             @db.UnsignedInt
@@ -196,6 +196,7 @@ model ShiftStaff {
   role      shift_staff_role @default(part)
   user      User?            @relation(fields: [userId], references: [id])
 
+  @@unique([shiftNr, year, name], map: "shift_member_unique")
   @@index([userId], map: "userId")
   @@map("shift_staff")
 }

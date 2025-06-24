@@ -18,6 +18,7 @@ export const UserInfoSchema = Type.Object({
   nickname: Type.Union([Type.String(), Type.Null()]),
   email: Type.Union([Type.String(), Type.Null()]),
   currentShift: Type.Integer(),
+  currentRole: Type.String(),
   isRoot: Type.Boolean(),
   managedShifts: Type.Array(Type.Integer()),
 });

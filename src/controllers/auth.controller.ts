@@ -76,10 +76,13 @@ const formatUserInfo = async (user: User): Promise<UserInfo> => {
   const managedShifts: number[] = [];
   const managedRoles = ["root", "boss", "instructor", "helper"];
 
+  let currentRole = "";
+
   shifts.forEach((shift) => {
     if (managedRoles.includes(shift.role.roleName)) {
       managedShifts.push(shift.shiftNr);
     }
+    if (shift.shiftNr === user.currentShift) currentRole = shift.role.roleName;
   });
 
   return {
@@ -88,6 +91,7 @@ const formatUserInfo = async (user: User): Promise<UserInfo> => {
     nickname: user.nickname,
     email: user.email,
     currentShift: user.currentShift,
+    currentRole,
     isRoot: user.role === "root",
     managedShifts,
   };

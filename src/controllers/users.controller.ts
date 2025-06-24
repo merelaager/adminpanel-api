@@ -264,7 +264,7 @@ export const signupUserHandler = async (
     // Consume the token.
     await prisma.signupToken.update({
       where: { token: req.body.token },
-      data: { isExpired: true },
+      data: { isExpired: true, usedDate: new Date() },
     });
     // Assign permissions
     if (signupData.roleId) {

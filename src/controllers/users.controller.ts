@@ -2,19 +2,21 @@ import { FastifyReply, FastifyRequest, RouteGenericInterface } from "fastify";
 import { Static } from "@sinclair/typebox";
 import { StatusCodes } from "http-status-codes";
 import { v4 as uuidv4 } from "uuid";
+import bcrypt from "bcrypt";
+import { Prisma, type PrismaClient } from "@prisma/client";
 
 import { isShiftBoss, isShiftMember } from "../utils/permissions";
 import prisma from "../utils/prisma";
-import { Prisma, type PrismaClient } from "@prisma/client";
+import MailService from "../services/mailService";
 
 import {
-  CreateInviteBody,
+  type CreateInviteBody,
   type PatchUserBody,
+  type SignupBody,
   UserCreateSchema,
   type UserParams,
 } from "../schemas/user";
 import type { JSendResponse } from "../types/jsend";
-import MailService from "../services/mailService";
 
 export type UserCreateBasis = Static<typeof UserCreateSchema>;
 
@@ -197,6 +199,92 @@ export const inviteUserHandler = async (
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       status: "error",
       message: "Ootamatu viga arve saatmise.",
+    });
+  }
+
+  return res.status(StatusCodes.CREATED).send();
+};
+
+interface ISignupUserHandler extends RouteGenericInterface {
+  Body: SignupBody;
+  Reply: JSendResponse;
+}
+
+export const signupUserHandler = async (
+  req: FastifyRequest<ISignupUserHandler>,
+  res: FastifyReply<ISignupUserHandler>,
+): Promise<never> => {
+  const signupData = await prisma.signupToken.findUnique({
+    where: { token: req.body.token, isExpired: false },
+  });
+
+  if (!signupData) {
+    return res.status(StatusCodes.FORBIDDEN).send({
+      status: "fail",
+      data: { token: `Pääsmik ei kehti.` },
+    });
+  }
+
+  const now = new Date();
+
+  const diffMs = Math.abs(now.getTime() - signupData.createdAt.getTime());
+  const diffHours = diffMs / (1000 * 60 * 60);
+  if (diffHours > 24) {
+    await prisma.signupToken.update({
+      where: { token: req.body.token },
+      data: { isExpired: true },
+    });
+    return res.status(StatusCodes.FORBIDDEN).send({
+      status: "fail",
+      data: { token: `Pääsmik on aegunud.` },
+    });
+  }
+
+  const saltRounds = 10;
+  const passwordHash = await bcrypt.hash(req.body.password, saltRounds);
+
+  try {
+    const user = await prisma.user.create({
+      data: {
+        username: req.body.username.trim(),
+        currentShift: signupData.shiftNr,
+        name: req.body.name.trim(),
+        email: req.body.email,
+        nickname: req.body.nickname || req.body.name.split(" ")[0],
+        password: passwordHash,
+      },
+    });
+    // Consume the token.
+    await prisma.signupToken.update({
+      where: { token: req.body.token },
+      data: { isExpired: true },
+    });
+    // Assign permissions
+    if (signupData.roleId) {
+      await prisma.userRoles.create({
+        data: {
+          shiftNr: signupData.shiftNr,
+          userId: user.id,
+          roleId: signupData.roleId,
+        },
+      });
+    }
+  } catch (err) {
+    console.error(err);
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+      if (err.code === "P2002") {
+        return res.status(StatusCodes.CONFLICT).send({
+          status: "fail",
+          data: {
+            conflict: "Kasutajanimi või meiliaadress on juba kasutuses.",
+          },
+        });
+      }
+    }
+
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
+      status: "error",
+      message: "Serveri viga kasutaja loomisel.",
     });
   }
 

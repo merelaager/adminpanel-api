@@ -8,9 +8,10 @@ import {
   loginHandler,
   userInfoHandler,
 } from "../../../controllers/auth.controller";
+import { signupUserHandler } from "../../../controllers/users.controller";
 
 import { CredentialsSchema } from "../../../schemas/auth";
-import { UserInfoSchema } from "../../../schemas/user";
+import { SignupSchema, UserInfoSchema } from "../../../schemas/user";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(
@@ -45,6 +46,29 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       },
     },
     loginHandler,
+  );
+  fastify.post(
+    "/signup",
+    {
+      schema: {
+        body: SignupSchema,
+        response: {
+          [StatusCodes.FORBIDDEN]: Type.Object({
+            status: Type.Literal("fail"),
+            data: Type.Object({ token: Type.String() }),
+          }),
+          [StatusCodes.CONFLICT]: Type.Object({
+            status: Type.Literal("fail"),
+            data: Type.Object({ conflict: Type.String() }),
+          }),
+          [StatusCodes.INTERNAL_SERVER_ERROR]: Type.Object({
+            status: Type.Literal("error"),
+            message: Type.String(),
+          }),
+        },
+      },
+    },
+    signupUserHandler,
   );
   fastify.post(
     "/logout",

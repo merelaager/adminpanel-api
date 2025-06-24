@@ -64,3 +64,14 @@ export const CreateInviteSchema = Type.Object({
 });
 
 export type CreateInviteBody = Static<typeof CreateInviteSchema>;
+
+export const SignupSchema = Type.Object({
+  username: Type.String(),
+  email: Type.String(),
+  name: Type.String(),
+  nickname: Type.Optional(Type.String()),
+  password: Type.String(),
+  token: Type.String(),
+});
+
+export type SignupBody = Static<typeof SignupSchema>;

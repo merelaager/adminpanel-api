@@ -331,13 +331,16 @@ model Bill {
   @@map("bills")
 }
 
-model tent_scores {
+model TentScore {
   id        Int      @id @default(autoincrement()) @db.UnsignedInt
   shiftNr   Int      @db.UnsignedInt
   tentNr    Int      @db.UnsignedInt
   score     Int      @db.UnsignedTinyInt
+  year      Int      @db.UnsignedInt
   createdAt DateTime @default(now()) @db.DateTime(0)
   updatedAt DateTime @updatedAt @db.DateTime(0)
+
+  @@map("tent_scores")
 }
 
 model Session {

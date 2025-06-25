@@ -29,3 +29,10 @@ export const UserWithShiftRoleSchema = Type.Object({
   role: Type.String(),
   roleId: Type.Number(),
 });
+
+export const ShiftTentFetchParams = Type.Object({
+  shiftNr: Type.Number(),
+  tentNr: Type.Number(),
+});
+
+export type TentFetchParams = Static<typeof ShiftTentFetchParams>;

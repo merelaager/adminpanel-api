@@ -11,14 +11,17 @@ import {
   fetchShiftUsersHandler,
 } from "../../../controllers/shifts.controller";
 import { fetchShiftStaff } from "../../../controllers/staff/fetch.staff";
+import { fetchTentHandler } from "../../../controllers/tent.controller";
 
 import {
   ShiftResourceFetchParams,
+  ShiftTentFetchParams,
   UserWithShiftRoleSchema,
 } from "../../../schemas/shift";
 import { CamperRecordSchema } from "../../../schemas/user";
 import { ParentBillSchema } from "../../../schemas/billing";
 import { ShiftStaffSchema } from "../../../schemas/staff";
+import { TentInfoSchema } from "../../../schemas/tent";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(
@@ -86,6 +89,27 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       },
     },
     fetchShiftUsersHandler,
+  );
+  fastify.get(
+    "/:shiftNr/tents/:tentNr",
+    {
+      schema: {
+        params: ShiftTentFetchParams,
+        response: {
+          [StatusCodes.OK]: Type.Object({
+            status: Type.Literal("success"),
+            data: TentInfoSchema,
+          }),
+          [StatusCodes.FORBIDDEN]: Type.Object({
+            status: Type.Literal("fail"),
+            data: Type.Object({
+              permissions: Type.String(),
+            }),
+          }),
+        },
+      },
+    },
+    fetchTentHandler,
   );
   fastify.get(
     "/:shiftNr/billing",

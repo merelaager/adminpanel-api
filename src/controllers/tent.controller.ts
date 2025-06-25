@@ -8,11 +8,11 @@ import { StatusCodes } from "http-status-codes";
 import prisma from "../utils/prisma";
 import { isShiftMember } from "../utils/permissions";
 
-import type { TentFetchParams } from "../schemas/shift";
+import type { AddScoreBody, TentQueryParams } from "../schemas/shift";
 import type { JSendResponse } from "../types/jsend";
 
 interface IFetchTentHandler extends RouteGenericInterface {
-  Params: TentFetchParams;
+  Params: TentQueryParams;
   Reply: JSendResponse;
 }
 
@@ -52,5 +52,44 @@ export const fetchTentHandler = async (
       campers: childrenInTent,
       scores: tentScores,
     },
+  });
+};
+
+interface IAddGradeHandler extends RouteGenericInterface {
+  Params: TentQueryParams;
+  Body: AddScoreBody;
+  Reply: JSendResponse;
+}
+
+export const addGradeHandler = async (
+  req: FastifyRequest<IAddGradeHandler>,
+  res: FastifyReply<IAddGradeHandler>,
+): Promise<never> => {
+  const { shiftNr, tentNr } = req.params;
+  const { score } = req.body;
+  const { userId } = req.session.user;
+
+  const isAuthorised = await isShiftMember(userId, shiftNr);
+  if (!isAuthorised) {
+    return res.status(StatusCodes.FORBIDDEN).send({
+      status: "fail",
+      data: { permissions: "Puuduvad õigused päringuks." },
+    });
+  }
+
+  const currentYear = new Date().getUTCFullYear();
+  const result = await prisma.tentScore.create({
+    data: {
+      shiftNr,
+      tentNr,
+      year: currentYear,
+      score: score,
+    },
+    select: { score: true, createdAt: true },
+  });
+
+  return res.status(StatusCodes.OK).send({
+    status: "success",
+    data: result,
   });
 };

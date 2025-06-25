@@ -30,9 +30,15 @@ export const UserWithShiftRoleSchema = Type.Object({
   roleId: Type.Number(),
 });
 
-export const ShiftTentFetchParams = Type.Object({
+export const ShiftTentQuerySchema = Type.Object({
   shiftNr: Type.Number(),
   tentNr: Type.Number(),
 });
 
-export type TentFetchParams = Static<typeof ShiftTentFetchParams>;
+export type TentQueryParams = Static<typeof ShiftTentQuerySchema>;
+
+export const AddGradeSchema = Type.Object({
+  score: Type.Number(),
+});
+
+export type AddScoreBody = Static<typeof AddGradeSchema>;

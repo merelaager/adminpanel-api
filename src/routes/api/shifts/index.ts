@@ -14,6 +14,7 @@ import { fetchShiftStaff } from "../../../controllers/staff/fetch.staff";
 import {
   addGradeHandler,
   fetchTentHandler,
+  fetchTentsHandler,
 } from "../../../controllers/tent.controller";
 
 import {
@@ -206,6 +207,29 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       },
     },
     fetchTentHandler,
+  );
+  fastify.get(
+    "/:shiftNr/tents",
+    {
+      schema: {
+        params: ShiftResourceFetchParams,
+        response: {
+          [StatusCodes.OK]: Type.Object({
+            status: Type.Literal("success"),
+            data: Type.Object({
+              scores: Type.Array(TentScoreSchema),
+            }),
+          }),
+          [StatusCodes.FORBIDDEN]: Type.Object({
+            status: Type.Literal("fail"),
+            data: Type.Object({
+              permissions: Type.String(),
+            }),
+          }),
+        },
+      },
+    },
+    fetchTentsHandler,
   );
   fastify.post(
     "/:shiftNr/tents/:tentNr",

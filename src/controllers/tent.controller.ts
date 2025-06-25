@@ -8,7 +8,11 @@ import { StatusCodes } from "http-status-codes";
 import prisma from "../utils/prisma";
 import { isShiftMember } from "../utils/permissions";
 
-import type { AddScoreBody, TentQueryParams } from "../schemas/shift";
+import {
+  AddScoreBody,
+  ShiftResourceFetchParams,
+  TentQueryParams,
+} from "../schemas/shift";
 import type { JSendResponse } from "../types/jsend";
 
 interface IFetchTentHandler extends RouteGenericInterface {
@@ -41,8 +45,8 @@ export const fetchTentHandler = async (
   const childrenInTent = records.map((record) => record.child.name);
 
   const tentScores = await prisma.tentScore.findMany({
-    where: { shiftNr, year: currentYear },
-    select: { score: true, createdAt: true },
+    where: { shiftNr, year: currentYear, tentNr },
+    select: { score: true, createdAt: true, tentNr: true },
     orderBy: { createdAt: "asc" },
   });
 
@@ -50,6 +54,42 @@ export const fetchTentHandler = async (
     status: "success",
     data: {
       campers: childrenInTent,
+      scores: tentScores,
+    },
+  });
+};
+
+interface IFetchTentsHandler extends RouteGenericInterface {
+  Params: ShiftResourceFetchParams;
+  Reply: JSendResponse;
+}
+
+export const fetchTentsHandler = async (
+  req: FastifyRequest<IFetchTentsHandler>,
+  res: FastifyReply<IFetchTentsHandler>,
+): Promise<never> => {
+  const { shiftNr } = req.params;
+  const { userId } = req.session.user;
+
+  const isAuthorised = await isShiftMember(userId, shiftNr);
+  if (!isAuthorised) {
+    return res.status(StatusCodes.FORBIDDEN).send({
+      status: "fail",
+      data: { permissions: "Puuduvad õigused päringuks." },
+    });
+  }
+
+  const currentYear = new Date().getUTCFullYear();
+
+  const tentScores = await prisma.tentScore.findMany({
+    where: { shiftNr, year: currentYear },
+    select: { score: true, createdAt: true, tentNr: true },
+    orderBy: { createdAt: "asc" },
+  });
+
+  return res.status(StatusCodes.OK).send({
+    status: "success",
+    data: {
       scores: tentScores,
     },
   });
@@ -85,7 +125,7 @@ export const addGradeHandler = async (
       year: currentYear,
       score: score,
     },
-    select: { score: true, createdAt: true },
+    select: { score: true, createdAt: true, tentNr: true },
   });
 
   return res.status(StatusCodes.OK).send({

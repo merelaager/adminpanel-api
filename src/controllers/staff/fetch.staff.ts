@@ -4,17 +4,27 @@ import type {
   RouteGenericInterface,
 } from "fastify";
 import { StatusCodes } from "http-status-codes";
+import { Type } from "@sinclair/typebox";
 
 import prisma from "../../utils/prisma";
 import { canViewShiftStaff } from "../../utils/permissions";
+import { createFailResponse, createSuccessResponse } from "../../utils/jsend";
 
 import { ShiftResourceFetchParams } from "../../schemas/shift";
-import type { JSendResponse } from "../../types/jsend";
-import type { ShiftStaffMember } from "../../schemas/staff";
+import { ShiftStaffMember, ShiftStaffSchema } from "../../schemas/staff";
+import type { JSendResponse } from "../../schemas/jsend";
+import { RequestPermissionsFail } from "../../schemas/responses";
+
+export const FetchShiftStaffData = Type.Object({
+  staff: Type.Array(ShiftStaffSchema),
+});
 
 interface IFetchShiftStaff extends RouteGenericInterface {
   Params: ShiftResourceFetchParams;
-  Reply: JSendResponse;
+  Reply: JSendResponse<
+    typeof FetchShiftStaffData,
+    typeof RequestPermissionsFail
+  >;
 }
 
 export const fetchShiftStaff = async (
@@ -26,10 +36,9 @@ export const fetchShiftStaff = async (
 
   const isAuthorised = await canViewShiftStaff(userId, shiftNr);
   if (!isAuthorised) {
-    return res.status(StatusCodes.FORBIDDEN).send({
-      status: "fail",
-      data: { permissions: "Puuduvad õigused päringuks." },
-    });
+    return res
+      .status(StatusCodes.FORBIDDEN)
+      .send(createFailResponse({ permissions: "Puuduvad õigused päringuks." }));
   }
 
   const currentYear = new Date().getUTCFullYear();
@@ -75,10 +84,9 @@ export const fetchShiftStaff = async (
     });
   });
 
-  return res.status(StatusCodes.OK).send({
-    status: "success",
-    data: {
+  return res.status(StatusCodes.OK).send(
+    createSuccessResponse({
       staff: shiftStaff,
-    },
-  });
+    }),
+  );
 };

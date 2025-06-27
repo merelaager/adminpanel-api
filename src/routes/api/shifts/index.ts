@@ -1,19 +1,28 @@
-import { Type } from "@sinclair/typebox";
-import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
+import type { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import { StatusCodes } from "http-status-codes";
 
 import {
+  FetchShiftBillingData,
   fetchShiftBillingHandler,
-  fetchShiftCampersHandler,
+  FetchShiftEmailsData,
   fetchShiftEmailsHandler,
+  FetchShiftPdfFailData,
   fetchShiftPdfHandler,
+  FetchShiftRecordsData,
+  fetchShiftRecordsHandler,
+  FetchShiftsData,
   fetchShiftsHandler,
+  FetchShiftUsersData,
   fetchShiftUsersHandler,
 } from "../../../controllers/shifts.controller";
-import { fetchShiftStaff } from "../../../controllers/staff/fetch.staff";
+import {
+  fetchShiftStaff,
+  FetchShiftStaffData,
+} from "../../../controllers/staff/fetch.staff";
 import {
   addGradeHandler,
   fetchTentHandler,
+  FetchTentsData,
   fetchTentsHandler,
 } from "../../../controllers/tent.controller";
 
@@ -21,12 +30,14 @@ import {
   AddGradeSchema,
   ShiftResourceFetchParams,
   ShiftTentQuerySchema,
-  UserWithShiftRoleSchema,
 } from "../../../schemas/shift";
-import { CamperRecordSchema } from "../../../schemas/user";
-import { ParentBillSchema } from "../../../schemas/billing";
-import { ShiftStaffSchema } from "../../../schemas/staff";
 import { TentInfoSchema, TentScoreSchema } from "../../../schemas/tent";
+import {
+  ErrorResponse,
+  FailResponse,
+  SuccessResponse,
+} from "../../../schemas/jsend";
+import { RequestPermissionsFail } from "../../../schemas/responses";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(
@@ -34,12 +45,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
     {
       schema: {
         response: {
-          [StatusCodes.OK]: Type.Object({
-            status: Type.Literal("success"),
-            data: Type.Object({
-              shifts: Type.Array(Type.Number()),
-            }),
-          }),
+          [StatusCodes.OK]: SuccessResponse(FetchShiftsData),
         },
       },
     },
@@ -51,22 +57,9 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         params: ShiftResourceFetchParams,
         response: {
-          [StatusCodes.NOT_FOUND]: Type.Object({
-            status: Type.Literal("fail"),
-            data: Type.Object({
-              shift: Type.String(),
-            }),
-          }),
-          [StatusCodes.FORBIDDEN]: Type.Object({
-            status: Type.Literal("fail"),
-            data: Type.Object({
-              permissions: Type.String(),
-            }),
-          }),
-          [StatusCodes.INTERNAL_SERVER_ERROR]: Type.Object({
-            status: Type.Literal("error"),
-            message: Type.String(),
-          }),
+          [StatusCodes.NOT_FOUND]: FailResponse(FetchShiftPdfFailData),
+          [StatusCodes.FORBIDDEN]: FailResponse(RequestPermissionsFail),
+          [StatusCodes.INTERNAL_SERVER_ERROR]: ErrorResponse,
         },
       },
     },
@@ -78,18 +71,8 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         params: ShiftResourceFetchParams,
         response: {
-          [StatusCodes.OK]: Type.Object({
-            status: Type.Literal("success"),
-            data: Type.Object({
-              users: Type.Array(UserWithShiftRoleSchema),
-            }),
-          }),
-          [StatusCodes.FORBIDDEN]: Type.Object({
-            status: Type.Literal("fail"),
-            data: Type.Object({
-              permissions: Type.String(),
-            }),
-          }),
+          [StatusCodes.OK]: SuccessResponse(FetchShiftUsersData),
+          [StatusCodes.FORBIDDEN]: FailResponse(RequestPermissionsFail),
         },
       },
     },
@@ -101,18 +84,8 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         params: ShiftResourceFetchParams,
         response: {
-          [StatusCodes.OK]: Type.Object({
-            status: Type.Literal("success"),
-            data: Type.Object({
-              records: Type.Array(ParentBillSchema),
-            }),
-          }),
-          [StatusCodes.FORBIDDEN]: Type.Object({
-            status: Type.Literal("fail"),
-            data: Type.Object({
-              permissions: Type.String(),
-            }),
-          }),
+          [StatusCodes.OK]: SuccessResponse(FetchShiftBillingData),
+          [StatusCodes.FORBIDDEN]: FailResponse(RequestPermissionsFail),
         },
       },
     },
@@ -124,22 +97,12 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         params: ShiftResourceFetchParams,
         response: {
-          [StatusCodes.OK]: Type.Object({
-            status: Type.Literal("success"),
-            data: Type.Object({
-              records: Type.Array(CamperRecordSchema),
-            }),
-          }),
-          [StatusCodes.FORBIDDEN]: Type.Object({
-            status: Type.Literal("fail"),
-            data: Type.Object({
-              permissions: Type.String(),
-            }),
-          }),
+          [StatusCodes.OK]: SuccessResponse(FetchShiftRecordsData),
+          [StatusCodes.FORBIDDEN]: FailResponse(RequestPermissionsFail),
         },
       },
     },
-    fetchShiftCampersHandler,
+    fetchShiftRecordsHandler,
   );
   fastify.get(
     "/:shiftNr/emails",
@@ -147,18 +110,8 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         params: ShiftResourceFetchParams,
         response: {
-          [StatusCodes.OK]: Type.Object({
-            status: Type.Literal("success"),
-            data: Type.Object({
-              emails: Type.Array(Type.String()),
-            }),
-          }),
-          [StatusCodes.FORBIDDEN]: Type.Object({
-            status: Type.Literal("fail"),
-            data: Type.Object({
-              permissions: Type.String(),
-            }),
-          }),
+          [StatusCodes.OK]: SuccessResponse(FetchShiftEmailsData),
+          [StatusCodes.FORBIDDEN]: FailResponse(RequestPermissionsFail),
         },
       },
     },
@@ -170,18 +123,8 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         params: ShiftResourceFetchParams,
         response: {
-          [StatusCodes.OK]: Type.Object({
-            status: Type.Literal("success"),
-            data: Type.Object({
-              staff: Type.Array(ShiftStaffSchema),
-            }),
-          }),
-          [StatusCodes.FORBIDDEN]: Type.Object({
-            status: Type.Literal("fail"),
-            data: Type.Object({
-              permissions: Type.String(),
-            }),
-          }),
+          [StatusCodes.OK]: SuccessResponse(FetchShiftStaffData),
+          [StatusCodes.FORBIDDEN]: FailResponse(RequestPermissionsFail),
         },
       },
     },
@@ -193,16 +136,8 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         params: ShiftTentQuerySchema,
         response: {
-          [StatusCodes.OK]: Type.Object({
-            status: Type.Literal("success"),
-            data: TentInfoSchema,
-          }),
-          [StatusCodes.FORBIDDEN]: Type.Object({
-            status: Type.Literal("fail"),
-            data: Type.Object({
-              permissions: Type.String(),
-            }),
-          }),
+          [StatusCodes.OK]: SuccessResponse(TentInfoSchema),
+          [StatusCodes.FORBIDDEN]: FailResponse(RequestPermissionsFail),
         },
       },
     },
@@ -214,18 +149,8 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         params: ShiftResourceFetchParams,
         response: {
-          [StatusCodes.OK]: Type.Object({
-            status: Type.Literal("success"),
-            data: Type.Object({
-              scores: Type.Array(TentScoreSchema),
-            }),
-          }),
-          [StatusCodes.FORBIDDEN]: Type.Object({
-            status: Type.Literal("fail"),
-            data: Type.Object({
-              permissions: Type.String(),
-            }),
-          }),
+          [StatusCodes.OK]: SuccessResponse(FetchTentsData),
+          [StatusCodes.FORBIDDEN]: FailResponse(RequestPermissionsFail),
         },
       },
     },
@@ -237,16 +162,8 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         params: ShiftTentQuerySchema,
         body: AddGradeSchema,
-        [StatusCodes.OK]: Type.Object({
-          status: Type.Literal("success"),
-          data: TentScoreSchema,
-        }),
-        [StatusCodes.FORBIDDEN]: Type.Object({
-          status: Type.Literal("fail"),
-          data: Type.Object({
-            permissions: Type.String(),
-          }),
-        }),
+        [StatusCodes.OK]: SuccessResponse(TentScoreSchema),
+        [StatusCodes.FORBIDDEN]: FailResponse(RequestPermissionsFail),
       },
     },
     addGradeHandler,

@@ -4,7 +4,6 @@ export const ChildBillSchema = Type.Object({
   childName: Type.String(),
   pricePaid: Type.Integer(),
   priceToPay: Type.Integer(),
-  billNr: Type.Integer(),
   shiftNr: Type.Integer(),
   billSent: Type.Boolean(),
 });
@@ -12,7 +11,7 @@ export const ChildBillSchema = Type.Object({
 export const ParentBillSchema = Type.Object({
   name: Type.String(),
   email: Type.String(),
-  billNr: Type.Integer(),
+  billNr: Type.Union([Type.Null(), Type.Integer()]),
   records: Type.Array(ChildBillSchema),
 });
 

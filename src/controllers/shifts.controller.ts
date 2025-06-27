@@ -1,7 +1,12 @@
 import fs from "fs";
 import type { ReadStream } from "node:fs";
-import { FastifyReply, FastifyRequest, RouteGenericInterface } from "fastify";
+import type {
+  FastifyReply,
+  FastifyRequest,
+  RouteGenericInterface,
+} from "fastify";
 import { StatusCodes } from "http-status-codes";
+import { Type } from "@sinclair/typebox";
 
 import prisma from "../utils/prisma";
 import {
@@ -9,19 +14,31 @@ import {
   PrintEntry,
 } from "../utils/shift-pdf-builder";
 import { isShiftBoss, isShiftMember } from "../utils/permissions";
+import {
+  createErrorResponse,
+  createFailResponse,
+  createSuccessResponse,
+} from "../utils/jsend";
 
 import { fetchUserShiftPermissions } from "./registration/registrations.controller";
 
-import type { JSendResponse } from "../types/jsend";
 import {
   RoleNameMap,
   ShiftResourceFetchParams,
   type UserWithShiftRole,
+  UserWithShiftRoleSchema,
 } from "../schemas/shift";
-import type { CamperRecord } from "../schemas/user";
+import { CamperRecord, CamperRecordSchema } from "../schemas/user";
+import { RequestPermissionsFail } from "../schemas/responses";
+import type { JSendError, JSendFail, JSendResponse } from "../schemas/jsend";
+import { ParentBillSchema } from "../schemas/billing";
+
+export const FetchShiftsData = Type.Object({
+  shifts: Type.Array(Type.Number()),
+});
 
 interface IFetchShiftsHandler extends RouteGenericInterface {
-  Reply: JSendResponse;
+  Reply: JSendResponse<typeof FetchShiftsData>;
 }
 
 export const fetchShiftsHandler = async (
@@ -33,17 +50,23 @@ export const fetchShiftsHandler = async (
   });
 
   const existingShifts = shifts.map((shift) => shift.id);
-  return res.status(StatusCodes.OK).send({
-    status: "success",
-    data: {
+  return res.status(StatusCodes.OK).send(
+    createSuccessResponse({
       shifts: existingShifts,
-    },
-  });
+    }),
+  );
 };
+
+export const FetchShiftPdfFailData = Type.Union([
+  Type.Object({ shift: Type.String() }),
+]);
 
 interface IFetchShiftPdfHandler extends RouteGenericInterface {
   Params: ShiftResourceFetchParams;
-  Reply: JSendResponse | ReadStream;
+  Reply:
+    | ReadStream
+    | JSendFail<typeof FetchShiftPdfFailData | typeof RequestPermissionsFail>
+    | JSendError;
 }
 
 export const fetchShiftPdfHandler = async (
@@ -64,12 +87,11 @@ export const fetchShiftPdfHandler = async (
   });
 
   if (activeRegistrations.length === 0) {
-    return res.status(StatusCodes.NOT_FOUND).send({
-      status: "fail",
-      data: {
+    return res.status(StatusCodes.NOT_FOUND).send(
+      createFailResponse({
         shift: "Vahetust ei ole olemas või puuduvad registreeritud lapsed.",
-      },
-    });
+      }),
+    );
   }
 
   const shiftViewPermissions = await fetchUserShiftPermissions(
@@ -87,12 +109,11 @@ export const fetchShiftPdfHandler = async (
 
   const canPrint = canViewPII && canViewContact;
   if (!canPrint) {
-    return res.status(StatusCodes.FORBIDDEN).send({
-      status: "fail",
-      data: {
+    return res.status(StatusCodes.FORBIDDEN).send(
+      createFailResponse({
         permissions: "Puuduvad detailse nimekirja nägemise õigused.",
-      },
-    });
+      }),
+    );
   }
 
   const printEntries: PrintEntry[] = [];
@@ -111,10 +132,9 @@ export const fetchShiftPdfHandler = async (
 
   const filePath = await generateShiftCamperListPDF(shiftNr, printEntries);
   if (!filePath) {
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
-      status: "error",
-      message: "Viga PDFi genereerimisel.",
-    });
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .send(createErrorResponse("Viga PDFi genereerimisel."));
   }
 
   const stream = fs.createReadStream(filePath);
@@ -122,9 +142,16 @@ export const fetchShiftPdfHandler = async (
   return res.send(stream);
 };
 
+export const FetchShiftUsersData = Type.Object({
+  users: Type.Array(UserWithShiftRoleSchema),
+});
+
 interface IFetchShiftUsers extends RouteGenericInterface {
   Params: ShiftResourceFetchParams;
-  Reply: JSendResponse;
+  Reply: JSendResponse<
+    typeof FetchShiftUsersData,
+    typeof RequestPermissionsFail
+  >;
 }
 
 export const fetchShiftUsersHandler = async (
@@ -136,10 +163,9 @@ export const fetchShiftUsersHandler = async (
 
   const isAuthorised = await isShiftBoss(userId, shiftNr);
   if (!isAuthorised) {
-    return res.status(StatusCodes.FORBIDDEN).send({
-      status: "fail",
-      data: { permissions: "Puuduvad õigused päringuks." },
-    });
+    return res
+      .status(StatusCodes.FORBIDDEN)
+      .send(createFailResponse({ permissions: "Puuduvad õigused päringuks." }));
   }
 
   const rawUsersAndPermissions = await prisma.userRoles.findMany({
@@ -169,20 +195,26 @@ export const fetchShiftUsersHandler = async (
     });
   });
 
-  return res.status(StatusCodes.OK).send({
-    status: "success",
-    data: {
+  return res.status(StatusCodes.OK).send(
+    createSuccessResponse({
       users: usersWithShiftRole,
-    },
-  });
+    }),
+  );
 };
+
+export const FetchShiftRecordsData = Type.Object({
+  records: Type.Array(CamperRecordSchema),
+});
 
 interface IFetchShiftCampers extends RouteGenericInterface {
   Params: ShiftResourceFetchParams;
-  Reply: JSendResponse;
+  Reply: JSendResponse<
+    typeof FetchShiftRecordsData,
+    typeof RequestPermissionsFail
+  >;
 }
 
-export const fetchShiftCampersHandler = async (
+export const fetchShiftRecordsHandler = async (
   req: FastifyRequest<IFetchShiftCampers>,
   res: FastifyReply<IFetchShiftCampers>,
 ): Promise<never> => {
@@ -191,10 +223,9 @@ export const fetchShiftCampersHandler = async (
 
   const isAuthorised = await isShiftMember(userId, shiftNr);
   if (!isAuthorised) {
-    return res.status(StatusCodes.FORBIDDEN).send({
-      status: "fail",
-      data: { permissions: "Puuduvad õigused päringuks." },
-    });
+    return res
+      .status(StatusCodes.FORBIDDEN)
+      .send(createFailResponse({ permissions: "Puuduvad õigused päringuks." }));
   }
 
   const currentYear = new Date().getUTCFullYear();
@@ -225,15 +256,21 @@ export const fetchShiftCampersHandler = async (
     });
   });
 
-  return res.status(StatusCodes.OK).send({
-    status: "success",
-    data: { records: camperRecords },
-  });
+  return res
+    .status(StatusCodes.OK)
+    .send(createSuccessResponse({ records: camperRecords }));
 };
+
+export const FetchShiftEmailsData = Type.Object({
+  emails: Type.Array(Type.String()),
+});
 
 interface IFetchShiftEmails extends RouteGenericInterface {
   Params: ShiftResourceFetchParams;
-  Reply: JSendResponse;
+  Reply: JSendResponse<
+    typeof FetchShiftEmailsData,
+    typeof RequestPermissionsFail
+  >;
 }
 
 export const fetchShiftEmailsHandler = async (
@@ -245,10 +282,9 @@ export const fetchShiftEmailsHandler = async (
 
   const isAuthorised = await isShiftBoss(userId, shiftNr);
   if (!isAuthorised) {
-    return res.status(StatusCodes.FORBIDDEN).send({
-      status: "fail",
-      data: { permissions: "Puuduvad õigused päringuks." },
-    });
+    return res
+      .status(StatusCodes.FORBIDDEN)
+      .send(createFailResponse({ permissions: "Puuduvad õigused päringuks." }));
   }
 
   const data = await prisma.registration.findMany({
@@ -261,15 +297,21 @@ export const fetchShiftEmailsHandler = async (
     emails.add(registration.contactEmail);
   });
 
-  return res.status(StatusCodes.OK).send({
-    status: "success",
-    data: { emails: Array.from(emails.values()) },
-  });
+  return res
+    .status(StatusCodes.OK)
+    .send(createSuccessResponse({ emails: Array.from(emails.values()) }));
 };
+
+export const FetchShiftBillingData = Type.Object({
+  records: Type.Array(ParentBillSchema),
+});
 
 interface IFetchShiftBillingInfo extends RouteGenericInterface {
   Params: ShiftResourceFetchParams;
-  Reply: JSendResponse;
+  Reply: JSendResponse<
+    typeof FetchShiftBillingData,
+    typeof RequestPermissionsFail
+  >;
 }
 
 export const fetchShiftBillingHandler = async (
@@ -281,10 +323,9 @@ export const fetchShiftBillingHandler = async (
 
   const isAuthorised = await isShiftBoss(userId, shiftNr);
   if (!isAuthorised) {
-    return res.status(StatusCodes.FORBIDDEN).send({
-      status: "fail",
-      data: { permissions: "Puuduvad õigused päringuks." },
-    });
+    return res
+      .status(StatusCodes.FORBIDDEN)
+      .send(createFailResponse({ permissions: "Puuduvad õigused päringuks." }));
   }
 
   type BillChildRecord = {
@@ -371,25 +412,21 @@ export const fetchShiftBillingHandler = async (
   });
 
   addendumRegistrations.forEach((registration) => {
-    const data = {
-      childName: registration.child.name,
-      pricePaid: registration.pricePaid,
-      priceToPay: registration.priceToPay,
-      billNr: registration.billId,
-      shiftNr: registration.shiftNr,
-      billSent: registration.notifSent,
-    };
-
     const childGroupWithoutActiveBill = registrationMap.get(
       registration.contactEmail,
     );
-    childGroupWithoutActiveBill?.records.push(data);
+    childGroupWithoutActiveBill?.records.push({
+      childName: registration.child.name,
+      pricePaid: registration.pricePaid,
+      priceToPay: registration.priceToPay,
+      shiftNr: registration.shiftNr,
+      billSent: registration.notifSent,
+    });
   });
 
-  return res.status(StatusCodes.OK).send({
-    status: "success",
-    data: {
+  return res.status(StatusCodes.OK).send(
+    createSuccessResponse({
       records: Array.from(registrationMap.values()),
-    },
-  });
+    }),
+  );
 };

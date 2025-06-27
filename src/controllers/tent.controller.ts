@@ -4,20 +4,24 @@ import type {
   RouteGenericInterface,
 } from "fastify";
 import { StatusCodes } from "http-status-codes";
+import { Type } from "@sinclair/typebox";
 
 import prisma from "../utils/prisma";
 import { isShiftMember } from "../utils/permissions";
+import { createFailResponse, createSuccessResponse } from "../utils/jsend";
 
 import {
   AddScoreBody,
   ShiftResourceFetchParams,
   TentQueryParams,
 } from "../schemas/shift";
-import type { JSendResponse } from "../types/jsend";
+import type { JSendResponse } from "../schemas/jsend";
+import { TentInfoSchema, TentScoreSchema } from "../schemas/tent";
+import { RequestPermissionsFail } from "../schemas/responses";
 
 interface IFetchTentHandler extends RouteGenericInterface {
   Params: TentQueryParams;
-  Reply: JSendResponse;
+  Reply: JSendResponse<typeof TentInfoSchema, typeof RequestPermissionsFail>;
 }
 
 export const fetchTentHandler = async (
@@ -29,10 +33,9 @@ export const fetchTentHandler = async (
 
   const isAuthorised = await isShiftMember(userId, shiftNr);
   if (!isAuthorised) {
-    return res.status(StatusCodes.FORBIDDEN).send({
-      status: "fail",
-      data: { permissions: "Puuduvad õigused päringuks." },
-    });
+    return res
+      .status(StatusCodes.FORBIDDEN)
+      .send(createFailResponse({ permissions: "Puuduvad õigused päringuks." }));
   }
 
   const currentYear = new Date().getUTCFullYear();
@@ -50,18 +53,23 @@ export const fetchTentHandler = async (
     orderBy: { createdAt: "asc" },
   });
 
-  return res.status(StatusCodes.OK).send({
-    status: "success",
-    data: {
+  return res.status(StatusCodes.OK).send(
+    createSuccessResponse({
       campers: childrenInTent,
-      scores: tentScores,
-    },
-  });
+      scores: tentScores.map((score) => {
+        return { ...score, createdAt: score.createdAt.toISOString() };
+      }),
+    }),
+  );
 };
+
+export const FetchTentsData = Type.Object({
+  scores: Type.Array(TentScoreSchema),
+});
 
 interface IFetchTentsHandler extends RouteGenericInterface {
   Params: ShiftResourceFetchParams;
-  Reply: JSendResponse;
+  Reply: JSendResponse<typeof FetchTentsData, typeof RequestPermissionsFail>;
 }
 
 export const fetchTentsHandler = async (
@@ -73,10 +81,9 @@ export const fetchTentsHandler = async (
 
   const isAuthorised = await isShiftMember(userId, shiftNr);
   if (!isAuthorised) {
-    return res.status(StatusCodes.FORBIDDEN).send({
-      status: "fail",
-      data: { permissions: "Puuduvad õigused päringuks." },
-    });
+    return res
+      .status(StatusCodes.FORBIDDEN)
+      .send(createFailResponse({ permissions: "Puuduvad õigused päringuks." }));
   }
 
   const currentYear = new Date().getUTCFullYear();
@@ -87,18 +94,19 @@ export const fetchTentsHandler = async (
     orderBy: { createdAt: "asc" },
   });
 
-  return res.status(StatusCodes.OK).send({
-    status: "success",
-    data: {
-      scores: tentScores,
-    },
-  });
+  return res.status(StatusCodes.OK).send(
+    createSuccessResponse({
+      scores: tentScores.map((score) => {
+        return { ...score, createdAt: score.createdAt.toISOString() };
+      }),
+    }),
+  );
 };
 
 interface IAddGradeHandler extends RouteGenericInterface {
   Params: TentQueryParams;
   Body: AddScoreBody;
-  Reply: JSendResponse;
+  Reply: JSendResponse<typeof TentScoreSchema, typeof RequestPermissionsFail>;
 }
 
 export const addGradeHandler = async (
@@ -111,10 +119,9 @@ export const addGradeHandler = async (
 
   const isAuthorised = await isShiftMember(userId, shiftNr);
   if (!isAuthorised) {
-    return res.status(StatusCodes.FORBIDDEN).send({
-      status: "fail",
-      data: { permissions: "Puuduvad õigused päringuks." },
-    });
+    return res
+      .status(StatusCodes.FORBIDDEN)
+      .send(createFailResponse({ permissions: "Puuduvad õigused päringuks." }));
   }
 
   const currentYear = new Date().getUTCFullYear();
@@ -128,8 +135,10 @@ export const addGradeHandler = async (
     select: { score: true, createdAt: true, tentNr: true },
   });
 
-  return res.status(StatusCodes.OK).send({
-    status: "success",
-    data: result,
-  });
+  return res.status(StatusCodes.OK).send(
+    createSuccessResponse({
+      ...result,
+      createdAt: result.createdAt.toISOString(),
+    }),
+  );
 };

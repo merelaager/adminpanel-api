@@ -10,16 +10,20 @@ import {
   registrationsCampersSyncHandler,
   registrationsFetchHandler,
 } from "../../../controllers/registration/registrations.controller";
-import { createRegistrationFromParentData } from "../../../controllers/registration/create.registration";
+import {
+  FormRegistrationData,
+  FormRegistrationFailData,
+  formRegistrationHandler,
+} from "../../../controllers/registration/create.registration";
 
 import {
   FilteredRegistrationSchema,
   PatchRegistrationBody,
   PatchRegistrationSchema,
-  PostRegistrationBody,
   RegistrationsCreationSchema,
   RegistrationsFetchSchema,
 } from "../../../schemas/registration";
+import { FailResponse, SuccessResponse } from "../../../schemas/jsend";
 
 interface PatchParams {
   regId: number;
@@ -50,25 +54,18 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
 
   fastify.post("/sync", registrationsCampersSyncHandler);
 
-  const postSchema = <RouteShorthandOptions>{
-    schema: {
-      body: RegistrationsCreationSchema,
-    },
-  };
-
-  fastify.post<{ Body: PostRegistrationBody }>(
+  fastify.post(
     "/",
-    postSchema,
-    async (request, reply) => {
-      const suppliedData = request.body;
-      const result = await createRegistrationFromParentData(
-        suppliedData,
-        fastify.prisma,
-        fastify.mailer,
-        fastify.regorder,
-      );
-      reply.status(result.code).send(result.response);
+    {
+      schema: {
+        body: RegistrationsCreationSchema,
+        response: {
+          [StatusCodes.CREATED]: SuccessResponse(FormRegistrationData),
+          [StatusCodes.BAD_REQUEST]: FailResponse(FormRegistrationFailData),
+        },
+      },
     },
+    formRegistrationHandler,
   );
 
   const patchSchema = <RouteShorthandOptions>{

@@ -1,17 +1,28 @@
-import { Child, Prisma, PrismaClient } from "@prisma/client";
-import { Transporter } from "nodemailer";
+import type {
+  FastifyReply,
+  FastifyRequest,
+  RouteGenericInterface,
+} from "fastify";
+import type { Transporter } from "nodemailer";
 import { StatusCodes } from "http-status-codes";
+import { Type } from "@sinclair/typebox";
+import { type Child, Prisma } from "@prisma/client";
 
 import MailService from "../../services/mailService";
-import type { TRegOrder } from "../../plugins/app/regorder";
+
+import prisma from "../../utils/prisma";
 import { computeIdCodeHash } from "../../utils/data-protection";
+import {
+  createErrorResponse,
+  createFailResponse,
+  createSuccessResponse,
+} from "../../utils/jsend";
 
 import {
-  CreateRegistrationData,
+  CreateRegistrationsBody,
   EmailReceiptInfo,
 } from "../../schemas/registration";
-
-import type { JSendResponse } from "../../types/jsend";
+import { JSendError, JSendResponse } from "../../schemas/jsend";
 
 const validateDate = (year: number, month: number, date: number) => {
   if (month < 0 || month > 11 || date < 0) return false;
@@ -67,34 +78,39 @@ const computePrice = (shiftNr: number, isOld: boolean) => {
   return price;
 };
 
-type RegistrationResult = {
-  ok: boolean;
-  code: StatusCodes;
-  response: JSendResponse;
-};
+export const FormRegistrationData = Type.Object({
+  count: Type.Integer(),
+});
 
-export const createRegistrationFromParentData = async (
-  registrations: CreateRegistrationData[],
-  prisma: PrismaClient,
-  mailer: Transporter,
-  regorder: TRegOrder,
-): Promise<RegistrationResult> => {
-  const resObj = <JSendResponse>{
-    status: "success",
-    data: null,
-  };
+export const FormRegistrationFailData = Type.Record(
+  Type.String(),
+  Type.String(),
+);
 
-  const maxEntries = 8;
+interface IFormRegistrationHandler extends RouteGenericInterface {
+  Body: CreateRegistrationsBody;
+  Reply:
+    | JSendResponse<
+        typeof FormRegistrationData,
+        typeof FormRegistrationFailData
+      >
+    | JSendError;
+}
+
+export const formRegistrationHandler = async (
+  req: FastifyRequest<IFormRegistrationHandler>,
+  res: FastifyReply<IFormRegistrationHandler>,
+): Promise<never> => {
+  const { mailer, regorder } = req.server;
+  const registrations = req.body;
+
+  const maxEntries = 4;
   if (registrations.length > maxEntries) {
-    resObj.status = "fail";
-    resObj.data = {
-      registrations: `The number of entries must not exceed ${maxEntries}`,
-    };
-    return {
-      ok: false,
-      code: StatusCodes.BAD_REQUEST,
-      response: resObj,
-    };
+    return res.status(StatusCodes.BAD_REQUEST).send(
+      createFailResponse({
+        registrations: `The number of entries must not exceed ${maxEntries}`,
+      }),
+    );
   }
 
   // Keep track of the relative order of registrations.
@@ -115,15 +131,11 @@ export const createRegistrationFromParentData = async (
     if (entry.idCode) {
       const parsedData = parseIdCode(entry.idCode);
       if ("error" in parsedData) {
-        resObj.status = "fail";
-        resObj.data = {};
-        resObj.data[`[${index}].idCode`] = parsedData.error;
-
-        return {
-          ok: false,
-          code: StatusCodes.BAD_REQUEST,
-          response: resObj,
-        };
+        return res.status(StatusCodes.BAD_REQUEST).send(
+          createFailResponse({
+            [`[${index}].idCode`]: parsedData.error,
+          }),
+        );
       }
 
       // Override the sex and birthday info even if set.
@@ -132,16 +144,13 @@ export const createRegistrationFromParentData = async (
     } else if (sex === undefined || dob === undefined) {
       // These should not be undefined since the request body has been validated.
       // But check in any case.
-      resObj.status = "fail";
-      resObj.data = {};
-      if (!sex) resObj.data[`[${index}].sex`] = "property is required";
-      if (!dob) resObj.data[`[${index}].dob`] = "property is required";
+      const failData: { [key: string]: string } = {};
+      if (!sex) failData[`[${index}].sex`] = "property is required";
+      if (!dob) failData[`[${index}].dob`] = "property is required";
 
-      return {
-        ok: false,
-        code: StatusCodes.BAD_REQUEST,
-        response: resObj,
-      };
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .send(createFailResponse(failData));
     }
 
     const childName = entry.name.trim().replace(/\s+/g, " ");
@@ -262,15 +271,9 @@ export const createRegistrationFromParentData = async (
     });
   } catch (err) {
     console.error(err);
-    const resErrObj = <JSendResponse>{
-      status: "error",
-      message: "Error communicating with database",
-    };
-    return {
-      ok: false,
-      code: StatusCodes.INTERNAL_SERVER_ERROR,
-      response: resErrObj,
-    };
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .send(createErrorResponse("Error communicating with the database"));
   }
 
   if (registrationEmailChoices.includes(true)) {
@@ -281,12 +284,9 @@ export const createRegistrationFromParentData = async (
     );
   }
 
-  resObj.data = { createMany };
-  return {
-    ok: true,
-    code: StatusCodes.CREATED,
-    response: resObj,
-  };
+  return res
+    .status(StatusCodes.CREATED)
+    .send(createSuccessResponse(createMany));
 };
 
 const sendRegistrationEmails = async (

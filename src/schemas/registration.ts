@@ -3,7 +3,9 @@ import { Static, Type } from "@sinclair/typebox";
 const STRING_MAX = 255;
 
 export type CreateRegistrationData = Static<typeof RegistrationCreationSchema>;
-export type PostRegistrationBody = Static<typeof RegistrationsCreationSchema>;
+export type CreateRegistrationsBody = Static<
+  typeof RegistrationsCreationSchema
+>;
 
 export const RegistrationCreationSchema = Type.Object({
   name: Type.String(),

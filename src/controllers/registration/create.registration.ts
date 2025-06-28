@@ -1,8 +1,10 @@
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Child, Prisma, PrismaClient } from "@prisma/client";
 import { Transporter } from "nodemailer";
 import { StatusCodes } from "http-status-codes";
 
 import MailService from "../../services/mailService";
+import type { TRegOrder } from "../../plugins/app/regorder";
+import { computeIdCodeHash } from "../../utils/data-protection";
 
 import {
   CreateRegistrationData,
@@ -10,7 +12,6 @@ import {
 } from "../../schemas/registration";
 
 import type { JSendResponse } from "../../types/jsend";
-import type { TRegOrder } from "../../plugins/app/regorder";
 
 const validateDate = (year: number, month: number, date: number) => {
   if (month < 0 || month > 11 || date < 0) return false;
@@ -144,12 +145,75 @@ export const createRegistrationFromParentData = async (
     }
 
     const childName = entry.name.trim().replace(/\s+/g, " ");
-    const childInstance = await prisma.child.create({
-      data: {
-        name: childName,
-        sex: sex,
-      },
-    });
+    const birthYear = new Date(dob).getFullYear();
+    const idCodeHash = entry.idCode ? computeIdCodeHash(entry.idCode) : null;
+
+    let childInstance: Child | null = null;
+
+    // As a first resort, try to use the ID code to check whether the child
+    // is already known in the camp database.
+    if (idCodeHash !== null) {
+      childInstance = await prisma.child.findUnique({
+        where: { idCodeHash },
+      });
+
+      if (childInstance !== null) {
+        if (childInstance.name !== childName) {
+          console.warn(
+            "Overwriting name",
+            childInstance.name,
+            "of",
+            childInstance.id,
+            "with",
+            childInstance.name,
+          );
+          await prisma.child.update({
+            where: { id: childInstance.id },
+            data: { name: childName },
+          });
+        }
+
+        // This should never happen, but better safe than sorry!
+        if (childInstance.birthYear && childInstance.birthYear !== birthYear) {
+          console.warn(
+            "ID code matches for ID code:",
+            entry.idCode,
+            "childId:",
+            childInstance.id,
+            "but the birth year is different",
+          );
+        }
+      }
+    }
+
+    // If the child was not found, then attempt to find one by name.
+    if (childInstance === null) {
+      childInstance = await prisma.child.findFirst({
+        where: { name: childName, sex },
+      });
+
+      if (childInstance !== null) {
+        if (childInstance.birthYear && childInstance.birthYear !== birthYear) {
+          console.warn(
+            "Found match for child with name:",
+            childInstance.name,
+            `(childId: ${childInstance.id})`,
+            "with different year of birth:",
+            childInstance.birthYear,
+            "vs",
+            birthYear,
+          );
+        }
+      }
+    }
+
+    // Finally, if no child instance was found,
+    // assume that the child is not known, and create a new entry.
+    if (childInstance === null) {
+      childInstance = await prisma.child.create({
+        data: { name: childName, sex, birthYear, idCodeHash },
+      });
+    }
 
     // TODO: check that the shift number exists.
     const isOld = !entry.isNew;

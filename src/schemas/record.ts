@@ -13,9 +13,9 @@ export const ForceSyncSchema = Type.Object({
   forceSync: Type.Boolean(), // Make intent explicit, just in case.
 });
 
-export type FlattenedRecord = Static<typeof FlattenedRecord>;
+export type FlattenedRecord = Static<typeof FlattenedRecordSchema>;
 
-export const FlattenedRecord = Type.Object({
+export const FlattenedRecordSchema = Type.Object({
   id: Type.Integer(),
   childId: Type.Integer(),
   childName: Type.String(),

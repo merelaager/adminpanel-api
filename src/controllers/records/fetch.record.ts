@@ -1,26 +1,34 @@
-import { FastifyReply, FastifyRequest, RouteGenericInterface } from "fastify";
+import type {
+  FastifyReply,
+  FastifyRequest,
+  RouteGenericInterface,
+} from "fastify";
 import { StatusCodes } from "http-status-codes";
+import { Type } from "@sinclair/typebox";
 
-import { Prisma } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import prisma from "../../utils/prisma";
 import { getAgeAtDate } from "../../utils/age";
+import { createFailResponse, createSuccessResponse } from "../../utils/jsend";
 
-import type { JSendResponse } from "../../types/jsend";
-import type {
+import {
   FetchRecordsQueryString,
   FlattenedRecord,
+  FlattenedRecordSchema,
   ForceSyncBody,
 } from "../../schemas/record";
+import { RequestPermissionsFail } from "../../schemas/responses";
+import type { JSendResponse } from "../../schemas/jsend";
 
 interface IForceSyncHandler extends RouteGenericInterface {
   Body: ForceSyncBody;
-  Reply: JSendResponse;
+  Reply: void;
 }
 
 export const forceSyncRecordsHandler = async (
   req: FastifyRequest<IForceSyncHandler>,
   res: FastifyReply<IForceSyncHandler>,
-) => {
+): Promise<never> => {
   const { shiftNr, forceSync } = req.body;
 
   if (!forceSync) return res.status(StatusCodes.NOT_MODIFIED).send();
@@ -103,15 +111,19 @@ export const forceSyncRecordsHandler = async (
   return res.status(StatusCodes.NO_CONTENT).send();
 };
 
+export const FetchRecordsData = Type.Object({
+  records: Type.Array(FlattenedRecordSchema),
+});
+
 interface IFetchRecordsHandler extends RouteGenericInterface {
   Querystring: FetchRecordsQueryString;
-  Reply: JSendResponse;
+  Reply: JSendResponse<typeof FetchRecordsData, typeof RequestPermissionsFail>;
 }
 
 export const fetchRecordsHandler = async (
   req: FastifyRequest<IFetchRecordsHandler>,
   res: FastifyReply<IFetchRecordsHandler>,
-) => {
+): Promise<never> => {
   const { shiftNr } = req.query;
   const { userId } = req.session.user;
 
@@ -126,10 +138,9 @@ export const fetchRecordsHandler = async (
     console.log(
       `User '${userId}' does not have any permissions for shift '${shiftNr}'`,
     );
-    return res.status(StatusCodes.FORBIDDEN).send({
-      status: "fail",
-      data: { permissions: "Ligipääsuõigused puuduvad" },
-    });
+    return res
+      .status(StatusCodes.FORBIDDEN)
+      .send(createFailResponse({ permissions: "Ligipääsuõigused puuduvad" }));
   }
 
   const records = await prisma.record.findMany({
@@ -159,10 +170,9 @@ export const fetchRecordsHandler = async (
     });
   });
 
-  return res.status(StatusCodes.OK).send({
-    status: "success",
-    data: {
+  return res.status(StatusCodes.OK).send(
+    createSuccessResponse({
       records: flattenedRecords,
-    },
-  });
+    }),
+  );
 };

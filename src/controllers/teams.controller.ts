@@ -4,19 +4,26 @@ import type {
   RouteGenericInterface,
 } from "fastify";
 import { StatusCodes } from "http-status-codes";
+import { Type } from "@sinclair/typebox";
 
 import prisma from "../utils/prisma";
+import { createFailResponse, createSuccessResponse } from "../utils/jsend";
 
-import type { JSendResponse } from "../types/jsend";
-import type {
+import {
   FetchTeamsQueryString,
   TeamCreationBody,
   TeamRecord,
+  TeamRecordSchema,
 } from "../schemas/team";
+import type { JSendFail, JSendResponse } from "../schemas/jsend";
+
+export const FetchTeamsData = Type.Object({
+  teams: Type.Array(TeamRecordSchema),
+});
 
 interface IFetchTeamsHandler extends RouteGenericInterface {
   Querystring: FetchTeamsQueryString;
-  Reply: JSendResponse;
+  Reply: JSendResponse<typeof FetchTeamsData>;
 }
 
 export const fetchTeamsHandler = async (
@@ -37,15 +44,16 @@ export const fetchTeamsHandler = async (
     },
   });
 
-  return res.status(StatusCodes.OK).send({
-    status: "success",
-    data: { teams },
-  });
+  return res.status(StatusCodes.OK).send(createSuccessResponse({ teams }));
 };
+
+export const TeamCreationFailData = Type.Object({
+  name: Type.String(),
+});
 
 interface ITeamCreationHandler extends RouteGenericInterface {
   Body: TeamCreationBody;
-  Reply: JSendResponse | void;
+  Reply: JSendFail<typeof TeamCreationFailData>;
 }
 
 export const teamCreationHandler = async (
@@ -56,12 +64,11 @@ export const teamCreationHandler = async (
   const year = new Date().getUTCFullYear();
 
   if (name.length < 1) {
-    return res.status(StatusCodes.UNPROCESSABLE_ENTITY).send({
-      status: "fail",
-      data: {
+    return res.status(StatusCodes.UNPROCESSABLE_ENTITY).send(
+      createFailResponse({
         name: "Meeskonna nimi ei tohi olla tühi",
-      },
-    });
+      }),
+    );
   }
 
   await prisma.team.create({

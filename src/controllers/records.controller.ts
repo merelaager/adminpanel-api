@@ -1,12 +1,19 @@
-import { FastifyReply, FastifyRequest, RouteGenericInterface } from "fastify";
+import type {
+  FastifyReply,
+  FastifyRequest,
+  RouteGenericInterface,
+} from "fastify";
 import { StatusCodes } from "http-status-codes";
+import { Type } from "@sinclair/typebox";
 
 import prisma from "../utils/prisma";
 import { isShiftMember } from "../utils/permissions";
-
-import type { JSendResponse } from "../types/jsend";
-import type { PatchRecordBody, RecordParams } from "../schemas/record";
 import { getChildAgeAtShiftStart } from "../utils/age";
+
+import type { PatchRecordBody, RecordParams } from "../schemas/record";
+import { RequestPermissionsFail } from "../schemas/responses";
+import type { JSendFail } from "../schemas/jsend";
+import { createFailResponse } from "../utils/jsend";
 
 type RecordCreateData = {
   childId: number;
@@ -42,10 +49,26 @@ export const toggleRecord = async (
   });
 };
 
+export const PatchRecordFailDataNF = Type.Object({
+  recordId: Type.String(),
+});
+
+export const PatchRecordFailDataUE = Type.Union([
+  Type.Object({ tentNr: Type.String() }),
+  Type.Object({ teamId: Type.String() }),
+]);
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const PatchRecordFailData = Type.Union([
+  PatchRecordFailDataNF,
+  PatchRecordFailDataUE,
+  RequestPermissionsFail,
+]);
+
 interface IPatchRecord extends RouteGenericInterface {
   Params: RecordParams;
   Body: PatchRecordBody;
-  Reply: JSendResponse;
+  Reply: JSendFail<typeof PatchRecordFailData>;
 }
 
 export const patchRecordHandler = async (
@@ -61,27 +84,28 @@ export const patchRecordHandler = async (
   });
 
   if (record === null) {
-    return res.status(StatusCodes.NOT_FOUND).send({
-      status: "fail",
-      data: { recordId: `Kirjet ei leitud. (id: ${recordId})` },
-    });
+    return res
+      .status(StatusCodes.NOT_FOUND)
+      .send(
+        createFailResponse({ recordId: `Kirjet ei leitud. (id: ${recordId})` }),
+      );
   }
 
   const isAuthorised = await isShiftMember(userId, record.shiftNr);
   if (!isAuthorised) {
-    return res.status(StatusCodes.FORBIDDEN).send({
-      status: "fail",
-      data: { permissions: "Puuduvad õigused päringuks." },
-    });
+    return res
+      .status(StatusCodes.FORBIDDEN)
+      .send(createFailResponse({ permissions: "Puuduvad õigused päringuks." }));
   }
 
   const tentNr = req.body.tentNr;
   if (tentNr !== undefined && tentNr !== null) {
     if (tentNr < 1 || tentNr > 10) {
-      return res.status(StatusCodes.UNPROCESSABLE_ENTITY).send({
-        status: "fail",
-        data: { tentNr: `Telk peab olema vahemikus 1–10. (oli: ${tentNr})` },
-      });
+      return res.status(StatusCodes.UNPROCESSABLE_ENTITY).send(
+        createFailResponse({
+          tentNr: `Telk peab olema vahemikus 1–10. (oli: ${tentNr})`,
+        }),
+      );
     }
   }
 
@@ -97,12 +121,11 @@ export const patchRecordHandler = async (
       select: { id: true },
     });
     if (team === null) {
-      return res.status(StatusCodes.UNPROCESSABLE_ENTITY).send({
-        status: "fail",
-        data: {
+      return res.status(StatusCodes.UNPROCESSABLE_ENTITY).send(
+        createFailResponse({
           teamId: `Meeskonda ei leitud või see ei kuulu vahetusse. (id: ${teamId})`,
-        },
-      });
+        }),
+      );
     }
   }
 

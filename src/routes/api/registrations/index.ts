@@ -7,6 +7,7 @@ import { StatusCodes } from "http-status-codes";
 
 import {
   patchRegistrationData,
+  registrationsCampersSyncHandler,
   registrationsFetchHandler,
 } from "../../../controllers/registration/registrations.controller";
 import { createRegistrationFromParentData } from "../../../controllers/registration/create.registration";
@@ -46,6 +47,8 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
     },
     registrationsFetchHandler,
   );
+
+  fastify.post("/sync", registrationsCampersSyncHandler);
 
   const postSchema = <RouteShorthandOptions>{
     schema: {

@@ -1,9 +1,15 @@
-import { FastifyReply, FastifyRequest, RouteGenericInterface } from "fastify";
+import type {
+  FastifyReply,
+  FastifyRequest,
+  RouteGenericInterface,
+} from "fastify";
 import { StatusCodes } from "http-status-codes";
 import type { PrismaClient, Registration } from "@prisma/client";
 
 import prisma from "../../utils/prisma";
 import { getAgeAtDate } from "../../utils/age";
+import { isSuperRoot } from "../../utils/permissions";
+import { computeIdCodeHash } from "../../utils/data-protection";
 
 import { toggleRecord } from "../records.controller";
 
@@ -260,4 +266,33 @@ export const patchRegistrationData = async (
   }
 
   return true;
+};
+
+interface IRegistrationsCampersSyncHandler extends RouteGenericInterface {
+  Response: void;
+}
+
+export const registrationsCampersSyncHandler = async (
+  req: FastifyRequest<IRegistrationsCampersSyncHandler>,
+  res: FastifyReply<IRegistrationsCampersSyncHandler>,
+): Promise<never> => {
+  const { userId } = req.session.user;
+  if (!(await isSuperRoot(userId)))
+    return res.status(StatusCodes.FORBIDDEN).send();
+
+  const registrations = await prisma.registration.findMany();
+
+  for (const registration of registrations) {
+    if (registration.idCode === null) continue;
+
+    await prisma.child.update({
+      where: { id: registration.childId },
+      data: {
+        idCodeHash: computeIdCodeHash(registration.idCode),
+        birthYear: registration.birthday.getUTCFullYear(),
+      },
+    });
+  }
+
+  return res.status(StatusCodes.NO_CONTENT).send();
 };

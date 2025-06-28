@@ -13,6 +13,8 @@ model Child {
   sex           Sex
   yearsAtCamp   Int?           @db.UnsignedInt
   notes         String?        @db.Text
+  birthYear     Int?           @db.UnsignedInt
+  idCodeHash    String?        @unique @db.VarChar(255)
   createdAt     DateTime       @default(now()) @db.DateTime(0)
   updatedAt     DateTime       @updatedAt @db.DateTime(0)
   oldRecords    OldRecord[]

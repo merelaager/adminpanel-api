@@ -25,6 +25,14 @@ export const isUserBoss = async (userId: number) => {
   return userRootInstance !== null;
 };
 
+export const isSuperRoot = async (userId: number) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId, role: "root" },
+    select: { id: true },
+  });
+  return user !== null;
+};
+
 export const isShiftBoss = async (userId: number, shiftNr: number) => {
   const userShiftBossInstances = await prisma.userRoles.findMany({
     where: {

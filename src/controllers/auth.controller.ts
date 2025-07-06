@@ -6,7 +6,7 @@ import prisma from "../utils/prisma";
 import type { User } from "@prisma/client";
 
 import type { JSendResponse } from "../types/jsend";
-import type { LoginBody } from "../schemas/auth";
+import type { ChangePasswordBody, LoginBody } from "../schemas/auth";
 import type { UserInfo } from "../schemas/user";
 
 interface IUserInfoHandler extends RouteGenericInterface {
@@ -62,6 +62,31 @@ export const loginHandler = async (
     status: "success",
     data: await formatUserInfo(user),
   });
+};
+
+interface ISetPasswordHandler extends RouteGenericInterface {
+  Body: ChangePasswordBody;
+  Reply: JSendResponse;
+}
+
+export const setPasswordHandler = async (
+  req: FastifyRequest<ISetPasswordHandler>,
+  res: FastifyReply<ISetPasswordHandler>,
+) => {
+  const { userId } = req.session.user;
+  const { password } = req.body;
+
+  const saltRounds = 10;
+  const passwordHash = await bcrypt.hash(password, saltRounds);
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      password: passwordHash,
+    },
+  });
+
+  return res.status(StatusCodes.NO_CONTENT).send();
 };
 
 const formatUserInfo = async (user: User): Promise<UserInfo> => {

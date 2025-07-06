@@ -6,11 +6,12 @@ import { StatusCodes } from "http-status-codes";
 
 import {
   loginHandler,
+  setPasswordHandler,
   userInfoHandler,
 } from "../../../controllers/auth.controller";
 import { signupUserHandler } from "../../../controllers/users.controller";
 
-import { CredentialsSchema } from "../../../schemas/auth";
+import { CredentialsSchema, PasswordSchema } from "../../../schemas/auth";
 import { SignupSchema, UserInfoSchema } from "../../../schemas/user";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
@@ -69,6 +70,15 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       },
     },
     signupUserHandler,
+  );
+  fastify.post(
+    "/password",
+    {
+      schema: {
+        body: PasswordSchema,
+      },
+    },
+    setPasswordHandler,
   );
   fastify.post(
     "/logout",

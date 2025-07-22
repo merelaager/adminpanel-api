@@ -49,7 +49,7 @@ export const fetchTentHandler = async (
 
   const tentScores = await prisma.tentScore.findMany({
     where: { shiftNr, year: currentYear, tentNr },
-    select: { score: true, createdAt: true, tentNr: true },
+    select: { score: true, createdAt: true, tentNr: true, id: true },
     orderBy: { createdAt: "asc" },
   });
 
@@ -57,7 +57,11 @@ export const fetchTentHandler = async (
     createSuccessResponse({
       campers: childrenInTent,
       scores: tentScores.map((score) => {
-        return { ...score, createdAt: score.createdAt.toISOString() };
+        return {
+          ...score,
+          scoreId: score.id,
+          createdAt: score.createdAt.toISOString(),
+        };
       }),
     }),
   );
@@ -90,14 +94,18 @@ export const fetchTentsHandler = async (
 
   const tentScores = await prisma.tentScore.findMany({
     where: { shiftNr, year: currentYear },
-    select: { score: true, createdAt: true, tentNr: true },
+    select: { score: true, createdAt: true, tentNr: true, id: true },
     orderBy: { createdAt: "asc" },
   });
 
   return res.status(StatusCodes.OK).send(
     createSuccessResponse({
       scores: tentScores.map((score) => {
-        return { ...score, createdAt: score.createdAt.toISOString() };
+        return {
+          ...score,
+          scoreId: score.id,
+          createdAt: score.createdAt.toISOString(),
+        };
       }),
     }),
   );
@@ -132,12 +140,13 @@ export const addGradeHandler = async (
       year: currentYear,
       score: score,
     },
-    select: { score: true, createdAt: true, tentNr: true },
+    select: { score: true, createdAt: true, tentNr: true, id: true },
   });
 
   return res.status(StatusCodes.OK).send(
     createSuccessResponse({
       ...result,
+      scoreId: result.score,
       createdAt: result.createdAt.toISOString(),
     }),
   );

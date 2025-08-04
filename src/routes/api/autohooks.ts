@@ -11,6 +11,10 @@ export default async function (fastify: FastifyInstance) {
       return;
     }
 
+    if (request.url.startsWith("/api/account/password")) {
+      return;
+    }
+
     // TODO: put registration creation behind authentication.
     if (request.url === "/api/registrations" && request.method === "POST") {
       return;

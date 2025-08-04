@@ -54,6 +54,21 @@ class MailService {
     });
   }
 
+  async sendPasswordResetToken(email: string, token: string) {
+    const link = `https://sild.merelaager.ee/password-reset?token=${token}`;
+    return this.transporter.sendMail({
+      from: {
+        name: "Merelaager — süsteem",
+        address: "no-reply@info.merelaager.ee",
+      },
+      to: email,
+      subject: "e-Kambüüsi salasõna lähtestamine",
+      text:
+        `Sisesta uus salasõna aadressil ${link}\n` + "Link toimib 24 tundi.",
+      html: `<p>Salasõna lähtestamise link: <a href="${link}">${link}</a><br />Link toimib 24 tundi.</p>`,
+    });
+  }
+
   async sendSignupToken(email: string, token: string, name: string) {
     const safeEmail = encodeURIComponent(email);
     const safeName = encodeURIComponent(name);

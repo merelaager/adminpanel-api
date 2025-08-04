@@ -76,3 +76,15 @@ export const SignupSchema = Type.Object({
 });
 
 export type SignupBody = Static<typeof SignupSchema>;
+
+export const ResetPasswordSchema = Type.Union([
+  Type.Object({
+    email: Type.String(),
+  }),
+  Type.Object({
+    token: Type.String(),
+    password: Type.String(),
+  }),
+]);
+
+export type RequestPasswordResetBody = Static<typeof ResetPasswordSchema>;

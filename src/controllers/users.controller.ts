@@ -12,6 +12,7 @@ import MailService from "../services/mailService";
 import {
   type CreateInviteBody,
   type PatchUserBody,
+  RequestPasswordResetBody,
   type SignupBody,
   UserCreateSchema,
   type UserParams,
@@ -208,6 +209,70 @@ export const inviteUserHandler = async (
       message: "Ootamatu viga arve saatmise.",
     });
   }
+
+  return res.status(StatusCodes.NO_CONTENT).send();
+};
+
+interface IRequestPasswordResetHandler extends RouteGenericInterface {
+  Body: RequestPasswordResetBody;
+  Reply: null;
+}
+
+export const resetPasswordHandler = async (
+  req: FastifyRequest<IRequestPasswordResetHandler>,
+  res: FastifyReply<IRequestPasswordResetHandler>,
+) => {
+  if ("email" in req.body) {
+    const email = req.body.email;
+    const userData = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true },
+    });
+
+    if (userData === null) {
+      return res.status(StatusCodes.ACCEPTED).send();
+    }
+
+    const token = uuidv4();
+    await prisma.resetToken.create({
+      data: { token, userId: userData.id },
+    });
+
+    const mailService = new MailService(req.server.mailer);
+    try {
+      await mailService.sendPasswordResetToken(email, token);
+    } catch (err) {
+      console.error("Email was", email);
+      console.error(err);
+    }
+
+    return res.status(StatusCodes.ACCEPTED).send();
+  }
+
+  const { token, password } = req.body;
+  const tokenEntry = await prisma.resetToken.findUnique({
+    where: { token },
+  });
+  if (!tokenEntry) {
+    return res.status(StatusCodes.FORBIDDEN).send();
+  }
+
+  const isOlderThan24h =
+    Date.now() - new Date(tokenEntry.createdAt).getTime() > 24 * 60 * 60 * 1000;
+  if (isOlderThan24h) {
+    await prisma.resetToken.delete({ where: { token } });
+    return res.status(StatusCodes.FORBIDDEN).send();
+  }
+
+  const saltRounds = 10;
+  const passwordHash = await bcrypt.hash(password, saltRounds);
+
+  await prisma.user.update({
+    where: { id: tokenEntry.userId },
+    data: { password: passwordHash },
+  });
+
+  await prisma.resetToken.delete({ where: { token } });
 
   return res.status(StatusCodes.NO_CONTENT).send();
 };

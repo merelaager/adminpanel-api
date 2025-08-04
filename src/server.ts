@@ -14,7 +14,7 @@ const fastify = Fastify({
   },
 });
 
-const CORS_METHODS = ["GET", "HEAD", "POST", "PATCH", "DELETE"];
+const CORS_METHODS = ["GET", "HEAD", "POST", "PATCH", "DELETE", "PUT"];
 
 const allowedStaticOrigins = [
   "https://dev.merelaager.ee",

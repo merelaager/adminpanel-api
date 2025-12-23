@@ -33,7 +33,7 @@ const mailerPlugin: FastifyPluginAsync = fp(async (server) => {
     await transporter.verify();
     server.log.info("Nodemailer transporter is ready");
   } catch (err) {
-    server.log.error("Failed to configure Nodemailer transporter", err);
+    server.log.error(err, "Failed to configure Nodemailer transporter");
     throw err;
   }
 });

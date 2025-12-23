@@ -11,12 +11,7 @@ import { type Child, Prisma } from "@prisma/client";
 import MailService from "../../services/mailService";
 
 import prisma from "../../utils/prisma";
-import { computeIdCodeHash } from "../../utils/data-protection";
-import {
-  createErrorResponse,
-  createFailResponse,
-  createSuccessResponse,
-} from "../../utils/jsend";
+import { createErrorResponse, createFailResponse } from "../../utils/jsend";
 
 import {
   CreateRegistrationsBody,
@@ -64,7 +59,7 @@ const parseIdCode = (code: string): IDCodeParseResult => {
 
 const computePrice = (shiftNr: number, isOld: boolean) => {
   // TODO: fetch price dynamically.
-  const shiftPrices = [290, 350, 350, 350];
+  const shiftPrices = [290, 360, 360, 360];
   const seniorityDiscounts = [10, 20, 20, 20];
 
   // This should never happen.
@@ -114,7 +109,7 @@ export const formRegistrationHandler = async (
   }
 
   // Keep track of the relative order of registrations.
-  // Order numbers are wasted if the registration fails (e.g. the request is malformed)
+  // Order numbers are wasted if the registration fails (e.g. the request is malformed),
   // but this is not a problem for the current use case, and it avoids looping twice.
   const currentOrder = regorder.getOrder();
 
@@ -155,15 +150,15 @@ export const formRegistrationHandler = async (
 
     const childName = entry.name.trim().replace(/\s+/g, " ");
     const birthYear = new Date(dob).getFullYear();
-    const idCodeHash = entry.idCode ? computeIdCodeHash(entry.idCode) : null;
+    const idCode = entry.idCode ? entry.idCode : null;
 
     let childInstance: Child | null = null;
 
     // As a first resort, try to use the ID code to check whether the child
     // is already known in the camp database.
-    if (idCodeHash !== null) {
+    if (idCode !== null) {
       childInstance = await prisma.child.findUnique({
-        where: { idCodeHash },
+        where: { idCode },
       });
 
       if (childInstance !== null) {
@@ -216,11 +211,13 @@ export const formRegistrationHandler = async (
       }
     }
 
+    const knownChild = childInstance !== null;
+
     // Finally, if no child instance was found,
-    // assume that the child is not known, and create a new entry.
+    // assume that the child is not known and create a new entry.
     if (childInstance === null) {
       childInstance = await prisma.child.create({
-        data: { name: childName, sex, birthYear, idCodeHash },
+        data: { name: childName, sex, birthYear, idCode },
       });
     }
 
@@ -231,7 +228,7 @@ export const formRegistrationHandler = async (
     // Here we know that the priceToPay must exist, as we compute it.
     let priceToPay = computePrice(entry.shiftNr, isOld);
     if (priceToPay < 0) {
-      priceToPay = 350;
+      priceToPay = 360;
       console.error(entry, "Invalid shift identifier");
     }
 
@@ -255,7 +252,34 @@ export const formRegistrationHandler = async (
       priceToPay: priceToPay,
     };
 
-    registrationEntries.push(registrationEntry);
+    // Do not double-include the child in the list for that shift.
+    // However, we must not leak whether the child is already in the list.
+    if (knownChild) {
+      const existingRegistration = await prisma.registration.findFirst({
+        where: {
+          childId: childInstance.id,
+          shiftNr: entry.shiftNr,
+        },
+      });
+      if (existingRegistration === null) {
+        registrationEntries.push(registrationEntry);
+      } else {
+        console.warn(
+          "Child:",
+          childInstance.name,
+          `(childId: ${childInstance.id})`,
+          "for shift",
+          registrationEntry.shiftNr,
+          "re-registered by",
+          registrationEntry.contactEmail,
+          registrationEntry.contactName,
+          registrationEntry.contactNumber,
+        );
+      }
+    } else {
+      registrationEntries.push(registrationEntry);
+    }
+
     camperBasicInfo.push({
       name: entry.name,
       shiftNr: entry.shiftNr,
@@ -264,9 +288,8 @@ export const formRegistrationHandler = async (
     registrationEmailChoices.push(entry.sendEmail ?? false);
   }
 
-  let createMany: Prisma.BatchPayload;
   try {
-    createMany = await prisma.registration.createMany({
+    await prisma.registration.createMany({
       data: registrationEntries,
     });
   } catch (err) {
@@ -284,9 +307,7 @@ export const formRegistrationHandler = async (
     );
   }
 
-  return res
-    .status(StatusCodes.CREATED)
-    .send(createSuccessResponse(createMany));
+  return res.status(StatusCodes.CREATED).send();
 };
 
 const sendRegistrationEmails = async (

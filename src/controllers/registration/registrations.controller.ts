@@ -9,7 +9,6 @@ import type { PrismaClient, Registration } from "@prisma/client";
 import prisma from "../../utils/prisma";
 import { getAgeAtDate } from "../../utils/age";
 import { isSuperRoot } from "../../utils/permissions";
-import { computeIdCodeHash } from "../../utils/data-protection";
 
 import { toggleRecord } from "../records.controller";
 
@@ -288,7 +287,7 @@ export const registrationsCampersSyncHandler = async (
     await prisma.child.update({
       where: { id: registration.childId },
       data: {
-        idCodeHash: computeIdCodeHash(registration.idCode),
+        idCode: registration.idCode,
         birthYear: registration.birthday.getUTCFullYear(),
       },
     });

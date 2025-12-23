@@ -89,4 +89,5 @@ export type EmailReceiptInfo = {
   name: string;
   shiftNr: number;
   contactEmail: string;
+  registrationId: string;
 };

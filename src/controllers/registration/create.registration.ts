@@ -3,6 +3,7 @@ import type {
   FastifyRequest,
   RouteGenericInterface,
 } from "fastify";
+import { v4 as uuidv4 } from "uuid";
 import type { Transporter } from "nodemailer";
 import { StatusCodes } from "http-status-codes";
 import { Type } from "@sinclair/typebox";
@@ -11,7 +12,11 @@ import { type Child, Prisma } from "@prisma/client";
 import MailService from "../../services/mailService";
 
 import prisma from "../../utils/prisma";
-import { createErrorResponse, createFailResponse } from "../../utils/jsend";
+import {
+  createErrorResponse,
+  createFailResponse,
+  createSuccessResponse,
+} from "../../utils/jsend";
 
 import {
   CreateRegistrationsBody,
@@ -74,7 +79,7 @@ const computePrice = (shiftNr: number, isOld: boolean) => {
 };
 
 export const FormRegistrationData = Type.Object({
-  count: Type.Integer(),
+  registrationId: Type.String(),
 });
 
 export const FormRegistrationFailData = Type.Record(
@@ -98,6 +103,8 @@ export const formRegistrationHandler = async (
 ): Promise<never> => {
   const { mailer, regorder } = req.server;
   const registrations = req.body;
+
+  const registrationId = uuidv4();
 
   const maxEntries = 4;
   if (registrations.length > maxEntries) {
@@ -234,6 +241,7 @@ export const formRegistrationHandler = async (
 
     const registrationEntry: Prisma.RegistrationCreateManyInput = {
       regOrder: currentOrder,
+      regId: registrationId,
       childId: childInstance.id,
       idCode: entry.idCode || null,
       shiftNr: entry.shiftNr,
@@ -252,7 +260,7 @@ export const formRegistrationHandler = async (
       priceToPay: priceToPay,
     };
 
-    // Do not double-include the child in the list for that shift.
+    // Do not double include the child in the list for that shift.
     // However, we must not leak whether the child is already in the list.
     if (knownChild) {
       const existingRegistration = await prisma.registration.findFirst({
@@ -261,29 +269,17 @@ export const formRegistrationHandler = async (
           shiftNr: entry.shiftNr,
         },
       });
-      if (existingRegistration === null) {
-        registrationEntries.push(registrationEntry);
-      } else {
-        console.warn(
-          "Child:",
-          childInstance.name,
-          `(childId: ${childInstance.id})`,
-          "for shift",
-          registrationEntry.shiftNr,
-          "re-registered by",
-          registrationEntry.contactEmail,
-          registrationEntry.contactName,
-          registrationEntry.contactNumber,
-        );
+      if (existingRegistration !== null) {
+        registrationEntry.visible = false;
       }
-    } else {
-      registrationEntries.push(registrationEntry);
     }
 
+    registrationEntries.push(registrationEntry);
     camperBasicInfo.push({
       name: entry.name,
       shiftNr: entry.shiftNr,
       contactEmail: entry.contactEmail,
+      registrationId: registrationId,
     });
     registrationEmailChoices.push(entry.sendEmail ?? false);
   }
@@ -307,7 +303,9 @@ export const formRegistrationHandler = async (
     );
   }
 
-  return res.status(StatusCodes.CREATED).send();
+  return res
+    .status(StatusCodes.CREATED)
+    .send(createSuccessResponse({ registrationId }));
 };
 
 const sendRegistrationEmails = async (

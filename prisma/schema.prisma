@@ -15,7 +15,6 @@ model Child {
   notes         String?        @db.Text
   birthYear     Int?           @db.UnsignedInt
   idCode        String?        @unique @db.VarChar(11)
-  idCodeHash    String?        @unique @db.VarChar(255)
   createdAt     DateTime       @default(now()) @db.DateTime(0)
   updatedAt     DateTime       @updatedAt @db.DateTime(0)
   oldRecords    OldRecord[]
@@ -102,6 +101,7 @@ model Registration {
   idCode        String?   @db.VarChar(255)
   shiftNr       Int       @db.UnsignedInt
   isRegistered  Boolean   @default(false)
+  regId         String    @db.VarChar(255)
   regOrder      Int       @db.UnsignedInt
   isOld         Boolean   @default(true)
   birthday      DateTime  @db.Date
@@ -120,6 +120,7 @@ model Registration {
   createdAt     DateTime  @default(now()) @db.DateTime(0)
   updatedAt     DateTime  @updatedAt @db.DateTime(0)
   notifSent     Boolean   @default(false)
+  visible       Boolean   @default(true) // Displayed in the web UI.
   billId        Int?      @db.UnsignedInt
   child         Child     @relation(fields: [childId], references: [id], onDelete: NoAction)
   shift         ShiftInfo @relation(fields: [shiftNr], references: [id], onDelete: NoAction)

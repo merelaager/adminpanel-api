@@ -39,7 +39,6 @@ export const getRegistrationReceipt = async (campers: EmailReceiptInfo[]) => {
     <p>Oleme ${plural ? "lapsed" : "lapse"}</p>
     ${getFormattedChildList(campers)}
     <p>registreerinud reservnimekirja. Kui juhataja koha kinnitab või põhinimekirjas koht vabaneb, võtame Teiega esimesel võimalusel ühendust.</p>
-    ${getTrackingLinkList(campers)}
     <p>Parimate soovidega</p>
     <p>${await getFormattedStaffContacts(shifts)}</p>
     ${getEmailRegistrationBodyPost()}`;
@@ -72,24 +71,24 @@ export const getConfirmationReceipt = async (
     ${getEmailRegistrationBodyPost()}`;
 };
 
-const getTrackingLinkList = (campers: EmailReceiptInfo[]) => {
-  const ids = Array.from(
-    new Set(campers.map((camper) => camper.registrationId)),
-  );
-
-  if (ids.length === 1) {
-    return `Registreerimise olekut saate jälgida <a href="https://merelaager.ee/registreermine/${ids[0]}">siin</a>.`;
-  }
-
-  let response =
-    "<p>Registreerimise olekuid saate jälgida järgnevatel linkidel:</p><ul>";
-  ids.forEach((id) => {
-    response += `<li><a href="https://merelaager.ee/registreermine/${id}">https://merelaager.ee/registreermine/${id}</a>`;
-  });
-  response += "</ul>";
-
-  return response;
-};
+// const getTrackingLinkList = (campers: EmailReceiptInfo[]) => {
+//   const ids = Array.from(
+//     new Set(campers.map((camper) => camper.registrationId)),
+//   );
+//
+//   if (ids.length === 1) {
+//     return `Registreerimise olekut saate jälgida <a href="https://merelaager.ee/registreermine/${ids[0]}">siin</a>.`;
+//   }
+//
+//   let response =
+//     "<p>Registreerimise olekuid saate jälgida järgnevatel linkidel:</p><ul>";
+//   ids.forEach((id) => {
+//     response += `<li><a href="https://merelaager.ee/registreermine/${id}">https://merelaager.ee/registreermine/${id}</a>`;
+//   });
+//   response += "</ul>";
+//
+//   return response;
+// };
 
 const getFormattedChildList = (campers: EmailReceiptInfo[]) => {
   let response = "<ul>";

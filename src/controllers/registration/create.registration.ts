@@ -64,7 +64,7 @@ const parseIdCode = (code: string): IDCodeParseResult => {
 
 const computePrice = (shiftNr: number, isOld: boolean) => {
   // TODO: fetch price dynamically.
-  const shiftPrices = [290, 360, 360, 360];
+  const shiftPrices = [250, 360, 360, 360];
   const seniorityDiscounts = [10, 20, 20, 20];
 
   // This should never happen.

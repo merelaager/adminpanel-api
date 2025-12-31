@@ -121,7 +121,7 @@ export const registrationsFetchHandler = async (
     shiftViewPermissions.has("registration.view.contact");
 
   const rawRegistrations = await prisma.registration.findMany({
-    where: { shiftNr },
+    where: { shiftNr, visible: true },
     select: {
       id: true,
       childId: true,

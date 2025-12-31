@@ -187,24 +187,24 @@ export const generateBillPdf = async (
 
   const counters = {
     childShortOld: {
-      txt: "10päevane vahetus vanale olijale",
+      txt: "7päevane vahetus vanale olijale",
       count: 0,
-      price: 180,
+      price: 140,
     },
     childShortNew: {
-      txt: "10päevane vahetus uuele tulijale",
+      txt: "7päevane vahetus uuele tulijale",
       count: 0,
-      price: 190,
+      price: 150,
     },
     childOld: {
       txt: "12päevane vahetus vanale olijale",
       count: 0,
-      price: 230,
+      price: 240,
     },
     childNew: {
       txt: "12päevane vahetus uuele tulijale",
       count: 0,
-      price: 250,
+      price: 260,
     },
     booking: {
       txt: "Broneerimistasu",

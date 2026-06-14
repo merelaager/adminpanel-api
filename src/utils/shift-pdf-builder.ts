@@ -1,11 +1,21 @@
-import fs, { WriteStream } from "fs";
-import type {
-  BufferOptions,
-  TDocumentDefinitions,
-  TFontDictionary,
-} from "pdfmake/interfaces";
-import PdfPrinter from "pdfmake";
-import PDFDocument = PDFKit.PDFDocument;
+import type { TDocumentDefinitions, TFontDictionary } from "pdfmake/interfaces";
+import pdfMake from "pdfmake";
+
+const fonts: TFontDictionary = {
+  Helvetica: {
+    normal: "Helvetica",
+    bold: "Helvetica-Bold",
+    italics: "Helvetica-Oblique",
+    bolditalics: "Helvetica-BoldOblique",
+  },
+};
+
+pdfMake.setFonts(fonts);
+
+// Silence pdfmake's access policy warnings.
+// No policies are needed here. Hopefully....
+pdfMake.setUrlAccessPolicy(() => true);
+pdfMake.setLocalAccessPolicy(() => true);
 
 export interface PrintEntry {
   name: string;
@@ -65,37 +75,10 @@ export const generateShiftCamperListPDF = async (
   entries: PrintEntry[],
 ): Promise<string> => {
   const filename = `${shiftNr}v_nimekiri.pdf`;
-  const options: BufferOptions = {};
-  const fonts: TFontDictionary = {
-    Helvetica: {
-      normal: "Helvetica",
-      bold: "Helvetica-Bold",
-      italics: "Helvetica-Oblique",
-      bolditalics: "Helvetica-BoldOblique",
-    },
-  };
-
-  const printer: PdfPrinter = new PdfPrinter(fonts);
   const filepath = `data/files/${filename}`;
 
   try {
-    // PDF document
-    const pdfDoc: PDFDocument = printer.createPdfKitDocument(
-      createDoc(shiftNr, entries),
-      options,
-    );
-
-    // PDF output
-    const writeStream: WriteStream = fs.createWriteStream(filepath);
-
-    // Write the document to file.
-    pdfDoc.pipe(writeStream);
-    pdfDoc.end();
-
-    // Emulate async behaviour in async/await syntax.
-    await new Promise<void>((resolve) => {
-      writeStream.on("finish", () => resolve());
-    });
+    await pdfMake.createPdf(createDoc(shiftNr, entries)).write(filepath);
 
     return filepath;
   } catch (e) {

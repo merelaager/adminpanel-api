@@ -15,6 +15,8 @@ export const getRegistrationReceipt = async (campers: EmailReceiptInfo[]) => {
     if (!shifts.includes(camper.shiftNr)) shifts.push(camper.shiftNr);
   });
 
+  const staffContacts = await getStaffContacts(shifts);
+
   // For grammar: is there more than one kid?
   const plural = campers.length > 1;
 
@@ -33,15 +35,20 @@ export const getRegistrationReceipt = async (campers: EmailReceiptInfo[]) => {
   }
   */
 
-  return `
+  const receiptHtml = `
     ${getEmailRegistrationBodyPre()}
     <p>Tere!</p>
     <p>Oleme ${plural ? "lapsed" : "lapse"}</p>
     ${getFormattedChildList(campers)}
     <p>registreerinud reservnimekirja. Kui juhataja koha kinnitab või põhinimekirjas koht vabaneb, võtame Teiega esimesel võimalusel ühendust.</p>
     <p>Parimate soovidega</p>
-    <p>${await getFormattedStaffContacts(shifts)}</p>
+    <p>${staffContacts.html}</p>
     ${getEmailRegistrationBodyPost()}`;
+
+  return {
+    staffEmails: staffContacts.emails,
+    html: receiptHtml,
+  };
 };
 
 export const getConfirmationReceipt = async (
@@ -57,6 +64,8 @@ export const getConfirmationReceipt = async (
     if (camper.isRegistered) totalPrice += camper.priceToPay;
   });
 
+  const staffContacts = await getStaffContacts(shifts);
+
   return `
     <h3>Registreerimise kinnitus!</h3>
     ${getFormattedRegistrationList(regCampers)}
@@ -67,7 +76,7 @@ export const getConfirmationReceipt = async (
     <p style="font-weight: bold">Kindlasti märkige selgitusse lapse nimi ja vahetus!</p>
     <p>Kui broneerimistasu pole kolme päeva jooksul meile laekunud, tõstame lapse reservnimekirja.</p>
     <p>Parimate soovidega</p>
-    <p>${await getFormattedStaffContacts(shifts)}</p>
+    <p>${staffContacts.html}</p>
     ${getEmailRegistrationBodyPost()}`;
 };
 
@@ -131,7 +140,7 @@ const getFormattedReserveList = (campers: CamperBillingInfo[]) => {
   return response;
 };
 
-const getFormattedStaffContacts = async (shiftNumbers: number[]) => {
+const getStaffContacts = async (shiftNumbers: number[]) => {
   const shifts = await prisma.shiftInfo.findMany({
     where: { id: { in: shiftNumbers } },
     select: {
@@ -149,5 +158,8 @@ const getFormattedStaffContacts = async (shiftNumbers: number[]) => {
     );
   });
 
-  return contactStrings.join(", ");
+  return {
+    emails: shifts.map((value) => value.bossEmail),
+    html: contactStrings.join(", "),
+  };
 };

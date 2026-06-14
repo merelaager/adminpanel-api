@@ -17,14 +17,17 @@ class MailService {
   }
 
   async sendRegistrationReceipt(campers: EmailReceiptInfo[], email: string) {
+    const registrationReceipt = await getRegistrationReceipt(campers);
+
     return this.transporter.sendMail({
       from: {
         name: "Merelaager",
         address: "no-reply@info.merelaager.ee",
       },
       to: email,
+      cc: registrationReceipt.staffEmails,
       subject: "Reservnimekirja kandmise teade",
-      html: await getRegistrationReceipt(campers),
+      html: registrationReceipt.html,
     });
   }
 

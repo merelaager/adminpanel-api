@@ -17,7 +17,7 @@ import type { JSendResponse } from "../../types/jsend";
 
 interface ISendBillHandler extends RouteGenericInterface {
   Body: SingleBillSendBody;
-  Reply: JSendResponse;
+  Reply: JSendResponse | null;
 }
 
 export const sendBillHandler = async (
@@ -110,5 +110,5 @@ export const sendBillHandler = async (
     });
   }
 
-  return res.status(StatusCodes.NO_CONTENT).send();
+  return res.status(StatusCodes.NO_CONTENT).send(null);
 };

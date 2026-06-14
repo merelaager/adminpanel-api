@@ -53,7 +53,7 @@ export const TeamCreationFailData = Type.Object({
 
 interface ITeamCreationHandler extends RouteGenericInterface {
   Body: TeamCreationBody;
-  Reply: JSendFail<typeof TeamCreationFailData>;
+  Reply: JSendFail<typeof TeamCreationFailData> | null;
 }
 
 export const teamCreationHandler = async (
@@ -75,5 +75,5 @@ export const teamCreationHandler = async (
     data: { shiftNr, name, year },
   });
 
-  return res.status(StatusCodes.CREATED).send();
+  return res.status(StatusCodes.CREATED).send(null);
 };

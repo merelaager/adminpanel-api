@@ -10,7 +10,7 @@ import type { ChangePasswordBody, LoginBody } from "../schemas/auth";
 import type { UserInfo } from "../schemas/user";
 
 interface IUserInfoHandler extends RouteGenericInterface {
-  Reply: JSendResponse;
+  Reply: JSendResponse | null;
 }
 
 export const userInfoHandler = async (
@@ -22,7 +22,7 @@ export const userInfoHandler = async (
   const user = await prisma.user.findUnique({ where: { id: userId } });
 
   if (!user) {
-    return res.status(StatusCodes.FORBIDDEN).send();
+    return res.status(StatusCodes.FORBIDDEN).send(null);
   }
 
   return res.status(StatusCodes.OK).send({
@@ -66,7 +66,7 @@ export const loginHandler = async (
 
 interface ISetPasswordHandler extends RouteGenericInterface {
   Body: ChangePasswordBody;
-  Reply: JSendResponse;
+  Reply: JSendResponse | null;
 }
 
 export const setPasswordHandler = async (
@@ -86,7 +86,7 @@ export const setPasswordHandler = async (
     },
   });
 
-  return res.status(StatusCodes.NO_CONTENT).send();
+  return res.status(StatusCodes.NO_CONTENT).send(null);
 };
 
 const formatUserInfo = async (user: User): Promise<UserInfo> => {

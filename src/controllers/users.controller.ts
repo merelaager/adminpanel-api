@@ -108,12 +108,12 @@ export const patchUserHandler = async (
     });
   }
 
-  return res.status(StatusCodes.NO_CONTENT).send();
+  return res.status(StatusCodes.NO_CONTENT).send(null);
 };
 
 interface IInviteUserHandler extends RouteGenericInterface {
   Body: CreateInviteBody;
-  Reply: JSendResponse;
+  Reply: JSendResponse | null;
 }
 
 export const inviteUserHandler = async (
@@ -180,7 +180,7 @@ export const inviteUserHandler = async (
   }
 
   // Do not send an account creation email if the user already exists.
-  if (user) return res.status(StatusCodes.NO_CONTENT).send();
+  if (user) return res.status(StatusCodes.NO_CONTENT).send(null);
 
   const dbRole = await prisma.role.findUnique({
     where: { roleName: permissionRoleMap[desiredRole as PermissionRole] },
@@ -210,7 +210,7 @@ export const inviteUserHandler = async (
     });
   }
 
-  return res.status(StatusCodes.NO_CONTENT).send();
+  return res.status(StatusCodes.NO_CONTENT).send(null);
 };
 
 interface IRequestPasswordResetHandler extends RouteGenericInterface {
@@ -274,12 +274,12 @@ export const resetPasswordHandler = async (
 
   await prisma.resetToken.delete({ where: { token } });
 
-  return res.status(StatusCodes.NO_CONTENT).send();
+  return res.status(StatusCodes.NO_CONTENT).send(null);
 };
 
 interface ISignupUserHandler extends RouteGenericInterface {
   Body: SignupBody;
-  Reply: JSendResponse;
+  Reply: JSendResponse | null;
 }
 
 export const signupUserHandler = async (
@@ -360,5 +360,5 @@ export const signupUserHandler = async (
     });
   }
 
-  return res.status(StatusCodes.CREATED).send();
+  return res.status(StatusCodes.CREATED).send(null);
 };

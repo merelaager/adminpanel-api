@@ -68,7 +68,7 @@ const PatchRecordFailData = Type.Union([
 interface IPatchRecord extends RouteGenericInterface {
   Params: RecordParams;
   Body: PatchRecordBody;
-  Reply: JSendFail<typeof PatchRecordFailData>;
+  Reply: JSendFail<typeof PatchRecordFailData> | null;
 }
 
 export const patchRecordHandler = async (
@@ -134,5 +134,5 @@ export const patchRecordHandler = async (
     data: req.body,
   });
 
-  return res.status(StatusCodes.NO_CONTENT).send();
+  return res.status(StatusCodes.NO_CONTENT).send(null);
 };

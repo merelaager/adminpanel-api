@@ -43,14 +43,14 @@ export const createAndAssignBill = async (
 
   if (isNaN(billNr)) {
     billNr = await createBillDatabaseEntry(contact.name, billTotal);
+  }
 
-    for (const camper of registeredCampers) {
-      if (camper.billId) continue; // No unnecessary updates.
-      await prisma.registration.update({
-        where: { id: camper.id },
-        data: { billId: billNr },
-      });
-    }
+  for (const camper of registeredCampers) {
+    if (camper.billId) continue;
+    await prisma.registration.update({
+      where: { id: camper.id },
+      data: { billId: billNr },
+    });
   }
 
   const campersBillData = registeredCampers.map((reg) => {
@@ -124,7 +124,7 @@ export const createBillHandler = async (
   }
 
   try {
-    await createAndAssignBill(billNr, billTotal, registeredCampers);
+    billNr = await createAndAssignBill(billNr, billTotal, registeredCampers);
   } catch (err) {
     console.error(err);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({

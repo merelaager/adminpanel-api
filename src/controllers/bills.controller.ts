@@ -2,7 +2,7 @@ import fs from "fs";
 import { ReadStream } from "node:fs";
 import { FastifyReply, FastifyRequest, RouteGenericInterface } from "fastify";
 import { StatusCodes } from "http-status-codes";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "../generated/prisma/client";
 
 import prisma from "../utils/prisma";
 import { isUserBoss } from "../utils/permissions";

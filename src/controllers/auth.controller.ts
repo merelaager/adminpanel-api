@@ -3,7 +3,7 @@ import { FastifyReply, FastifyRequest, RouteGenericInterface } from "fastify";
 import { StatusCodes } from "http-status-codes";
 
 import prisma from "../utils/prisma";
-import type { User } from "@prisma/client";
+import type { User } from "../generated/prisma/client";
 
 import type { JSendResponse } from "../types/jsend";
 import type { ChangePasswordBody, LoginBody } from "../schemas/auth";

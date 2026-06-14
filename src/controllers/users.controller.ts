@@ -3,7 +3,7 @@ import { Static } from "@sinclair/typebox";
 import { StatusCodes } from "http-status-codes";
 import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcrypt";
-import { Prisma, type PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "../generated/prisma/client";
 
 import { isShiftBoss, isShiftMember } from "../utils/permissions";
 import prisma from "../utils/prisma";

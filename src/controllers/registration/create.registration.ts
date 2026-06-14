@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from "uuid";
 import type { Transporter } from "nodemailer";
 import { StatusCodes } from "http-status-codes";
 import { Type } from "@sinclair/typebox";
-import { type Child, Prisma } from "@prisma/client";
+import { type Child, Prisma } from "../../generated/prisma/client";
 
 import MailService from "../../services/mailService";
 

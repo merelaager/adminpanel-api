@@ -4,7 +4,7 @@ import type {
   RouteGenericInterface,
 } from "fastify";
 import { StatusCodes } from "http-status-codes";
-import type { PrismaClient, Registration } from "@prisma/client";
+import type { PrismaClient, Registration } from "../../generated/prisma/client";
 
 import prisma from "../../utils/prisma";
 import { getAgeAtDate } from "../../utils/age";

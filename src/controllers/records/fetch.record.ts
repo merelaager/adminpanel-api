@@ -6,7 +6,7 @@ import type {
 import { StatusCodes } from "http-status-codes";
 import { Type } from "@sinclair/typebox";
 
-import type { Prisma } from "@prisma/client";
+import type { Prisma } from "../../generated/prisma/client";
 import prisma from "../../utils/prisma";
 import { getAgeAtDate } from "../../utils/age";
 import { createFailResponse, createSuccessResponse } from "../../utils/jsend";

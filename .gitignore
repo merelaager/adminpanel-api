@@ -23,6 +23,9 @@ yarn-error.log*
 /out-tsc
 dist/
 
+# Prisma
+src/generated
+
 # Yarn
 .pnp.*
 .yarn/*

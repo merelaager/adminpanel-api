@@ -9,6 +9,7 @@ import { Type } from "@sinclair/typebox";
 import type { Prisma } from "../../generated/prisma/client";
 import prisma from "../../utils/prisma";
 import { getAgeAtDate } from "../../utils/age";
+import { isShiftMember } from "../../utils/permissions";
 import { createFailResponse, createSuccessResponse } from "../../utils/jsend";
 
 import {
@@ -120,23 +121,38 @@ interface IFetchRecordsHandler extends RouteGenericInterface {
   Reply: JSendResponse<typeof FetchRecordsData, typeof RequestPermissionsFail>;
 }
 
-export const fetchRecordsHandler = async (
-  req: FastifyRequest<IFetchRecordsHandler>,
-  res: FastifyReply<IFetchRecordsHandler>,
+type FetchRecordsReply = FastifyReply<IFetchRecordsHandler>;
+
+const recordRelations = {
+  child: { select: { name: true } },
+  team: { select: { name: true } },
+} satisfies Prisma.RecordInclude;
+
+type RecordWithRelations = Prisma.RecordGetPayload<{
+  include: typeof recordRelations;
+}>;
+
+const flattenRecord = (record: RecordWithRelations): FlattenedRecord => ({
+  id: record.id,
+  childId: record.childId,
+  childName: record.child.name,
+  teamId: record.teamId,
+  teamName: record.team?.name ?? null,
+  tentNr: record.tentNr,
+  isPresent: record.isPresent,
+  ageAtCamp: record.ageAtCamp,
+  year: record.year,
+  shiftNr: record.shiftNr,
+});
+
+const fetchShiftRecords = async (
+  shiftNr: number,
+  userId: number,
+  res: FetchRecordsReply,
 ): Promise<never> => {
-  const { shiftNr } = req.query;
-  const { userId } = req.session.user;
-
-  // Verify that the user has any kind of permission for that shift.
-  // There is no sensitive data here, so any person registered to the shift
-  // should be able to see the information.
-  const permissions = await prisma.userRoles.findMany({
-    where: { shiftNr, userId },
-  });
-
-  if (permissions.length === 0) {
+  if (!(await isShiftMember(userId, shiftNr))) {
     console.log(
-      `User '${userId}' does not have any permissions for shift '${shiftNr}'`,
+      `User '${userId}' is not authorised to view records for '${shiftNr}'`,
     );
     return res
       .status(StatusCodes.FORBIDDEN)
@@ -144,35 +160,68 @@ export const fetchRecordsHandler = async (
   }
 
   const records = await prisma.record.findMany({
-    where: {
-      shiftNr,
-      year: new Date().getUTCFullYear(),
-      isActive: true,
-    },
-    include: {
-      child: { select: { name: true } },
-      team: { select: { name: true } },
-    },
+    where: { shiftNr, year: new Date().getUTCFullYear(), isActive: true },
+    include: recordRelations,
   });
 
-  const flattenedRecords: FlattenedRecord[] = [];
+  return res
+    .status(StatusCodes.OK)
+    .send(createSuccessResponse({ records: records.map(flattenRecord) }));
+};
 
-  records.forEach((record) => {
-    flattenedRecords.push({
-      id: record.id,
-      childId: record.childId,
-      childName: record.child.name,
-      teamId: record.teamId,
-      teamName: record.team?.name ?? null,
-      tentNr: record.tentNr,
-      isPresent: record.isPresent,
-      ageAtCamp: record.ageAtCamp,
-    });
+const fetchCamperRecords = async (
+  childId: number,
+  userId: number,
+  res: FetchRecordsReply,
+): Promise<never> => {
+  const records = await prisma.record.findMany({
+    where: { childId, isActive: true },
+    include: recordRelations,
+    orderBy: [{ year: "desc" }, { shiftNr: "asc" }],
   });
 
-  return res.status(StatusCodes.OK).send(
-    createSuccessResponse({
-      records: flattenedRecords,
-    }),
-  );
+  // Records are sorted most-recent year first. The history is viewable only if
+  // the camper's latest involvement is the current year, and the viewer is a
+  // member of (one of) the shift(s) the camper is in that year.
+  const currentYear = new Date().getUTCFullYear();
+  const mostRecentYear = records[0]?.year;
+
+  let isAuthorised = false;
+  if (mostRecentYear === currentYear) {
+    const currentShiftNrs = records
+      .filter((record) => record.year === currentYear)
+      .map((record) => record.shiftNr);
+
+    for (const shiftNr of currentShiftNrs) {
+      if (await isShiftMember(userId, shiftNr)) {
+        isAuthorised = true;
+        break;
+      }
+    }
+  }
+
+  if (!isAuthorised) {
+    console.log(
+      `User '${userId}' is not authorised to view historic records for '${childId}'`,
+    );
+    return res
+      .status(StatusCodes.FORBIDDEN)
+      .send(createFailResponse({ permissions: "Ligipääsuõigused puuduvad" }));
+  }
+
+  return res
+    .status(StatusCodes.OK)
+    .send(createSuccessResponse({ records: records.map(flattenRecord) }));
+};
+
+export const fetchRecordsHandler = async (
+  req: FastifyRequest<IFetchRecordsHandler>,
+  res: FastifyReply<IFetchRecordsHandler>,
+): Promise<never> => {
+  const { userId } = req.session.user;
+
+  if ("childId" in req.query) {
+    return fetchCamperRecords(req.query.childId, userId, res);
+  }
+  return fetchShiftRecords(req.query.shiftNr, userId, res);
 };

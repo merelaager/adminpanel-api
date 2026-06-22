@@ -1,10 +1,21 @@
 import { Static, Type } from "@sinclair/typebox";
 
-export type FetchRecordsQueryString = Static<typeof RecordsFetchSchema>;
+const ShiftRecordsFilterSchema = Type.Object(
+  { shiftNr: Type.Integer() },
+  { additionalProperties: false },
+);
 
-export const RecordsFetchSchema = Type.Object({
-  shiftNr: Type.Integer(),
-});
+const CamperRecordsFilterSchema = Type.Object(
+  { childId: Type.Integer() },
+  { additionalProperties: false },
+);
+
+export const RecordsFetchSchema = Type.Union([
+  ShiftRecordsFilterSchema,
+  CamperRecordsFilterSchema,
+]);
+
+export type FetchRecordsQueryString = Static<typeof RecordsFetchSchema>;
 
 export type ForceSyncBody = Static<typeof ForceSyncSchema>;
 
@@ -24,6 +35,8 @@ export const FlattenedRecordSchema = Type.Object({
   tentNr: Type.Union([Type.Number(), Type.Null()]),
   isPresent: Type.Boolean(),
   ageAtCamp: Type.Integer(),
+  year: Type.Integer(),
+  shiftNr: Type.Integer(),
 });
 
 export type RecordParams = Static<typeof RecordParamsSchema>;

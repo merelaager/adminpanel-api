@@ -174,29 +174,16 @@ const fetchCamperRecords = async (
   userId: number,
   res: FetchRecordsReply,
 ): Promise<never> => {
-  const records = await prisma.record.findMany({
-    where: { childId, isActive: true },
-    include: recordRelations,
-    orderBy: [{ year: "desc" }, { shiftNr: "asc" }],
+  const registrations = await prisma.registration.findMany({
+    where: { childId },
+    select: { shiftNr: true },
   });
 
-  // Records are sorted most-recent year first. The history is viewable only if
-  // the camper's latest involvement is the current year, and the viewer is a
-  // member of (one of) the shift(s) the camper is in that year.
-  const currentYear = new Date().getUTCFullYear();
-  const mostRecentYear = records[0]?.year;
-
   let isAuthorised = false;
-  if (mostRecentYear === currentYear) {
-    const currentShiftNrs = records
-      .filter((record) => record.year === currentYear)
-      .map((record) => record.shiftNr);
-
-    for (const shiftNr of currentShiftNrs) {
-      if (await isShiftMember(userId, shiftNr)) {
-        isAuthorised = true;
-        break;
-      }
+  for (const registration of registrations) {
+    if (await isShiftMember(userId, registration.shiftNr)) {
+      isAuthorised = true;
+      break;
     }
   }
 
@@ -208,6 +195,12 @@ const fetchCamperRecords = async (
       .status(StatusCodes.FORBIDDEN)
       .send(createFailResponse({ permissions: "Ligipääsuõigused puuduvad" }));
   }
+
+  const records = await prisma.record.findMany({
+    where: { childId, isActive: true },
+    include: recordRelations,
+    orderBy: [{ year: "desc" }, { shiftNr: "asc" }],
+  });
 
   return res
     .status(StatusCodes.OK)

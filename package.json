@@ -24,11 +24,11 @@
     "fastify": "^5.8.5",
     "fastify-plugin": "^6.0.0",
     "http-status-codes": "^2.3.0",
-    "nodemailer": "^8.0.11",
+    "nodemailer": "^9.0.0",
     "nodemailer-mailgun-transport": "^2.1.5",
     "pdfkit": "^0.19.1",
     "pdfmake": "^0.3.11",
-    "typebox": "^1.2.9",
+    "typebox": "^1.2.11",
     "uuid": "^14.0.0"
   },
   "devDependencies": {

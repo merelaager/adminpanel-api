@@ -6,6 +6,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.put(
     "/password",
     {
+      config: { public: true },
       schema: {
         body: ResetPasswordSchema,
       },

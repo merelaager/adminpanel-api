@@ -24,6 +24,7 @@ import {
   RegistrationsFetchSchema,
 } from "../../../schemas/registration";
 import { FailResponse, SuccessResponse } from "../../../schemas/jsend";
+import { getSessionUser } from "../../../utils/session";
 
 interface PatchParams {
   regId: number;
@@ -57,6 +58,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.post(
     "/",
     {
+      config: { public: true },
       schema: {
         body: RegistrationsCreationSchema,
         response: {
@@ -85,7 +87,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
     "/:regId",
     patchSchema,
     async (request, reply) => {
-      const { userId } = request.session.user;
+      const { userId } = getSessionUser(request);
       const { regId } = request.params;
 
       const status = await patchRegistrationData(

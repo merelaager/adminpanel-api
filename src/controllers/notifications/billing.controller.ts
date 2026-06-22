@@ -3,6 +3,7 @@ import { StatusCodes } from "http-status-codes";
 
 import prisma from "../../utils/prisma";
 import { isUserBoss } from "../../utils/permissions";
+import { getSessionUser } from "../../utils/session";
 
 import MailService from "../../services/mailService";
 
@@ -24,7 +25,7 @@ export const sendBillHandler = async (
   req: FastifyRequest<ISendBillHandler>,
   res: FastifyReply<ISendBillHandler>,
 ) => {
-  const { userId } = req.session.user;
+  const { userId } = getSessionUser(req);
   const email = req.body.email;
 
   // Since bills can contain data about campers in many shifts

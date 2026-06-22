@@ -7,6 +7,7 @@ import { Prisma, type PrismaClient } from "../generated/prisma/client";
 
 import { isShiftBoss, isShiftMember } from "../utils/permissions";
 import prisma from "../utils/prisma";
+import { getSessionUser } from "../utils/session";
 import MailService from "../services/mailService";
 
 import {
@@ -82,7 +83,7 @@ export const patchUserHandler = async (
   res: FastifyReply<IPatchUserHandler>,
 ): Promise<never> => {
   const { userId } = req.params;
-  const requesterId = req.session.user.userId;
+  const requesterId = getSessionUser(req).userId;
 
   if (userId !== requesterId) {
     return res.status(StatusCodes.FORBIDDEN).send({
@@ -120,7 +121,7 @@ export const inviteUserHandler = async (
   req: FastifyRequest<IInviteUserHandler>,
   res: FastifyReply<IInviteUserHandler>,
 ): Promise<never> => {
-  const { userId } = req.session.user;
+  const { userId } = getSessionUser(req);
   const { shiftNr, email } = req.body;
 
   if (!(await isShiftBoss(userId, shiftNr))) {

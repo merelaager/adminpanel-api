@@ -8,6 +8,7 @@ import { Type } from "@sinclair/typebox";
 
 import prisma from "../utils/prisma";
 import { isShiftMember } from "../utils/permissions";
+import { getSessionUser } from "../utils/session";
 import { createFailResponse, createSuccessResponse } from "../utils/jsend";
 
 import {
@@ -29,7 +30,7 @@ export const fetchTentHandler = async (
   res: FastifyReply<IFetchTentHandler>,
 ): Promise<never> => {
   const { shiftNr, tentNr } = req.params;
-  const { userId } = req.session.user;
+  const { userId } = getSessionUser(req);
 
   const isAuthorised = await isShiftMember(userId, shiftNr);
   if (!isAuthorised) {
@@ -81,7 +82,7 @@ export const fetchTentsHandler = async (
   res: FastifyReply<IFetchTentsHandler>,
 ): Promise<never> => {
   const { shiftNr } = req.params;
-  const { userId } = req.session.user;
+  const { userId } = getSessionUser(req);
 
   const isAuthorised = await isShiftMember(userId, shiftNr);
   if (!isAuthorised) {
@@ -123,7 +124,7 @@ export const addGradeHandler = async (
 ): Promise<never> => {
   const { shiftNr, tentNr } = req.params;
   const { score } = req.body;
-  const { userId } = req.session.user;
+  const { userId } = getSessionUser(req);
 
   const isAuthorised = await isShiftMember(userId, shiftNr);
   if (!isAuthorised) {

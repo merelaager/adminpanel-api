@@ -8,6 +8,7 @@ import { Type } from "@sinclair/typebox";
 
 import prisma from "../../utils/prisma";
 import { canViewShiftStaff } from "../../utils/permissions";
+import { getSessionUser } from "../../utils/session";
 import { createFailResponse, createSuccessResponse } from "../../utils/jsend";
 
 import { ShiftResourceFetchParams } from "../../schemas/shift";
@@ -31,7 +32,7 @@ export const fetchShiftStaff = async (
   req: FastifyRequest<IFetchShiftStaff>,
   res: FastifyReply<IFetchShiftStaff>,
 ): Promise<never> => {
-  const { userId } = req.session.user;
+  const { userId } = getSessionUser(req);
   const { shiftNr } = req.params;
 
   const isAuthorised = await canViewShiftStaff(userId, shiftNr);

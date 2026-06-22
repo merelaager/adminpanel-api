@@ -6,6 +6,7 @@ import { Prisma } from "../generated/prisma/client";
 
 import prisma from "../utils/prisma";
 import { isUserBoss } from "../utils/permissions";
+import { getSessionUser } from "../utils/session";
 import { generateBillPdf } from "../utils/bill-builder";
 
 import type { JSendResponse } from "../types/jsend";
@@ -75,7 +76,7 @@ export const createBillHandler = async (
   req: FastifyRequest<ICreateBillHandler>,
   res: FastifyReply<ICreateBillHandler>,
 ) => {
-  const { userId } = req.session.user;
+  const { userId } = getSessionUser(req);
 
   if (!(await isUserBoss(userId))) {
     return res.status(StatusCodes.FORBIDDEN).send({
@@ -150,7 +151,7 @@ export const fetchBillHandler = async (
   req: FastifyRequest<IFetchBillHandler>,
   res: FastifyReply<IFetchBillHandler>,
 ) => {
-  const { userId } = req.session.user;
+  const { userId } = getSessionUser(req);
 
   if (!(await isUserBoss(userId))) {
     return res.status(StatusCodes.FORBIDDEN).send({

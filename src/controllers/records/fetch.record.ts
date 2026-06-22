@@ -10,6 +10,7 @@ import type { Prisma } from "../../generated/prisma/client";
 import prisma from "../../utils/prisma";
 import { getAgeAtDate } from "../../utils/age";
 import { isShiftMember } from "../../utils/permissions";
+import { getSessionUser } from "../../utils/session";
 import { createFailResponse, createSuccessResponse } from "../../utils/jsend";
 
 import {
@@ -211,7 +212,7 @@ export const fetchRecordsHandler = async (
   req: FastifyRequest<IFetchRecordsHandler>,
   res: FastifyReply<IFetchRecordsHandler>,
 ): Promise<never> => {
-  const { userId } = req.session.user;
+  const { userId } = getSessionUser(req);
 
   if ("childId" in req.query) {
     return fetchCamperRecords(req.query.childId, userId, res);

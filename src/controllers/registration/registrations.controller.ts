@@ -7,6 +7,7 @@ import { StatusCodes } from "http-status-codes";
 import type { PrismaClient, Registration } from "../../generated/prisma/client";
 
 import prisma from "../../utils/prisma";
+import { getSessionUser } from "../../utils/session";
 import { getAgeAtDate } from "../../utils/age";
 import { isSuperRoot } from "../../utils/permissions";
 
@@ -86,7 +87,7 @@ export const registrationsFetchHandler = async (
   req: FastifyRequest<IRegistrationsFetchHandler>,
   res: FastifyReply<IRegistrationsFetchHandler>,
 ): Promise<never> => {
-  const { userId } = req.session.user;
+  const { userId } = getSessionUser(req);
   const { shiftNr } = req.query;
 
   if (!shiftNr) {
@@ -275,7 +276,7 @@ export const registrationsCampersSyncHandler = async (
   req: FastifyRequest<IRegistrationsCampersSyncHandler>,
   res: FastifyReply<IRegistrationsCampersSyncHandler>,
 ): Promise<never> => {
-  const { userId } = req.session.user;
+  const { userId } = getSessionUser(req);
   if (!(await isSuperRoot(userId)))
     return res.status(StatusCodes.FORBIDDEN).send();
 

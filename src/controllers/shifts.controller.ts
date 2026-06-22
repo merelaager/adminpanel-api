@@ -9,6 +9,7 @@ import { StatusCodes } from "http-status-codes";
 import { Type } from "@sinclair/typebox";
 
 import prisma from "../utils/prisma";
+import { getSessionUser } from "../utils/session";
 import {
   generateShiftCamperListPDF,
   PrintEntry,
@@ -74,7 +75,7 @@ export const fetchShiftPdfHandler = async (
   res: FastifyReply<IFetchShiftPdfHandler>,
 ): Promise<never> => {
   const { shiftNr } = req.params;
-  const { userId } = req.session.user;
+  const { userId } = getSessionUser(req);
 
   const activeRegistrations = await prisma.registration.findMany({
     where: { shiftNr, isRegistered: true },
@@ -159,7 +160,7 @@ export const fetchShiftUsersHandler = async (
   res: FastifyReply<IFetchShiftUsers>,
 ): Promise<never> => {
   const { shiftNr } = req.params;
-  const { userId } = req.session.user;
+  const { userId } = getSessionUser(req);
 
   const isAuthorised = await isShiftBoss(userId, shiftNr);
   if (!isAuthorised) {
@@ -219,7 +220,7 @@ export const fetchShiftRecordsHandler = async (
   res: FastifyReply<IFetchShiftCampers>,
 ): Promise<never> => {
   const { shiftNr } = req.params;
-  const { userId } = req.session.user;
+  const { userId } = getSessionUser(req);
 
   const isAuthorised = await isShiftMember(userId, shiftNr);
   if (!isAuthorised) {
@@ -278,7 +279,7 @@ export const fetchShiftEmailsHandler = async (
   res: FastifyReply<IFetchShiftEmails>,
 ): Promise<never> => {
   const { shiftNr } = req.params;
-  const { userId } = req.session.user;
+  const { userId } = getSessionUser(req);
 
   const isAuthorised = await isShiftBoss(userId, shiftNr);
   if (!isAuthorised) {
@@ -319,7 +320,7 @@ export const fetchShiftBillingHandler = async (
   res: FastifyReply<IFetchShiftBillingInfo>,
 ): Promise<never> => {
   const { shiftNr } = req.params;
-  const { userId } = req.session.user;
+  const { userId } = getSessionUser(req);
 
   const isAuthorised = await isShiftBoss(userId, shiftNr);
   if (!isAuthorised) {

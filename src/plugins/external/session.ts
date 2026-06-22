@@ -9,7 +9,7 @@ import type { Auth } from "../../schemas/auth";
 
 declare module "fastify" {
   interface Session {
-    user: Auth;
+    user?: Auth;
   }
 }
 

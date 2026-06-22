@@ -1,22 +1,16 @@
 import { FastifyInstance } from "fastify";
 import { StatusCodes } from "http-status-codes";
 
+declare module "fastify" {
+  interface FastifyContextConfig {
+    // Opt out of authentication by setting `config: { public: true }`.
+    public?: boolean;
+  }
+}
+
 export default async function (fastify: FastifyInstance) {
   fastify.addHook("onRequest", async (request, reply) => {
-    if (request.url.startsWith("/api/auth/login")) {
-      return;
-    }
-
-    if (request.url.startsWith("/api/auth/signup")) {
-      return;
-    }
-
-    if (request.url.startsWith("/api/account/password")) {
-      return;
-    }
-
-    // TODO: put registration creation behind authentication.
-    if (request.url === "/api/registrations" && request.method === "POST") {
+    if (request.routeOptions.config?.public) {
       return;
     }
 

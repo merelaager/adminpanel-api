@@ -8,6 +8,7 @@ import { Type } from "@sinclair/typebox";
 
 import prisma from "../utils/prisma";
 import { isShiftMember } from "../utils/permissions";
+import { getSessionUser } from "../utils/session";
 import { getChildAgeAtShiftStart } from "../utils/age";
 
 import type { PatchRecordBody, RecordParams } from "../schemas/record";
@@ -76,7 +77,7 @@ export const patchRecordHandler = async (
   res: FastifyReply<IPatchRecord>,
 ): Promise<never> => {
   const { recordId } = req.params;
-  const { userId } = req.session.user;
+  const { userId } = getSessionUser(req);
 
   const record = await prisma.record.findUnique({
     where: { id: recordId },

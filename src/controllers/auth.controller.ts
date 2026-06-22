@@ -3,6 +3,7 @@ import { FastifyReply, FastifyRequest, RouteGenericInterface } from "fastify";
 import { StatusCodes } from "http-status-codes";
 
 import prisma from "../utils/prisma";
+import { getSessionUser } from "../utils/session";
 import type { User } from "../generated/prisma/client";
 
 import type { JSendResponse } from "../types/jsend";
@@ -17,7 +18,7 @@ export const userInfoHandler = async (
   req: FastifyRequest<IUserInfoHandler>,
   res: FastifyReply<IUserInfoHandler>,
 ): Promise<never> => {
-  const { userId } = req.session.user;
+  const { userId } = getSessionUser(req);
 
   const user = await prisma.user.findUnique({ where: { id: userId } });
 
@@ -74,7 +75,7 @@ export const setPasswordHandler = async (
   req: FastifyRequest<ISetPasswordHandler>,
   res: FastifyReply<ISetPasswordHandler>,
 ) => {
-  const { userId } = req.session.user;
+  const { userId } = getSessionUser(req);
   const { password } = req.body;
 
   const saltRounds = 10;

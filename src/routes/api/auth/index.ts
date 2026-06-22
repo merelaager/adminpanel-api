@@ -32,6 +32,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.post(
     "/login",
     {
+      config: { public: true },
       schema: {
         body: CredentialsSchema,
         response: {
@@ -51,6 +52,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.post(
     "/signup",
     {
+      config: { public: true },
       schema: {
         body: SignupSchema,
         response: {

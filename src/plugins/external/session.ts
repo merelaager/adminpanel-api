@@ -28,7 +28,7 @@ export default fp(
     fastify.register(fastifySession, {
       secret: sessionSecret,
       cookie: {
-        secure: "auto",
+        secure: process.env.NODE_ENV === "production",
         domain: cookieDomain,
         sameSite: "lax",
         httpOnly: true,

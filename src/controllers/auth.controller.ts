@@ -55,6 +55,7 @@ export const loginHandler = async (
     });
   }
 
+  await req.session.regenerate();
   req.session.user = { userId: user.id };
   await req.session.save();
 

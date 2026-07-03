@@ -14,13 +14,16 @@ import {
   generateShiftCamperListPDF,
   PrintEntry,
 } from "#app/utils/shift-pdf-builder";
-import { isShiftBoss, isShiftMember } from "#app/utils/permissions";
+import {
+  canViewShiftBasic,
+  canViewShiftPermissions,
+} from "#app/utils/permissions";
 import {
   createErrorResponse,
   createFailResponse,
   createSuccessResponse,
 } from "#app/utils/jsend";
-import { Permissions, PermissionPrefixes } from "#app/constants/permissions";
+import { PermissionPrefixes, Permissions } from "#app/constants/permissions";
 
 import { fetchUserShiftPermissions } from "./registration/registrations.controller";
 
@@ -167,7 +170,7 @@ export const fetchShiftUsersHandler = async (
   const { shiftNr } = req.params;
   const { userId } = getSessionUser(req);
 
-  const isAuthorised = await isShiftBoss(userId, shiftNr);
+  const isAuthorised = await canViewShiftPermissions(userId, shiftNr);
   if (!isAuthorised) {
     return res
       .status(StatusCodes.FORBIDDEN)
@@ -227,7 +230,7 @@ export const fetchShiftRecordsHandler = async (
   const { shiftNr } = req.params;
   const { userId } = getSessionUser(req);
 
-  const isAuthorised = await isShiftMember(userId, shiftNr);
+  const isAuthorised = await canViewShiftBasic(userId, shiftNr);
   if (!isAuthorised) {
     return res
       .status(StatusCodes.FORBIDDEN)
@@ -286,8 +289,17 @@ export const fetchShiftEmailsHandler = async (
   const { shiftNr } = req.params;
   const { userId } = getSessionUser(req);
 
-  const isAuthorised = await isShiftBoss(userId, shiftNr);
-  if (!isAuthorised) {
+  const shiftViewPermissions = await fetchUserShiftPermissions(
+    userId,
+    shiftNr,
+    PermissionPrefixes.REGISTRATION_VIEW,
+  );
+
+  const canViewContact =
+    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_FULL) ||
+    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_CONTACT);
+
+  if (!canViewContact) {
     return res
       .status(StatusCodes.FORBIDDEN)
       .send(createFailResponse({ permissions: "Puuduvad õigused päringuks." }));
@@ -327,8 +339,17 @@ export const fetchShiftBillingHandler = async (
   const { shiftNr } = req.params;
   const { userId } = getSessionUser(req);
 
-  const isAuthorised = await isShiftBoss(userId, shiftNr);
-  if (!isAuthorised) {
+  const shiftViewPermissions = await fetchUserShiftPermissions(
+    userId,
+    shiftNr,
+    PermissionPrefixes.REGISTRATION_VIEW,
+  );
+
+  const canViewPrice =
+    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_FULL) ||
+    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_PRICE);
+
+  if (!canViewPrice) {
     return res
       .status(StatusCodes.FORBIDDEN)
       .send(createFailResponse({ permissions: "Puuduvad õigused päringuks." }));

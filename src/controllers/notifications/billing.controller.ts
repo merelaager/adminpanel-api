@@ -2,7 +2,7 @@ import { FastifyReply, FastifyRequest, RouteGenericInterface } from "fastify";
 import { StatusCodes } from "http-status-codes";
 
 import prisma from "#app/utils/prisma";
-import { isUserBoss } from "#app/utils/permissions";
+import { canEditRegistrationPriceAnyShift } from "#app/utils/permissions";
 import { getSessionUser } from "#app/utils/session";
 
 import MailService from "#app/services/mailService";
@@ -32,9 +32,10 @@ export const sendBillHandler = async (
   const { userId } = getSessionUser(req);
   const email = req.body.email;
 
-  // Since bills can contain data about campers in many shifts
-  // being a boss of one shift is enough to allow the sending of bills.
-  if (!(await isUserBoss(userId))) {
+  // Since bills can contain data about campers in many shifts,
+  // having registration price edit permissions for any one shift is enough
+  // to allow the sending of bills.
+  if (!(await canEditRegistrationPriceAnyShift(userId))) {
     return res.status(StatusCodes.FORBIDDEN).send({
       status: "fail",
       data: {

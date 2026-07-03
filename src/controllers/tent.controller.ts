@@ -7,7 +7,7 @@ import { StatusCodes } from "http-status-codes";
 import { Type } from "@sinclair/typebox";
 
 import prisma from "#app/utils/prisma";
-import { isShiftMember } from "#app/utils/permissions";
+import { canEditShiftBasic, canViewShiftBasic } from "#app/utils/permissions";
 import { getSessionUser } from "#app/utils/session";
 import { createFailResponse, createSuccessResponse } from "#app/utils/jsend";
 
@@ -32,7 +32,7 @@ export const fetchTentHandler = async (
   const { shiftNr, tentNr } = req.params;
   const { userId } = getSessionUser(req);
 
-  const isAuthorised = await isShiftMember(userId, shiftNr);
+  const isAuthorised = await canViewShiftBasic(userId, shiftNr);
   if (!isAuthorised) {
     return res
       .status(StatusCodes.FORBIDDEN)
@@ -84,7 +84,7 @@ export const fetchTentsHandler = async (
   const { shiftNr } = req.params;
   const { userId } = getSessionUser(req);
 
-  const isAuthorised = await isShiftMember(userId, shiftNr);
+  const isAuthorised = await canViewShiftBasic(userId, shiftNr);
   if (!isAuthorised) {
     return res
       .status(StatusCodes.FORBIDDEN)
@@ -126,7 +126,7 @@ export const addGradeHandler = async (
   const { score } = req.body;
   const { userId } = getSessionUser(req);
 
-  const isAuthorised = await isShiftMember(userId, shiftNr);
+  const isAuthorised = await canEditShiftBasic(userId, shiftNr);
   if (!isAuthorised) {
     return res
       .status(StatusCodes.FORBIDDEN)

@@ -16,7 +16,7 @@ import {
   TeamRecordSchema,
 } from "#app/schemas/team";
 import type { JSendFail, JSendResponse } from "#app/schemas/jsend";
-import { isShiftMember } from "#app/utils/permissions";
+import { canEditShiftBasic, canViewShiftBasic } from "#app/utils/permissions";
 import { getSessionUser } from "#app/utils/session";
 import { RequestPermissionsFail } from "#app/schemas/responses";
 
@@ -38,7 +38,7 @@ export const fetchTeamsHandler = async (
   const { userId } = getSessionUser(req);
   const { shiftNr } = req.query;
 
-  const isAuthorised = await isShiftMember(userId, shiftNr);
+  const isAuthorised = await canViewShiftBasic(userId, shiftNr);
   if (!isAuthorised) {
     return res
       .status(StatusCodes.FORBIDDEN)
@@ -80,7 +80,7 @@ export const teamCreationHandler = async (
   const { shiftNr, name } = req.body;
   const year = new Date().getUTCFullYear();
 
-  const isAuthorised = await isShiftMember(userId, shiftNr);
+  const isAuthorised = await canEditShiftBasic(userId, shiftNr);
   if (!isAuthorised) {
     return res
       .status(StatusCodes.FORBIDDEN)

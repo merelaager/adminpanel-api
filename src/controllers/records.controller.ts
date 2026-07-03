@@ -7,7 +7,7 @@ import { StatusCodes } from "http-status-codes";
 import { Type } from "@sinclair/typebox";
 
 import prisma from "#app/utils/prisma";
-import { isShiftMember } from "#app/utils/permissions";
+import { canEditShiftBasic } from "#app/utils/permissions";
 import { getSessionUser } from "#app/utils/session";
 import { getChildAgeAtShiftStart } from "#app/utils/age";
 
@@ -89,7 +89,7 @@ export const patchRecordHandler = async (
       );
   }
 
-  const isAuthorised = await isShiftMember(userId, record.shiftNr);
+  const isAuthorised = await canEditShiftBasic(userId, record.shiftNr);
   if (!isAuthorised) {
     return res
       .status(StatusCodes.FORBIDDEN)

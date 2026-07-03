@@ -9,7 +9,7 @@ import { Type } from "@sinclair/typebox";
 import type { Prisma } from "#app/generated/prisma/client";
 import prisma from "#app/utils/prisma";
 import { getAgeAtDate } from "#app/utils/age";
-import { isShiftMember } from "#app/utils/permissions";
+import { canEditShiftBasic, canViewShiftBasic } from "#app/utils/permissions";
 import { getSessionUser } from "#app/utils/session";
 import { createFailResponse, createSuccessResponse } from "#app/utils/jsend";
 
@@ -34,7 +34,7 @@ export const forceSyncRecordsHandler = async (
   const { userId } = getSessionUser(req);
   const { shiftNr, forceSync } = req.body;
 
-  const isAuthorised = await isShiftMember(userId, shiftNr);
+  const isAuthorised = await canEditShiftBasic(userId, shiftNr);
   if (!isAuthorised) {
     return res
       .status(StatusCodes.FORBIDDEN)
@@ -159,7 +159,7 @@ const fetchShiftRecords = async (
   userId: number,
   res: FetchRecordsReply,
 ): Promise<never> => {
-  if (!(await isShiftMember(userId, shiftNr))) {
+  if (!(await canViewShiftBasic(userId, shiftNr))) {
     res.log.warn(
       { userId, shiftNr },
       "User not authorised to view shift records",
@@ -191,7 +191,7 @@ const fetchCamperRecords = async (
 
   let isAuthorised = false;
   for (const registration of registrations) {
-    if (await isShiftMember(userId, registration.shiftNr)) {
+    if (await canViewShiftBasic(userId, registration.shiftNr)) {
       isAuthorised = true;
       break;
     }

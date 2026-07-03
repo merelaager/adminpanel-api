@@ -6,7 +6,8 @@
   "scripts": {
     "build": "tsc && tsc-alias",
     "dev": "tsx watch src/server.ts",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@fastify/autoload": "^6.3.1",
@@ -36,7 +37,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/bcrypt": "^6.0.0",
-    "@types/node": "^25.9.3",
+    "@types/node": "^26.0.1",
     "@types/nodemailer": "^8.0.1",
     "@types/pdfkit": "^0.17.6",
     "@types/pdfmake": "^0.3.3",

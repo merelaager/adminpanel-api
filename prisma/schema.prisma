@@ -54,7 +54,7 @@ model EventInfo {
 
 model Permission {
   id               Int              @id @default(autoincrement()) @db.UnsignedInt
-  permissionName   String           @db.VarChar(255)
+  permissionName   String           @unique @db.VarChar(255)
   createdAt        DateTime         @default(now()) @db.DateTime(0)
   updatedAt        DateTime         @updatedAt @db.DateTime(0)
   role_permissions RolePermission[]

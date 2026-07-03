@@ -5,7 +5,7 @@ import { StatusCodes } from "http-status-codes";
 import { Prisma } from "#app/generated/prisma/client";
 
 import prisma from "#app/utils/prisma";
-import { isUserBoss } from "#app/utils/permissions";
+import { canEditRegistrationPriceAnyShift } from "#app/utils/permissions";
 import { getSessionUser } from "#app/utils/session";
 import { generateBillPdf } from "#app/utils/bill-builder";
 
@@ -82,7 +82,7 @@ export const createBillHandler = async (
 ) => {
   const { userId } = getSessionUser(req);
 
-  if (!(await isUserBoss(userId))) {
+  if (!(await canEditRegistrationPriceAnyShift(userId))) {
     return res.status(StatusCodes.FORBIDDEN).send({
       status: "fail",
       data: {
@@ -157,7 +157,7 @@ export const fetchBillHandler = async (
 ) => {
   const { userId } = getSessionUser(req);
 
-  if (!(await isUserBoss(userId))) {
+  if (!(await canEditRegistrationPriceAnyShift(userId))) {
     return res.status(StatusCodes.FORBIDDEN).send({
       status: "fail",
       data: {

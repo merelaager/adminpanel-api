@@ -1,30 +1,6 @@
 import prisma from "./prisma";
 
 import { Permissions } from "#app/constants/permissions";
-import { SHIFT_BOSS_ROLES, SHIFT_STAFF_ROLES } from "#app/constants/roles";
-
-export const isUserBoss = async (userId: number) => {
-  const userBossInstances = await prisma.userRoles.findMany({
-    where: {
-      userId,
-      role: {
-        roleName: {
-          in: [...SHIFT_BOSS_ROLES],
-        },
-      },
-    },
-    select: { id: true },
-  });
-
-  if (userBossInstances.length > 0) return true;
-
-  const userRootInstance = await prisma.user.findUnique({
-    where: { id: userId, role: "root" },
-    select: { id: true },
-  });
-
-  return userRootInstance !== null;
-};
 
 export const isSuperRoot = async (userId: number) => {
   const user = await prisma.user.findUnique({
@@ -34,39 +10,11 @@ export const isSuperRoot = async (userId: number) => {
   return user !== null;
 };
 
-export const isShiftBoss = async (userId: number, shiftNr: number) => {
-  const userShiftBossInstances = await prisma.userRoles.findMany({
-    where: {
-      userId,
-      shiftNr,
-      role: {
-        roleName: {
-          in: [...SHIFT_BOSS_ROLES],
-        },
-      },
-    },
-  });
-
-  return userShiftBossInstances.length > 0;
-};
-
-export const isShiftMember = async (userId: number, shiftNr: number) => {
-  const userShiftRoles = await prisma.userRoles.findMany({
-    where: {
-      userId,
-      shiftNr,
-      role: {
-        roleName: {
-          in: [...SHIFT_STAFF_ROLES],
-        },
-      },
-    },
-  });
-
-  return userShiftRoles.length > 0;
-};
-
-export const canViewShiftStaff = async (userId: number, shiftNr: number) => {
+const userHasShiftPermission = async (
+  userId: number,
+  shiftNr: number,
+  permission: Permissions,
+): Promise<boolean> => {
   const userShiftRoles = await prisma.userRoles.findMany({
     where: {
       userId,
@@ -75,7 +23,7 @@ export const canViewShiftStaff = async (userId: number, shiftNr: number) => {
         role_permissions: {
           some: {
             permission: {
-              permissionName: Permissions.VIEW_SHIFT_STAFF,
+              permissionName: permission,
             },
           },
         },
@@ -86,3 +34,44 @@ export const canViewShiftStaff = async (userId: number, shiftNr: number) => {
 
   return userShiftRoles.length > 0;
 };
+
+export const canViewShiftStaff = (userId: number, shiftNr: number) =>
+  userHasShiftPermission(userId, shiftNr, Permissions.VIEW_SHIFT_STAFF);
+
+export const canViewShiftBasic = (userId: number, shiftNr: number) =>
+  userHasShiftPermission(userId, shiftNr, Permissions.VIEW_SHIFT_BASIC);
+
+export const canEditShiftBasic = (userId: number, shiftNr: number) =>
+  userHasShiftPermission(userId, shiftNr, Permissions.EDIT_SHIFT_BASIC);
+
+export const canEditShiftMembers = (userId: number, shiftNr: number) =>
+  userHasShiftPermission(userId, shiftNr, Permissions.EDIT_SHIFT_MEMBERS);
+
+export const canViewShiftPermissions = (userId: number, shiftNr: number) =>
+  userHasShiftPermission(userId, shiftNr, Permissions.VIEW_SHIFT_PERMISSIONS);
+
+const userHasPermissionInAnyShift = async (
+  userId: number,
+  permission: Permissions,
+): Promise<boolean> => {
+  const userRoles = await prisma.userRoles.findMany({
+    where: {
+      userId,
+      role: {
+        role_permissions: {
+          some: {
+            permission: {
+              permissionName: permission,
+            },
+          },
+        },
+      },
+    },
+    select: { id: true },
+  });
+
+  return userRoles.length > 0;
+};
+
+export const canEditRegistrationPriceAnyShift = (userId: number) =>
+  userHasPermissionInAnyShift(userId, Permissions.EDIT_REGISTRATION_PRICE);

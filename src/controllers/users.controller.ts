@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcrypt";
 import { Prisma, type PrismaClient } from "#app/generated/prisma/client";
 
-import { isShiftBoss, isShiftMember } from "#app/utils/permissions";
+import { canEditShiftMembers, canViewShiftBasic } from "#app/utils/permissions";
 import prisma from "#app/utils/prisma";
 import { getSessionUser } from "#app/utils/session";
 import MailService from "#app/services/mailService";
@@ -101,7 +101,7 @@ export const patchUserHandler = async (
 
   const currentShift = req.body.currentShift;
   if (currentShift !== undefined) {
-    if (!(await isShiftMember(requesterId, currentShift))) {
+    if (!(await canViewShiftBasic(requesterId, currentShift))) {
       return res.status(StatusCodes.FORBIDDEN).send({
         status: "fail",
         data: {
@@ -134,7 +134,7 @@ export const inviteUserHandler = async (
   const { userId } = getSessionUser(req);
   const { shiftNr, email } = req.body;
 
-  if (!(await isShiftBoss(userId, shiftNr))) {
+  if (!(await canEditShiftMembers(userId, shiftNr))) {
     return res.status(StatusCodes.FORBIDDEN).send({
       status: "fail",
       data: { permissions: "Puuduvad õigused kasutaja loomiseks!" },

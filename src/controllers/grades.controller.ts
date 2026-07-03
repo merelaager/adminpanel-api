@@ -8,7 +8,7 @@ import { StatusCodes } from "http-status-codes";
 import prisma from "#app/utils/prisma";
 
 import { GradeDeleteParams } from "#app/schemas/grades";
-import { isShiftMember } from "#app/utils/permissions";
+import { canEditShiftBasic } from "#app/utils/permissions";
 import { createFailResponse } from "#app/utils/jsend";
 import { getSessionUser } from "#app/utils/session";
 
@@ -29,7 +29,7 @@ export const deleteGradeHandler = async (
   });
 
   if (grade) {
-    const isAuthorised = await isShiftMember(userId, grade.shiftNr);
+    const isAuthorised = await canEditShiftBasic(userId, grade.shiftNr);
     if (!isAuthorised) {
       return reply
         .status(StatusCodes.FORBIDDEN)

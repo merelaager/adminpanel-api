@@ -12,7 +12,7 @@ import type { JSendResponse } from "#app/schemas/jsend";
 import { UnknownData } from "#app/schemas/jsend";
 import { createFailResponse } from "#app/utils/jsend";
 import { validatePasswordPolicy } from "./users.controller";
-import { isRoleNameIn, SHIFT_STAFF_ROLES } from "#app/constants/roles";
+import { Permissions } from "#app/constants/permissions";
 
 interface IUserInfoHandler extends RouteGenericInterface {
   Reply: JSendResponse<typeof UnknownData, typeof UnknownData> | null;
@@ -111,7 +111,17 @@ const formatUserInfo = async (user: User): Promise<UserInfo> => {
   const shifts = await prisma.userRoles.findMany({
     where: { userId: user.id },
     select: {
-      role: { select: { roleName: true } },
+      role: {
+        select: {
+          roleName: true,
+          role_permissions: {
+            where: {
+              permission: { permissionName: Permissions.VIEW_SHIFT_BASIC },
+            },
+            select: { roleId: true },
+          },
+        },
+      },
       shiftNr: true,
     },
   });
@@ -121,7 +131,7 @@ const formatUserInfo = async (user: User): Promise<UserInfo> => {
   let currentRole = "";
 
   shifts.forEach((shift) => {
-    if (isRoleNameIn(shift.role.roleName, SHIFT_STAFF_ROLES)) {
+    if (shift.role.role_permissions.length > 0) {
       managedShifts.push(shift.shiftNr);
     }
     if (shift.shiftNr === user.currentShift) currentRole = shift.role.roleName;

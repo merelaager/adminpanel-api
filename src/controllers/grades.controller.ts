@@ -8,6 +8,9 @@ import { StatusCodes } from "http-status-codes";
 import prisma from "../utils/prisma";
 
 import { GradeDeleteParams } from "../schemas/grades";
+import { isShiftMember } from "../utils/permissions";
+import { createFailResponse } from "../utils/jsend";
+import { getSessionUser } from "../utils/session";
 
 interface IDeleteGradeHandler extends RouteGenericInterface {
   Params: GradeDeleteParams;
@@ -18,6 +21,7 @@ export const deleteGradeHandler = async (
   req: FastifyRequest<IDeleteGradeHandler>,
   reply: FastifyReply<IDeleteGradeHandler>,
 ) => {
+  const { userId } = getSessionUser(req);
   const { gradeId } = req.params;
 
   const grade = await prisma.tentScore.findUnique({
@@ -25,6 +29,15 @@ export const deleteGradeHandler = async (
   });
 
   if (grade) {
+    const isAuthorised = await isShiftMember(userId, grade.shiftNr);
+    if (!isAuthorised) {
+      return reply
+        .status(StatusCodes.FORBIDDEN)
+        .send(
+          createFailResponse({ permissions: "Puuduvad õigused päringuks." }),
+        );
+    }
+
     await prisma.tentScore.delete({
       where: { id: gradeId },
     });

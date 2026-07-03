@@ -4,6 +4,7 @@ import "dotenv/config";
 import Fastify from "fastify";
 import fastifyAutoload from "@fastify/autoload";
 import cors from "@fastify/cors";
+import rateLimit from "@fastify/rate-limit";
 
 const fastify = Fastify({
   logger: true,
@@ -37,6 +38,10 @@ fastify.register(cors, {
     cb(new Error("Not allowed by CORS"), false);
   },
   methods: CORS_METHODS,
+});
+
+fastify.register(rateLimit, {
+  global: false,
 });
 
 fastify.register(fastifyAutoload, {

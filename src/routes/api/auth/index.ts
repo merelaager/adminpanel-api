@@ -32,7 +32,13 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.post(
     "/login",
     {
-      config: { public: true },
+      config: {
+        public: true,
+        rateLimit: {
+          max: 3,
+          timeWindow: "1 minute",
+        },
+      },
       schema: {
         body: CredentialsSchema,
         response: {

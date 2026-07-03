@@ -288,16 +288,20 @@ export const registrationsCampersSyncHandler = async (
 
   const registrations = await prisma.registration.findMany();
 
-  for (const registration of registrations) {
-    if (registration.idCode === null) continue;
+  const updates = registrations
+    .filter((registration) => registration.idCode !== null)
+    .map((registration) =>
+      prisma.child.update({
+        where: { id: registration.childId },
+        data: {
+          idCode: registration.idCode,
+          birthYear: registration.birthday.getUTCFullYear(),
+        },
+      }),
+    );
 
-    await prisma.child.update({
-      where: { id: registration.childId },
-      data: {
-        idCode: registration.idCode,
-        birthYear: registration.birthday.getUTCFullYear(),
-      },
-    });
+  if (updates.length > 0) {
+    await prisma.$transaction(updates);
   }
 
   return res.status(StatusCodes.NO_CONTENT).send();

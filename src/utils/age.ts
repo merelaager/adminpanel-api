@@ -18,19 +18,18 @@ export const getChildAgeAtShiftStart = async (
   childId: number,
   shiftNr: number,
 ) => {
-  const shiftInfo = await prisma.shiftInfo.findUnique({
-    where: { id: shiftNr },
-    select: { startDate: true },
-  });
+  const [shiftInfo, registration] = await Promise.all([
+    prisma.shiftInfo.findUnique({
+      where: { id: shiftNr },
+      select: { startDate: true },
+    }),
+    prisma.registration.findFirst({
+      where: { childId },
+      select: { birthday: true },
+    }),
+  ]);
 
-  if (!shiftInfo) return 0;
-
-  const registration = await prisma.registration.findFirst({
-    where: { childId },
-    select: { birthday: true },
-  });
-
-  if (!registration) return 0;
+  if (!shiftInfo || !registration) return 0;
 
   return getAgeAtDate(registration.birthday, shiftInfo.startDate);
 };

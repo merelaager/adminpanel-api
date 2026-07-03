@@ -6,9 +6,14 @@ import type { Prisma } from "#app/generated/prisma/client";
 import prisma from "#app/utils/prisma";
 import { getAgeAtDate } from "#app/utils/age";
 import { getCurrentCampYear } from "#app/utils/campYear";
-import { canEditShiftBasic, canViewShiftBasic } from "#app/utils/permissions";
+import {
+  canEditShiftBasic,
+  canViewShiftBasic,
+  userHasShiftPermissionInAnyOf,
+} from "#app/utils/permissions";
 import { getSessionUser } from "#app/utils/session";
 import { createFailResponse, createSuccessResponse } from "#app/utils/jsend";
+import { Permissions } from "#app/constants/permissions";
 
 import {
   FlattenedRecord,
@@ -187,13 +192,11 @@ const fetchCamperRecords = async (
     select: { shiftNr: true },
   });
 
-  let isAuthorised = false;
-  for (const registration of registrations) {
-    if (await canViewShiftBasic(userId, registration.shiftNr)) {
-      isAuthorised = true;
-      break;
-    }
-  }
+  const isAuthorised = await userHasShiftPermissionInAnyOf(
+    userId,
+    registrations.map((registration) => registration.shiftNr),
+    Permissions.VIEW_SHIFT_BASIC,
+  );
 
   if (!isAuthorised) {
     res.log.warn(

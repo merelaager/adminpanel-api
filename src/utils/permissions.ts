@@ -15,7 +15,7 @@ const userHasShiftPermission = async (
   shiftNr: number,
   permission: Permissions,
 ): Promise<boolean> => {
-  const userShiftRoles = await prisma.userRoles.findMany({
+  const userShiftRole = await prisma.userRoles.findFirst({
     where: {
       userId,
       shiftNr,
@@ -32,7 +32,7 @@ const userHasShiftPermission = async (
     select: { id: true },
   });
 
-  return userShiftRoles.length > 0;
+  return userShiftRole !== null;
 };
 
 export const canViewShiftStaff = (userId: number, shiftNr: number) =>
@@ -50,11 +50,36 @@ export const canEditShiftMembers = (userId: number, shiftNr: number) =>
 export const canViewShiftPermissions = (userId: number, shiftNr: number) =>
   userHasShiftPermission(userId, shiftNr, Permissions.VIEW_SHIFT_PERMISSIONS);
 
+export const userHasShiftPermissionInAnyOf = async (
+  userId: number,
+  shiftNrs: number[],
+  permission: Permissions,
+): Promise<boolean> => {
+  const userShiftRole = await prisma.userRoles.findFirst({
+    where: {
+      userId,
+      shiftNr: { in: shiftNrs },
+      role: {
+        role_permissions: {
+          some: {
+            permission: {
+              permissionName: permission,
+            },
+          },
+        },
+      },
+    },
+    select: { id: true },
+  });
+
+  return userShiftRole !== null;
+};
+
 const userHasPermissionInAnyShift = async (
   userId: number,
   permission: Permissions,
 ): Promise<boolean> => {
-  const userRoles = await prisma.userRoles.findMany({
+  const userRole = await prisma.userRoles.findFirst({
     where: {
       userId,
       role: {
@@ -70,7 +95,7 @@ const userHasPermissionInAnyShift = async (
     select: { id: true },
   });
 
-  return userRoles.length > 0;
+  return userRole !== null;
 };
 
 export const canEditRegistrationPriceAnyShift = (userId: number) =>

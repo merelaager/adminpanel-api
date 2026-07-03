@@ -16,6 +16,9 @@ import {
   TeamRecordSchema,
 } from "../schemas/team";
 import type { JSendFail, JSendResponse } from "../schemas/jsend";
+import { isShiftMember } from "../utils/permissions";
+import { getSessionUser } from "../utils/session";
+import { RequestPermissionsFail } from "../schemas/responses";
 
 export const FetchTeamsData = Type.Object({
   teams: Type.Array(TeamRecordSchema),
@@ -23,14 +26,24 @@ export const FetchTeamsData = Type.Object({
 
 interface IFetchTeamsHandler extends RouteGenericInterface {
   Querystring: FetchTeamsQueryString;
-  Reply: JSendResponse<typeof FetchTeamsData>;
+  Reply:
+    | JSendResponse<typeof FetchTeamsData>
+    | JSendFail<typeof RequestPermissionsFail>;
 }
 
 export const fetchTeamsHandler = async (
   req: FastifyRequest<IFetchTeamsHandler>,
   res: FastifyReply<IFetchTeamsHandler>,
 ): Promise<never> => {
+  const { userId } = getSessionUser(req);
   const { shiftNr } = req.query;
+
+  const isAuthorised = await isShiftMember(userId, shiftNr);
+  if (!isAuthorised) {
+    return res
+      .status(StatusCodes.FORBIDDEN)
+      .send(createFailResponse({ permissions: "Puuduvad õigused päringuks." }));
+  }
 
   const teams: TeamRecord[] = await prisma.team.findMany({
     where: { shiftNr, year: new Date().getUTCFullYear() },
@@ -53,13 +66,17 @@ export const TeamCreationFailData = Type.Object({
 
 interface ITeamCreationHandler extends RouteGenericInterface {
   Body: TeamCreationBody;
-  Reply: JSendFail<typeof TeamCreationFailData> | null;
+  Reply: JSendFail<
+    typeof TeamCreationFailData | typeof RequestPermissionsFail
+  > | null;
 }
 
 export const teamCreationHandler = async (
   req: FastifyRequest<ITeamCreationHandler>,
   res: FastifyReply<ITeamCreationHandler>,
 ): Promise<never> => {
+  const { userId } = getSessionUser(req);
+
   const { shiftNr, name } = req.body;
   const year = new Date().getUTCFullYear();
 
@@ -69,6 +86,13 @@ export const teamCreationHandler = async (
         name: "Meeskonna nimi ei tohi olla tühi",
       }),
     );
+  }
+
+  const isAuthorised = await isShiftMember(userId, shiftNr);
+  if (!isAuthorised) {
+    return res
+      .status(StatusCodes.FORBIDDEN)
+      .send(createFailResponse({ permissions: "Puuduvad õigused päringuks." }));
   }
 
   await prisma.team.create({

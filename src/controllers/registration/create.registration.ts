@@ -142,7 +142,7 @@ export const formRegistrationHandler = async (
     }
 
     const childName = entry.name.trim().replace(/\s+/g, " ");
-    const birthYear = new Date(dob).getFullYear();
+    const birthYear = new Date(dob).getUTCFullYear();
     const idCode = entry.idCode ? entry.idCode : null;
 
     let childInstance: Child | null = null;

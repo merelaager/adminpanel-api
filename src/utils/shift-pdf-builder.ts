@@ -63,7 +63,7 @@ const createDoc = (
 
   return {
     content: [
-      { text: `${shiftNr}v ${new Date().getFullYear()}`, style: "header" },
+      { text: `${shiftNr}v ${new Date().getUTCFullYear()}`, style: "header" },
       { table: { body: tableRows } },
     ],
     defaultStyle: { font: "Helvetica" },

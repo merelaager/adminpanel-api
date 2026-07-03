@@ -12,6 +12,7 @@ import type { JSendResponse } from "#app/schemas/jsend";
 import { UnknownData } from "#app/schemas/jsend";
 import { createFailResponse } from "#app/utils/jsend";
 import { validatePasswordPolicy } from "./users.controller";
+import { isRoleNameIn, SHIFT_STAFF_ROLES } from "#app/constants/roles";
 
 interface IUserInfoHandler extends RouteGenericInterface {
   Reply: JSendResponse<typeof UnknownData, typeof UnknownData> | null;
@@ -116,12 +117,11 @@ const formatUserInfo = async (user: User): Promise<UserInfo> => {
   });
 
   const managedShifts: number[] = [];
-  const managedRoles = ["root", "boss", "instructor", "helper"];
 
   let currentRole = "";
 
   shifts.forEach((shift) => {
-    if (managedRoles.includes(shift.role.roleName)) {
+    if (isRoleNameIn(shift.role.roleName, SHIFT_STAFF_ROLES)) {
       managedShifts.push(shift.shiftNr);
     }
     if (shift.shiftNr === user.currentShift) currentRole = shift.role.roleName;

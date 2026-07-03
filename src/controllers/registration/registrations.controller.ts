@@ -10,6 +10,7 @@ import prisma from "#app/utils/prisma";
 import { getSessionUser } from "#app/utils/session";
 import { getAgeAtDate } from "#app/utils/age";
 import { isSuperRoot } from "#app/utils/permissions";
+import { Permissions, PermissionPrefixes } from "#app/constants/permissions";
 
 import { toggleRecord } from "#app/controllers/records.controller";
 
@@ -25,7 +26,7 @@ import { UnknownData } from "#app/schemas/jsend";
 export const fetchUserShiftPermissions = async (
   userId: number,
   shiftNr: number,
-  permissionPrefix: string,
+  permissionPrefix: PermissionPrefixes,
 ) => {
   const userShiftRolesRaw = await prisma.userRoles.findMany({
     where: { userId, shiftNr },
@@ -102,7 +103,7 @@ export const registrationsFetchHandler = async (
   const shiftViewPermissions = await fetchUserShiftPermissions(
     userId,
     shiftNr,
-    "registration.view",
+    PermissionPrefixes.REGISTRATION_VIEW,
   );
   if (shiftViewPermissions.size === 0) {
     return res
@@ -111,16 +112,16 @@ export const registrationsFetchHandler = async (
   }
 
   const canViewPII =
-    shiftViewPermissions.has("registration.view.full") ||
-    shiftViewPermissions.has("registration.view.personal-info");
+    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_FULL) ||
+    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_PERSONAL_INFO);
 
   const canViewFinancial =
-    shiftViewPermissions.has("registration.view.full") ||
-    shiftViewPermissions.has("registration.view.price");
+    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_FULL) ||
+    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_PRICE);
 
   const canViewContact =
-    shiftViewPermissions.has("registration.view.full") ||
-    shiftViewPermissions.has("registration.view.contact");
+    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_FULL) ||
+    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_CONTACT);
 
   const rawRegistrations = await prisma.registration.findMany({
     where: { shiftNr, visible: true },
@@ -209,12 +210,14 @@ export const patchRegistrationData = async (
   const regEditPermissions = await fetchUserShiftPermissions(
     userId,
     regShift.shiftNr,
-    "registration.edit",
+    PermissionPrefixes.REGISTRATION_EDIT,
   );
 
   if (regEditPermissions.size === 0) return false;
 
-  const canEditPrice = regEditPermissions.has("registration.edit.price");
+  const canEditPrice = regEditPermissions.has(
+    Permissions.EDIT_REGISTRATION_PRICE,
+  );
   const priceEditKeys = [
     "pricePaid",
     "priceToPay",
@@ -224,7 +227,7 @@ export const patchRegistrationData = async (
   }
 
   const canEditRegistration = regEditPermissions.has(
-    "registration.edit.isRegistered",
+    Permissions.EDIT_REGISTRATION_IS_REGISTERED,
   );
   const regEditKeys = [
     "isOld",

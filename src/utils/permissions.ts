@@ -1,6 +1,7 @@
 import prisma from "./prisma";
 
 import { Permissions } from "#app/constants/permissions";
+import { SHIFT_BOSS_ROLES, SHIFT_STAFF_ROLES } from "#app/constants/roles";
 
 export const isUserBoss = async (userId: number) => {
   const userBossInstances = await prisma.userRoles.findMany({
@@ -8,7 +9,7 @@ export const isUserBoss = async (userId: number) => {
       userId,
       role: {
         roleName: {
-          in: ["boss", "root"],
+          in: [...SHIFT_BOSS_ROLES],
         },
       },
     },
@@ -40,7 +41,7 @@ export const isShiftBoss = async (userId: number, shiftNr: number) => {
       shiftNr,
       role: {
         roleName: {
-          in: ["boss", "root"],
+          in: [...SHIFT_BOSS_ROLES],
         },
       },
     },
@@ -56,7 +57,7 @@ export const isShiftMember = async (userId: number, shiftNr: number) => {
       shiftNr,
       role: {
         roleName: {
-          in: ["boss", "root", "instructor", "helper"],
+          in: [...SHIFT_STAFF_ROLES],
         },
       },
     },

@@ -20,11 +20,12 @@ import {
   createFailResponse,
   createSuccessResponse,
 } from "#app/utils/jsend";
+import { Permissions, PermissionPrefixes } from "#app/constants/permissions";
 
 import { fetchUserShiftPermissions } from "./registration/registrations.controller";
 
 import {
-  RoleNameMap,
+  getRoleDisplayName,
   ShiftResourceFetchParams,
   type UserWithShiftRole,
   UserWithShiftRoleSchema,
@@ -98,15 +99,15 @@ export const fetchShiftPdfHandler = async (
   const shiftViewPermissions = await fetchUserShiftPermissions(
     userId,
     shiftNr,
-    "registration.view",
+    PermissionPrefixes.REGISTRATION_VIEW,
   );
 
   const canViewPII =
-    shiftViewPermissions.has("registration.view.full") ||
-    shiftViewPermissions.has("registration.view.personal-info");
+    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_FULL) ||
+    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_PERSONAL_INFO);
   const canViewContact =
-    shiftViewPermissions.has("registration.view.full") ||
-    shiftViewPermissions.has("registration.view.contact");
+    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_FULL) ||
+    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_CONTACT);
 
   const canPrint = canViewPII && canViewContact;
   if (!canPrint) {
@@ -195,7 +196,7 @@ export const fetchShiftUsersHandler = async (
       userId: obj.user.id,
       name: obj.user.name,
       shiftNr,
-      role: RoleNameMap[obj.role.roleName] ?? obj.role.roleName,
+      role: getRoleDisplayName(obj.role.roleName),
       roleId: obj.role.id,
     });
   });

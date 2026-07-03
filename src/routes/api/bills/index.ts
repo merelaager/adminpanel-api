@@ -1,7 +1,5 @@
-import {
-  FastifyPluginAsyncTypebox,
-  Type,
-} from "@fastify/type-provider-typebox";
+import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
+import { Type } from "@sinclair/typebox";
 import { StatusCodes } from "http-status-codes";
 
 import {
@@ -10,6 +8,11 @@ import {
 } from "../../../controllers/bills.controller";
 
 import { BillCreationSchema } from "../../../schemas/bill";
+import {
+  ErrorResponse,
+  FailResponse,
+  SuccessResponse,
+} from "../../../schemas/jsend";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(
@@ -18,14 +21,12 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         params: Type.Object({ billId: Type.Integer() }),
         response: {
-          [StatusCodes.FORBIDDEN]: Type.Object({
-            status: Type.Literal("fail"),
-            data: Type.Object({ permissions: Type.String() }),
-          }),
-          [StatusCodes.NOT_FOUND]: Type.Object({
-            status: Type.Literal("fail"),
-            data: Type.Object({ billId: Type.String() }),
-          }),
+          [StatusCodes.FORBIDDEN]: FailResponse(
+            Type.Object({ permissions: Type.String() }),
+          ),
+          [StatusCodes.NOT_FOUND]: FailResponse(
+            Type.Object({ billId: Type.String() }),
+          ),
         },
       },
     },
@@ -37,24 +38,19 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         body: BillCreationSchema,
         response: {
-          [StatusCodes.OK]: Type.Object({
-            status: Type.Literal("success"),
-            data: Type.Object({
+          [StatusCodes.OK]: SuccessResponse(
+            Type.Object({
               billNr: Type.Integer(),
             }),
-          }),
-          [StatusCodes.NOT_FOUND]: Type.Object({
-            status: Type.Literal("fail"),
-            data: Type.Union([
+          ),
+          [StatusCodes.NOT_FOUND]: FailResponse(
+            Type.Union([
               Type.Object({ email: Type.String() }),
               Type.Object({ registrations: Type.String() }),
               Type.Object({ permissions: Type.String() }),
             ]),
-          }),
-          [StatusCodes.INTERNAL_SERVER_ERROR]: Type.Object({
-            status: Type.Literal("error"),
-            message: Type.String(),
-          }),
+          ),
+          [StatusCodes.INTERNAL_SERVER_ERROR]: ErrorResponse,
         },
       },
     },

@@ -18,7 +18,8 @@ import {
   UserCreateSchema,
   type UserParams,
 } from "../schemas/user";
-import type { JSendResponse } from "../types/jsend";
+import type { JSendError, JSendResponse } from "../schemas/jsend";
+import { UnknownData } from "../schemas/jsend";
 import { createFailResponse } from "../utils/jsend";
 
 export type UserCreateBasis = Static<typeof UserCreateSchema>;
@@ -81,7 +82,7 @@ export const validatePasswordPolicy = (password: string): string | null => {
 interface IPatchUserHandler extends RouteGenericInterface {
   Params: UserParams;
   Body: PatchUserBody;
-  Reply: JSendResponse | null;
+  Reply: JSendResponse<typeof UnknownData, typeof UnknownData> | null;
 }
 
 export const patchUserHandler = async (
@@ -120,7 +121,7 @@ export const patchUserHandler = async (
 
 interface IInviteUserHandler extends RouteGenericInterface {
   Body: CreateInviteBody;
-  Reply: JSendResponse | null;
+  Reply: JSendResponse<typeof UnknownData, typeof UnknownData> | JSendError | null;
 }
 
 export const inviteUserHandler = async (
@@ -293,7 +294,7 @@ export const resetPasswordHandler = async (
 
 interface ISignupUserHandler extends RouteGenericInterface {
   Body: SignupBody;
-  Reply: JSendResponse | null;
+  Reply: JSendResponse<typeof UnknownData, typeof UnknownData> | JSendError | null;
 }
 
 export const signupUserHandler = async (

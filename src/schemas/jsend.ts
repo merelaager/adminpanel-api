@@ -14,6 +14,8 @@ export function FailResponse<T extends TSchema>(dataSchema: T) {
   });
 }
 
+export const UnknownData = Type.Unknown();
+
 export const ErrorResponse = Type.Object({
   status: Type.Literal("error"),
   message: Type.String(),

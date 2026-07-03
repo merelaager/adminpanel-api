@@ -14,11 +14,12 @@ import {
 } from "../bills.controller";
 
 import type { SingleBillSendBody } from "../../schemas/shift";
-import type { JSendResponse } from "../../types/jsend";
+import type { JSendError, JSendResponse } from "../../schemas/jsend";
+import { UnknownData } from "../../schemas/jsend";
 
 interface ISendBillHandler extends RouteGenericInterface {
   Body: SingleBillSendBody;
-  Reply: JSendResponse | null;
+  Reply: JSendResponse<typeof UnknownData, typeof UnknownData> | JSendError | null;
 }
 
 export const sendBillHandler = async (

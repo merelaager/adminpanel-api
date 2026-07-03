@@ -9,7 +9,8 @@ import { isUserBoss } from "../utils/permissions";
 import { getSessionUser } from "../utils/session";
 import { generateBillPdf } from "../utils/bill-builder";
 
-import type { JSendResponse } from "../types/jsend";
+import type { JSendError, JSendResponse } from "../schemas/jsend";
+import { UnknownData } from "../schemas/jsend";
 import type { BillCreationBody } from "../schemas/bill";
 
 export const registrationInclude = {
@@ -69,7 +70,7 @@ export const createAndAssignBill = async (
 
 interface ICreateBillHandler extends RouteGenericInterface {
   Body: BillCreationBody;
-  Reply: JSendResponse;
+  Reply: JSendResponse<typeof UnknownData, typeof UnknownData> | JSendError;
 }
 
 export const createBillHandler = async (
@@ -144,7 +145,7 @@ export const createBillHandler = async (
 
 interface IFetchBillHandler extends RouteGenericInterface {
   Params: { billId: number };
-  Reply: JSendResponse | ReadStream;
+  Reply: JSendResponse<typeof UnknownData, typeof UnknownData> | ReadStream;
 }
 
 export const fetchBillHandler = async (

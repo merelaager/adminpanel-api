@@ -6,14 +6,15 @@ import prisma from "../utils/prisma";
 import { getSessionUser } from "../utils/session";
 import type { User } from "../generated/prisma/client";
 
-import type { JSendResponse } from "../types/jsend";
 import type { ChangePasswordBody, LoginBody } from "../schemas/auth";
 import type { UserInfo } from "../schemas/user";
+import type { JSendResponse } from "../schemas/jsend";
+import { UnknownData } from "../schemas/jsend";
 import { createFailResponse } from "../utils/jsend";
 import { validatePasswordPolicy } from "./users.controller";
 
 interface IUserInfoHandler extends RouteGenericInterface {
-  Reply: JSendResponse | null;
+  Reply: JSendResponse<typeof UnknownData, typeof UnknownData> | null;
 }
 
 export const userInfoHandler = async (
@@ -36,7 +37,7 @@ export const userInfoHandler = async (
 
 interface ILoginHandler extends RouteGenericInterface {
   Body: LoginBody;
-  Reply: JSendResponse;
+  Reply: JSendResponse<typeof UnknownData, typeof UnknownData>;
 }
 
 export const loginHandler = async (
@@ -75,7 +76,7 @@ export const loginHandler = async (
 
 interface ISetPasswordHandler extends RouteGenericInterface {
   Body: ChangePasswordBody;
-  Reply: JSendResponse | null;
+  Reply: JSendResponse<typeof UnknownData, typeof UnknownData> | null;
 }
 
 export const setPasswordHandler = async (

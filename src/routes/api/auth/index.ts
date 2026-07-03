@@ -1,7 +1,5 @@
-import {
-  FastifyPluginAsyncTypebox,
-  Type,
-} from "@fastify/type-provider-typebox";
+import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
+import { Type } from "@sinclair/typebox";
 import { StatusCodes } from "http-status-codes";
 
 import {
@@ -13,6 +11,11 @@ import { signupUserHandler } from "../../../controllers/users.controller";
 
 import { CredentialsSchema, PasswordSchema } from "../../../schemas/auth";
 import { SignupSchema, UserInfoSchema } from "../../../schemas/user";
+import {
+  ErrorResponse,
+  FailResponse,
+  SuccessResponse,
+} from "../../../schemas/jsend";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(
@@ -20,10 +23,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
     {
       schema: {
         response: {
-          [StatusCodes.OK]: Type.Object({
-            status: Type.Literal("success"),
-            data: UserInfoSchema,
-          }),
+          [StatusCodes.OK]: SuccessResponse(UserInfoSchema),
         },
       },
     },
@@ -42,14 +42,10 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         body: CredentialsSchema,
         response: {
-          [StatusCodes.OK]: Type.Object({
-            status: Type.Literal("success"),
-            data: UserInfoSchema,
-          }),
-          [StatusCodes.UNAUTHORIZED]: Type.Object({
-            status: Type.Literal("fail"),
-            data: Type.Object({ message: Type.String() }),
-          }),
+          [StatusCodes.OK]: SuccessResponse(UserInfoSchema),
+          [StatusCodes.UNAUTHORIZED]: FailResponse(
+            Type.Object({ message: Type.String() }),
+          ),
         },
       },
     },
@@ -62,18 +58,13 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         body: SignupSchema,
         response: {
-          [StatusCodes.FORBIDDEN]: Type.Object({
-            status: Type.Literal("fail"),
-            data: Type.Object({ token: Type.String() }),
-          }),
-          [StatusCodes.CONFLICT]: Type.Object({
-            status: Type.Literal("fail"),
-            data: Type.Object({ conflict: Type.String() }),
-          }),
-          [StatusCodes.INTERNAL_SERVER_ERROR]: Type.Object({
-            status: Type.Literal("error"),
-            message: Type.String(),
-          }),
+          [StatusCodes.FORBIDDEN]: FailResponse(
+            Type.Object({ token: Type.String() }),
+          ),
+          [StatusCodes.CONFLICT]: FailResponse(
+            Type.Object({ conflict: Type.String() }),
+          ),
+          [StatusCodes.INTERNAL_SERVER_ERROR]: ErrorResponse,
         },
       },
     },

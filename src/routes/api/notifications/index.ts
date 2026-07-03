@@ -1,12 +1,11 @@
-import {
-  FastifyPluginAsyncTypebox,
-  Type,
-} from "@fastify/type-provider-typebox";
+import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
+import { Type } from "@sinclair/typebox";
 import { StatusCodes } from "http-status-codes";
 
 import { sendBillHandler } from "../../../controllers/notifications/billing.controller";
 
 import { SingleBillSendSchema } from "../../../schemas/shift";
+import { ErrorResponse, FailResponse } from "../../../schemas/jsend";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.post(
@@ -15,21 +14,16 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         body: SingleBillSendSchema,
         response: {
-          [StatusCodes.FORBIDDEN]: Type.Object({
-            status: Type.Literal("fail"),
-            data: Type.Object({ permissions: Type.String() }),
-          }),
-          [StatusCodes.NOT_FOUND]: Type.Object({
-            status: Type.Literal("fail"),
-            data: Type.Union([
+          [StatusCodes.FORBIDDEN]: FailResponse(
+            Type.Object({ permissions: Type.String() }),
+          ),
+          [StatusCodes.NOT_FOUND]: FailResponse(
+            Type.Union([
               Type.Object({ email: Type.String() }),
               Type.Object({ registrations: Type.String() }),
             ]),
-          }),
-          [StatusCodes.INTERNAL_SERVER_ERROR]: Type.Object({
-            status: Type.Literal("error"),
-            message: Type.String(),
-          }),
+          ),
+          [StatusCodes.INTERNAL_SERVER_ERROR]: ErrorResponse,
         },
       },
     },

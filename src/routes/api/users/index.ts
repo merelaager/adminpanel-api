@@ -12,6 +12,7 @@ import {
   PatchUserSchema,
   UserParamsSchema,
 } from "../../../schemas/user";
+import { ErrorResponse, FailResponse } from "../../../schemas/jsend";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.patch(
@@ -21,15 +22,14 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         params: UserParamsSchema,
         body: PatchUserSchema,
         response: {
-          [StatusCodes.FORBIDDEN]: Type.Object({
-            status: Type.Literal("fail"),
-            data: Type.Partial(
+          [StatusCodes.FORBIDDEN]: FailResponse(
+            Type.Partial(
               Type.Object({
                 userId: Type.String(),
                 currentShift: Type.String(),
               }),
             ),
-          }),
+          ),
         },
       },
     },
@@ -41,22 +41,17 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         body: CreateInviteSchema,
         response: {
-          [StatusCodes.UNPROCESSABLE_ENTITY]: Type.Object({
-            status: Type.Literal("fail"),
-            data: Type.Object({
+          [StatusCodes.UNPROCESSABLE_ENTITY]: FailResponse(
+            Type.Object({
               role: Type.String(),
             }),
-          }),
-          [StatusCodes.FORBIDDEN]: Type.Object({
-            status: Type.Literal("fail"),
-            data: Type.Object({
+          ),
+          [StatusCodes.FORBIDDEN]: FailResponse(
+            Type.Object({
               permissions: Type.String(),
             }),
-          }),
-          [StatusCodes.INTERNAL_SERVER_ERROR]: Type.Object({
-            status: Type.Literal("error"),
-            message: Type.String(),
-          }),
+          ),
+          [StatusCodes.INTERNAL_SERVER_ERROR]: ErrorResponse,
         },
       },
     },

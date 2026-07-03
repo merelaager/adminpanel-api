@@ -1,8 +1,6 @@
 import { RouteShorthandOptions } from "fastify";
-import {
-  FastifyPluginAsyncTypebox,
-  Type,
-} from "@fastify/type-provider-typebox";
+import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
+import { Type } from "@sinclair/typebox";
 import { StatusCodes } from "http-status-codes";
 
 import {
@@ -23,7 +21,11 @@ import {
   RegistrationsCreationSchema,
   RegistrationsFetchSchema,
 } from "../../../schemas/registration";
-import { FailResponse, SuccessResponse } from "../../../schemas/jsend";
+import {
+  ErrorResponse,
+  FailResponse,
+  SuccessResponse,
+} from "../../../schemas/jsend";
 import { getSessionUser } from "../../../utils/session";
 
 interface PatchParams {
@@ -37,16 +39,12 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         querystring: RegistrationsFetchSchema,
         response: {
-          [StatusCodes.OK]: Type.Object({
-            status: Type.Literal("success"),
-            data: Type.Object({
+          [StatusCodes.OK]: SuccessResponse(
+            Type.Object({
               registrations: Type.Array(FilteredRegistrationSchema),
             }),
-          }),
-          [StatusCodes.NOT_IMPLEMENTED]: Type.Object({
-            status: Type.Literal("error"),
-            message: Type.String(),
-          }),
+          ),
+          [StatusCodes.NOT_IMPLEMENTED]: ErrorResponse,
         },
       },
     },
@@ -75,10 +73,9 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       params: Type.Object({ regId: Type.Integer() }),
       body: PatchRegistrationSchema,
       response: {
-        [StatusCodes.NOT_FOUND]: Type.Object({
-          status: Type.Literal("fail"),
-          data: Type.Object({ message: Type.String() }),
-        }),
+        [StatusCodes.NOT_FOUND]: FailResponse(
+          Type.Object({ message: Type.String() }),
+        ),
       },
     },
   };

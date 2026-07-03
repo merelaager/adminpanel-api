@@ -19,7 +19,8 @@ import {
   PatchRegistrationBody,
 } from "../../schemas/registration";
 
-import type { JSendResponse } from "../../types/jsend";
+import type { JSendError, JSendResponse } from "../../schemas/jsend";
+import { UnknownData } from "../../schemas/jsend";
 
 export const fetchUserShiftPermissions = async (
   userId: number,
@@ -80,7 +81,7 @@ const onlyHasAllowedKeys = <
 
 interface IRegistrationsFetchHandler extends RouteGenericInterface {
   Querystring: FetchRegistrationsQueryString;
-  Response: JSendResponse;
+  Response: JSendResponse<typeof UnknownData, typeof UnknownData> | JSendError;
 }
 
 export const registrationsFetchHandler = async (

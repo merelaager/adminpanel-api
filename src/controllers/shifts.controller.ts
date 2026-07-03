@@ -131,7 +131,11 @@ export const fetchShiftPdfHandler = async (
     });
   });
 
-  const filePath = await generateShiftCamperListPDF(shiftNr, printEntries);
+  const filePath = await generateShiftCamperListPDF(
+    shiftNr,
+    printEntries,
+    req.log,
+  );
   if (!filePath) {
     return res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)

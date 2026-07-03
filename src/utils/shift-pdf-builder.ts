@@ -1,4 +1,5 @@
 import type { TDocumentDefinitions, TFontDictionary } from "pdfmake/interfaces";
+import type { FastifyBaseLogger } from "fastify";
 import pdfMake from "pdfmake";
 
 const fonts: TFontDictionary = {
@@ -73,6 +74,7 @@ const createDoc = (
 export const generateShiftCamperListPDF = async (
   shiftNr: number,
   entries: PrintEntry[],
+  log: FastifyBaseLogger,
 ): Promise<string> => {
   const filename = `${shiftNr}v_nimekiri.pdf`;
   const filepath = `data/files/${filename}`;
@@ -81,8 +83,8 @@ export const generateShiftCamperListPDF = async (
     await pdfMake.createPdf(createDoc(shiftNr, entries)).write(filepath);
 
     return filepath;
-  } catch (e) {
-    console.error(e);
+  } catch (err) {
+    log.error({ err, shiftNr }, "Failed to generate shift camper list PDF");
     return "";
   }
 };

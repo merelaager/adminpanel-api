@@ -128,7 +128,7 @@ export const createBillHandler = async (
   try {
     billNr = await createAndAssignBill(billNr, billTotal, registeredCampers);
   } catch (err) {
-    console.error(err);
+    req.log.error({ err }, "Failed to create and assign bill");
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       status: "error",
       message: "Ootamatu viga arve genereerimisel",

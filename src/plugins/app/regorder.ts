@@ -9,7 +9,6 @@ class RegOrder {
 
   constructor(currentOrder: number) {
     this.regOrder = currentOrder;
-    console.log("RegOrder initialised:", currentOrder);
   }
 
   getOrder() {
@@ -39,6 +38,7 @@ const regorderPlugin: FastifyPluginAsync = fp(async (server) => {
   }
 
   server.decorate("regorder", new RegOrder(initialOrder));
+  server.log.info({ initialOrder }, "RegOrder initialised");
 });
 
 export default regorderPlugin;

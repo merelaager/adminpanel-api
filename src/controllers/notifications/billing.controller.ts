@@ -19,7 +19,10 @@ import { UnknownData } from "../../schemas/jsend";
 
 interface ISendBillHandler extends RouteGenericInterface {
   Body: SingleBillSendBody;
-  Reply: JSendResponse<typeof UnknownData, typeof UnknownData> | JSendError | null;
+  Reply:
+    | JSendResponse<typeof UnknownData, typeof UnknownData>
+    | JSendError
+    | null;
 }
 
 export const sendBillHandler = async (
@@ -84,7 +87,7 @@ export const sendBillHandler = async (
   try {
     billNr = await createAndAssignBill(billNr, billTotal, regCampers);
   } catch (err) {
-    console.error(err);
+    req.log.error({ err }, "Failed to create and assign bill");
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       status: "error",
       message: "Ootamatu viga arve genereerimisel.",
@@ -104,8 +107,7 @@ export const sendBillHandler = async (
       },
     });
   } catch (err) {
-    console.error("Email was", email);
-    console.error(err);
+    req.log.error({ err, email }, "Failed to send bill email");
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       status: "error",
       message: "Ootamatu viga arve saatmise.",

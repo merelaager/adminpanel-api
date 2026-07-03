@@ -121,7 +121,10 @@ export const patchUserHandler = async (
 
 interface IInviteUserHandler extends RouteGenericInterface {
   Body: CreateInviteBody;
-  Reply: JSendResponse<typeof UnknownData, typeof UnknownData> | JSendError | null;
+  Reply:
+    | JSendResponse<typeof UnknownData, typeof UnknownData>
+    | JSendError
+    | null;
 }
 
 export const inviteUserHandler = async (
@@ -210,8 +213,7 @@ export const inviteUserHandler = async (
   try {
     await mailService.sendSignupToken(email, token, req.body.name);
   } catch (err) {
-    console.error("Email was", email);
-    console.error(err);
+    req.log.error({ err, email }, "Failed to send signup token email");
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       status: "error",
       message: "Ootamatu viga arve saatmise.",
@@ -250,8 +252,7 @@ export const resetPasswordHandler = async (
     try {
       await mailService.sendPasswordResetToken(email, token);
     } catch (err) {
-      console.error("Email was", email);
-      console.error(err);
+      req.log.error({ err, email }, "Failed to send password reset email");
     }
 
     return res.status(StatusCodes.ACCEPTED).send();
@@ -294,7 +295,10 @@ export const resetPasswordHandler = async (
 
 interface ISignupUserHandler extends RouteGenericInterface {
   Body: SignupBody;
-  Reply: JSendResponse<typeof UnknownData, typeof UnknownData> | JSendError | null;
+  Reply:
+    | JSendResponse<typeof UnknownData, typeof UnknownData>
+    | JSendError
+    | null;
 }
 
 export const signupUserHandler = async (
@@ -366,7 +370,7 @@ export const signupUserHandler = async (
       });
     }
   } catch (err) {
-    console.error(err);
+    req.log.error({ err }, "Failed to create user during signup");
     if (err instanceof Prisma.PrismaClientKnownRequestError) {
       if (err.code === "P2002") {
         return res.status(StatusCodes.CONFLICT).send({

@@ -160,8 +160,9 @@ const fetchShiftRecords = async (
   res: FetchRecordsReply,
 ): Promise<never> => {
   if (!(await isShiftMember(userId, shiftNr))) {
-    console.log(
-      `User '${userId}' is not authorised to view records for '${shiftNr}'`,
+    res.log.warn(
+      { userId, shiftNr },
+      "User not authorised to view shift records",
     );
     return res
       .status(StatusCodes.FORBIDDEN)
@@ -197,8 +198,9 @@ const fetchCamperRecords = async (
   }
 
   if (!isAuthorised) {
-    console.log(
-      `User '${userId}' is not authorised to view historic records for '${childId}'`,
+    res.log.warn(
+      { userId, childId },
+      "User not authorised to view historic records",
     );
     return res
       .status(StatusCodes.FORBIDDEN)

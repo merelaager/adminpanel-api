@@ -1,4 +1,5 @@
 import type {
+  FastifyBaseLogger,
   FastifyReply,
   FastifyRequest,
   RouteGenericInterface,
@@ -170,13 +171,13 @@ export const formRegistrationHandler = async (
 
       if (childInstance !== null) {
         if (childInstance.name !== childName) {
-          console.warn(
-            "Overwriting name",
-            childInstance.name,
-            "of",
-            childInstance.id,
-            "with",
-            childInstance.name,
+          req.log.warn(
+            {
+              childId: childInstance.id,
+              oldName: childInstance.name,
+              newName: childName,
+            },
+            "Overwriting child name",
           );
           await prisma.child.update({
             where: { id: childInstance.id },
@@ -186,12 +187,9 @@ export const formRegistrationHandler = async (
 
         // This should never happen, but better safe than sorry!
         if (childInstance.birthYear && childInstance.birthYear !== birthYear) {
-          console.warn(
-            "ID code matches for ID code:",
-            entry.idCode,
-            "childId:",
-            childInstance.id,
-            "but the birth year is different",
+          req.log.warn(
+            { idCode: entry.idCode, childId: childInstance.id },
+            "ID code matches an existing child but the birth year is different",
           );
         }
       }
@@ -205,14 +203,14 @@ export const formRegistrationHandler = async (
 
       if (childInstance !== null) {
         if (childInstance.birthYear && childInstance.birthYear !== birthYear) {
-          console.warn(
-            "Found match for child with name:",
-            childInstance.name,
-            `(childId: ${childInstance.id})`,
-            "with different year of birth:",
-            childInstance.birthYear,
-            "vs",
-            birthYear,
+          req.log.warn(
+            {
+              childId: childInstance.id,
+              childName: childInstance.name,
+              existingBirthYear: childInstance.birthYear,
+              submittedBirthYear: birthYear,
+            },
+            "Found match for child by name with a different year of birth",
           );
         }
       }
@@ -236,7 +234,7 @@ export const formRegistrationHandler = async (
     let priceToPay = computePrice(entry.shiftNr, isOld);
     if (priceToPay < 0) {
       priceToPay = 360;
-      console.error(entry, "Invalid shift identifier");
+      req.log.error({ entry }, "Invalid shift identifier");
     }
 
     const registrationEntry: Prisma.RegistrationCreateManyInput = {
@@ -289,7 +287,7 @@ export const formRegistrationHandler = async (
       data: registrationEntries,
     });
   } catch (err) {
-    console.error(err);
+    req.log.error({ err }, "Failed to create registrations");
     return res
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
       .send(createErrorResponse("Error communicating with the database"));
@@ -300,6 +298,7 @@ export const formRegistrationHandler = async (
       camperBasicInfo,
       registrationEmailChoices,
       mailer,
+      req.log,
     );
   }
 
@@ -312,6 +311,7 @@ const sendRegistrationEmails = async (
   registrations: EmailReceiptInfo[],
   emailChoices: boolean[],
   mailer: Transporter,
+  log: FastifyBaseLogger,
 ) => {
   // Group children by email.
   const childContacts: {
@@ -338,8 +338,7 @@ const sendRegistrationEmails = async (
     try {
       await mailService.sendRegistrationReceipt(entries, email);
     } catch (err) {
-      console.error("Email was", email);
-      console.error(err);
+      log.error({ err, email }, "Failed to send registration receipt email");
     }
   }
 };

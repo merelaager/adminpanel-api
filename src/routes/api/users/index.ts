@@ -12,7 +12,7 @@ import {
   PatchUserSchema,
   UserParamsSchema,
 } from "../../../schemas/user";
-import { ErrorResponse, FailResponse } from "../../../schemas/jsend";
+import { ErrorResponseRef, FailResponse } from "../../../schemas/jsend";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.patch(
@@ -51,7 +51,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
               permissions: Type.String(),
             }),
           ),
-          [StatusCodes.INTERNAL_SERVER_ERROR]: ErrorResponse,
+          [StatusCodes.INTERNAL_SERVER_ERROR]: ErrorResponseRef,
         },
       },
     },

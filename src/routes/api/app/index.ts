@@ -3,7 +3,7 @@ import { StatusCodes } from "http-status-codes";
 
 import { fetchAppVersionHandler } from "../../../controllers/app.controller";
 import { AppPlatformQuery, AppVersionData } from "../../../schemas/app";
-import { ErrorResponse, SuccessResponse } from "../../../schemas/jsend";
+import { ErrorResponseRef, SuccessResponse } from "../../../schemas/jsend";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(
@@ -14,7 +14,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         querystring: AppPlatformQuery,
         response: {
           [StatusCodes.OK]: SuccessResponse(AppVersionData),
-          [StatusCodes.NOT_FOUND]: ErrorResponse,
+          [StatusCodes.NOT_FOUND]: ErrorResponseRef,
         },
       },
     },

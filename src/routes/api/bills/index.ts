@@ -9,7 +9,7 @@ import {
 
 import { BillCreationSchema } from "../../../schemas/bill";
 import {
-  ErrorResponse,
+  ErrorResponseRef,
   FailResponse,
   SuccessResponse,
 } from "../../../schemas/jsend";
@@ -50,7 +50,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
               Type.Object({ permissions: Type.String() }),
             ]),
           ),
-          [StatusCodes.INTERNAL_SERVER_ERROR]: ErrorResponse,
+          [StatusCodes.INTERNAL_SERVER_ERROR]: ErrorResponseRef,
         },
       },
     },

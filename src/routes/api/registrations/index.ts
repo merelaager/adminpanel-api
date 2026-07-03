@@ -22,7 +22,7 @@ import {
   RegistrationsFetchSchema,
 } from "../../../schemas/registration";
 import {
-  ErrorResponse,
+  ErrorResponseRef,
   FailResponse,
   SuccessResponse,
 } from "../../../schemas/jsend";
@@ -44,7 +44,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
               registrations: Type.Array(FilteredRegistrationSchema),
             }),
           ),
-          [StatusCodes.NOT_IMPLEMENTED]: ErrorResponse,
+          [StatusCodes.NOT_IMPLEMENTED]: ErrorResponseRef,
         },
       },
     },

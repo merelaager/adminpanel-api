@@ -16,12 +16,23 @@ export function FailResponse<T extends TSchema>(dataSchema: T) {
 
 export const UnknownData = Type.Unknown();
 
-export const ErrorResponse = Type.Object({
-  status: Type.Literal("error"),
-  message: Type.String(),
-  code: Type.Optional(Type.Integer()),
-  data: Type.Optional(Type.Unknown()),
-});
+const ERROR_RESPONSE_ID = "JSendError";
+
+export const ErrorResponse = Type.Object(
+  {
+    status: Type.Literal("error"),
+    message: Type.String(),
+    code: Type.Optional(Type.Integer()),
+    data: Type.Optional(Type.Unknown()),
+  },
+  { $id: ERROR_RESPONSE_ID },
+);
+
+export type JSendError = Static<typeof ErrorResponse>;
+
+export const ErrorResponseRef = Type.Unsafe<JSendError>(
+  Type.Ref(ERROR_RESPONSE_ID),
+);
 
 export function JSendResponseSchema<
   SuccessData extends TSchema,
@@ -30,7 +41,7 @@ export function JSendResponseSchema<
   return Type.Union([
     SuccessResponse(successDataSchema),
     FailResponse(failDataSchema),
-    ErrorResponse,
+    ErrorResponseRef,
   ]);
 }
 
@@ -46,5 +57,3 @@ export type JSendResponse<
 export type JSendFail<TFail extends TSchema> = Static<
   ReturnType<typeof FailResponse<TFail>>
 >;
-
-export type JSendError = Static<typeof ErrorResponse>;

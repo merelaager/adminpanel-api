@@ -12,7 +12,7 @@ import { signupUserHandler } from "../../../controllers/users.controller";
 import { CredentialsSchema, PasswordSchema } from "../../../schemas/auth";
 import { SignupSchema, UserInfoSchema } from "../../../schemas/user";
 import {
-  ErrorResponse,
+  ErrorResponseRef,
   FailResponse,
   SuccessResponse,
 } from "../../../schemas/jsend";
@@ -64,7 +64,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
           [StatusCodes.CONFLICT]: FailResponse(
             Type.Object({ conflict: Type.String() }),
           ),
-          [StatusCodes.INTERNAL_SERVER_ERROR]: ErrorResponse,
+          [StatusCodes.INTERNAL_SERVER_ERROR]: ErrorResponseRef,
         },
       },
     },

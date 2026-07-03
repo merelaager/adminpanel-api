@@ -33,7 +33,7 @@ import {
 } from "../../../schemas/shift";
 import { TentInfoSchema, TentScoreSchema } from "../../../schemas/tent";
 import {
-  ErrorResponse,
+  ErrorResponseRef,
   FailResponse,
   SuccessResponse,
 } from "../../../schemas/jsend";
@@ -59,7 +59,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         response: {
           [StatusCodes.NOT_FOUND]: FailResponse(FetchShiftPdfFailData),
           [StatusCodes.FORBIDDEN]: FailResponse(RequestPermissionsFail),
-          [StatusCodes.INTERNAL_SERVER_ERROR]: ErrorResponse,
+          [StatusCodes.INTERNAL_SERVER_ERROR]: ErrorResponseRef,
         },
       },
     },

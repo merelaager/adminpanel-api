@@ -22,6 +22,7 @@ const allowedStaticOrigins = [
   "https://sild.merelaager.ee",
 ];
 const allowedDomainPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+const isProduction = process.env.NODE_ENV === "production";
 
 fastify.register(cors, {
   credentials: true,
@@ -29,7 +30,7 @@ fastify.register(cors, {
     if (
       !origin ||
       allowedStaticOrigins.includes(origin) ||
-      allowedDomainPattern.test(origin)
+      (!isProduction && allowedDomainPattern.test(origin))
     ) {
       cb(null, true);
       return;

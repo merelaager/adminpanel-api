@@ -18,9 +18,7 @@ model Child {
   idCode        String?        @unique @db.VarChar(11)
   createdAt     DateTime       @default(now()) @db.DateTime(0)
   updatedAt     DateTime       @updatedAt @db.DateTime(0)
-  oldRecords    OldRecord[]
   registrations Registration[]
-  shift_data    ShiftData[]
   teams         Team[]
   records       Record[]
 
@@ -60,19 +58,6 @@ model Permission {
   role_permissions RolePermission[]
 
   @@map("permissions")
-}
-
-model OldRecord {
-  id        Int      @id @default(autoincrement()) @db.UnsignedInt
-  shiftNr   Int      @db.UnsignedInt
-  year      Int      @default(2023) @db.UnsignedInt
-  createdAt DateTime @default(now()) @db.DateTime(0)
-  updatedAt DateTime @updatedAt @db.DateTime(0)
-  childId   Int      @db.UnsignedInt
-  children  Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
-
-  @@index([childId], map: "childId")
-  @@map("old_records")
 }
 
 model Record {
@@ -171,25 +156,6 @@ model Role {
   @@map("roles")
 }
 
-model ShiftData {
-  id          Int      @id @default(autoincrement()) @db.UnsignedInt
-  shiftNr     Int      @db.UnsignedInt
-  tentNr      Int?     @db.UnsignedInt
-  parentNotes String?  @db.Text
-  isPresent   Boolean  @default(false)
-  createdAt   DateTime @default(now()) @db.DateTime(0)
-  updatedAt   DateTime @updatedAt @db.DateTime(0)
-  childId     Int      @db.UnsignedInt
-  teamId      Int?     @db.UnsignedInt
-  isActive    Boolean  @default(true)
-  children    Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
-  teams       Team?    @relation(fields: [teamId], references: [id], onDelete: Cascade)
-
-  @@index([childId], map: "childId")
-  @@index([teamId], map: "teamId")
-  @@map("shift_data")
-}
-
 model ShiftStaff {
   id        Int              @id @default(autoincrement()) @db.UnsignedInt
   shiftNr   Int              @db.UnsignedInt
@@ -253,17 +219,16 @@ model SignupToken {
 }
 
 model Team {
-  id         Int         @id @default(autoincrement()) @db.UnsignedInt
-  shiftNr    Int         @db.UnsignedInt
-  name       String      @db.VarChar(255)
-  year       Int         @db.UnsignedInt
-  place      Int?        @db.UnsignedInt
-  captainId  Int?        @db.UnsignedInt
-  createdAt  DateTime    @default(now()) @db.DateTime(0)
-  updatedAt  DateTime    @updatedAt @db.DateTime(0)
-  shift_data ShiftData[]
-  captain    Child?      @relation(fields: [captainId], references: [id])
-  records    Record[]
+  id        Int      @id @default(autoincrement()) @db.UnsignedInt
+  shiftNr   Int      @db.UnsignedInt
+  name      String   @db.VarChar(255)
+  year      Int      @db.UnsignedInt
+  place     Int?     @db.UnsignedInt
+  captainId Int?     @db.UnsignedInt
+  createdAt DateTime @default(now()) @db.DateTime(0)
+  updatedAt DateTime @updatedAt @db.DateTime(0)
+  captain   Child?   @relation(fields: [captainId], references: [id])
+  records   Record[]
 
   @@index([captainId], map: "captainId")
   @@map("teams")
@@ -297,7 +262,6 @@ model User {
   nickname     String?       @db.VarChar(255)
   role         users_role    @default(std)
   password     String        @db.VarChar(255)
-  refreshToken String?       @db.VarChar(255)
   createdAt    DateTime      @default(now()) @db.DateTime(0)
   updatedAt    DateTime      @updatedAt @db.DateTime(0)
   documents    Document[]

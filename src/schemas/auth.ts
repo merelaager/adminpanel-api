@@ -12,7 +12,8 @@ export interface Auth {
 }
 
 export const PasswordSchema = Type.Object({
-  password: Type.String()
-})
+  currentPassword: Type.String(),
+  password: Type.String(),
+});
 
-export type ChangePasswordBody = Static<typeof PasswordSchema>
+export type ChangePasswordBody = Static<typeof PasswordSchema>;

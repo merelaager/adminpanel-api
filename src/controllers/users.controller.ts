@@ -7,7 +7,7 @@ import { Prisma, type PrismaClient } from "#app/generated/prisma/client";
 
 import { canEditShiftMembers, canViewShiftBasic } from "#app/utils/permissions";
 import prisma from "#app/utils/prisma";
-import { getSessionUser } from "#app/utils/session";
+import { deleteUserSessions, getSessionUser } from "#app/utils/session";
 import MailService from "#app/services/mailService";
 
 import {
@@ -283,7 +283,7 @@ export const resetPasswordHandler = async (
   }
 
   const rejectReason = validatePasswordPolicy(password);
-  if (!rejectReason) {
+  if (rejectReason) {
     return res
       .status(StatusCodes.UNPROCESSABLE_ENTITY)
       .send(createFailResponse({ password: rejectReason }));
@@ -304,7 +304,8 @@ export const resetPasswordHandler = async (
     data: { password: passwordHash },
   });
 
-  await prisma.resetToken.delete({ where: { token } });
+  await deleteUserSessions(tokenEntry.userId);
+  await prisma.resetToken.deleteMany({ where: { userId: tokenEntry.userId } });
 
   return res.status(StatusCodes.NO_CONTENT).send(null);
 };
@@ -335,7 +336,7 @@ export const signupUserHandler = async (
   }
 
   const rejectReason = validatePasswordPolicy(password);
-  if (!rejectReason) {
+  if (rejectReason) {
     return res
       .status(StatusCodes.UNPROCESSABLE_ENTITY)
       .send(createFailResponse({ password: rejectReason }));

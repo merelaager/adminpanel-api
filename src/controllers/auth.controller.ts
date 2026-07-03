@@ -3,7 +3,7 @@ import { FastifyReply, FastifyRequest, RouteGenericInterface } from "fastify";
 import { StatusCodes } from "http-status-codes";
 
 import prisma from "#app/utils/prisma";
-import { getSessionUser } from "#app/utils/session";
+import { deleteUserSessions, getSessionUser } from "#app/utils/session";
 import type { User } from "#app/generated/prisma/client";
 
 import type { ChangePasswordBody, LoginBody } from "#app/schemas/auth";
@@ -85,10 +85,17 @@ export const setPasswordHandler = async (
   res: FastifyReply<ISetPasswordHandler>,
 ) => {
   const { userId } = getSessionUser(req);
-  const { password } = req.body;
+  const { currentPassword, password } = req.body;
+
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user || !(await bcrypt.compare(currentPassword, user.password))) {
+    return res
+      .status(StatusCodes.UNAUTHORIZED)
+      .send(createFailResponse({ currentPassword: "Vale salasõna." }));
+  }
 
   const rejectReason = validatePasswordPolicy(password);
-  if (!rejectReason) {
+  if (rejectReason) {
     return res
       .status(StatusCodes.UNPROCESSABLE_ENTITY)
       .send(createFailResponse({ password: rejectReason }));
@@ -103,6 +110,8 @@ export const setPasswordHandler = async (
       password: passwordHash,
     },
   });
+
+  await deleteUserSessions(userId, req.session.sessionId);
 
   return res.status(StatusCodes.NO_CONTENT).send(null);
 };

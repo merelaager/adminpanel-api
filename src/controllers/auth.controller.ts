@@ -51,7 +51,12 @@ export const loginHandler = async (
     },
   });
 
-  if (!user || !bcrypt.compareSync(password, user.password)) {
+  const checkPassword = user
+    ? user.password
+    : "$2b$10$nOUIs5kJ7naTuTFkBy1veuK0kSxUFXfuaOKdOKf9xYT0KKIGSJwFa"; // Example value from the documentation
+  const isValid = await bcrypt.compare(password, checkPassword);
+
+  if (!isValid || !user) {
     return res.code(StatusCodes.UNAUTHORIZED).send({
       status: "fail",
       data: { message: "Vale kasutajanimi või parool." },

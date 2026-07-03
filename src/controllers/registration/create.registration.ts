@@ -107,15 +107,6 @@ export const formRegistrationHandler = async (
 
   const registrationId = uuidv4();
 
-  const maxEntries = 4;
-  if (registrations.length > maxEntries) {
-    return res.status(StatusCodes.BAD_REQUEST).send(
-      createFailResponse({
-        registrations: `The number of entries must not exceed ${maxEntries}`,
-      }),
-    );
-  }
-
   // Keep track of the relative order of registrations.
   // Order numbers are wasted if the registration fails (e.g. the request is malformed),
   // but this is not a problem for the current use case, and it avoids looping twice.

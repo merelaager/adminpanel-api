@@ -52,7 +52,10 @@ export const PatchRecordSchema = Type.Partial(
     {
       // Null must be first to avoid null being parsed as 0.
       teamId: Type.Union([Type.Null(), Type.Integer()]),
-      tentNr: Type.Union([Type.Null(), Type.Integer()]),
+      tentNr: Type.Union([
+        Type.Null(),
+        Type.Integer({ minimum: 1, maximum: 10 }),
+      ]),
       isPresent: Type.Boolean(),
     },
     {

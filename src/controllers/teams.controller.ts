@@ -80,14 +80,6 @@ export const teamCreationHandler = async (
   const { shiftNr, name } = req.body;
   const year = new Date().getUTCFullYear();
 
-  if (name.length < 1) {
-    return res.status(StatusCodes.UNPROCESSABLE_ENTITY).send(
-      createFailResponse({
-        name: "Meeskonna nimi ei tohi olla tühi",
-      }),
-    );
-  }
-
   const isAuthorised = await isShiftMember(userId, shiftNr);
   if (!isAuthorised) {
     return res

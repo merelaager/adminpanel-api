@@ -30,8 +30,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         body: TeamCreationSchema,
         response: {
-          [StatusCodes.UNPROCESSABLE_ENTITY]:
-            FailResponse(TeamCreationFailData),
+          [StatusCodes.BAD_REQUEST]: FailResponse(TeamCreationFailData),
         },
       },
     },

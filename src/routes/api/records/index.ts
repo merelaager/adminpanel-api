@@ -1,5 +1,6 @@
 import type { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import { StatusCodes } from "http-status-codes";
+import { Type } from "@sinclair/typebox";
 
 import {
   FetchRecordsData,
@@ -52,6 +53,9 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         body: PatchRecordSchema,
         response: {
           [StatusCodes.NOT_FOUND]: FailResponse(PatchRecordFailDataNF),
+          [StatusCodes.BAD_REQUEST]: FailResponse(
+            Type.Object({ tentNr: Type.String() }),
+          ),
           [StatusCodes.UNPROCESSABLE_ENTITY]: FailResponse(
             PatchRecordFailDataUE,
           ),

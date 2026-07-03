@@ -54,10 +54,7 @@ export const PatchRecordFailDataNF = Type.Object({
   recordId: Type.String(),
 });
 
-export const PatchRecordFailDataUE = Type.Union([
-  Type.Object({ tentNr: Type.String() }),
-  Type.Object({ teamId: Type.String() }),
-]);
+export const PatchRecordFailDataUE = Type.Object({ teamId: Type.String() });
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const PatchRecordFailData = Type.Union([
@@ -97,17 +94,6 @@ export const patchRecordHandler = async (
     return res
       .status(StatusCodes.FORBIDDEN)
       .send(createFailResponse({ permissions: "Puuduvad õigused päringuks." }));
-  }
-
-  const tentNr = req.body.tentNr;
-  if (tentNr !== undefined && tentNr !== null) {
-    if (tentNr < 1 || tentNr > 10) {
-      return res.status(StatusCodes.UNPROCESSABLE_ENTITY).send(
-        createFailResponse({
-          tentNr: `Telk peab olema vahemikus 1–10. (oli: ${tentNr})`,
-        }),
-      );
-    }
   }
 
   const teamId = req.body.teamId;

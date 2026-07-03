@@ -10,7 +10,7 @@ export type TeamCreationBody = Static<typeof TeamCreationSchema>;
 
 export const TeamCreationSchema = Type.Object({
   shiftNr: Type.Integer(),
-  name: Type.String(),
+  name: Type.String({ minLength: 1 }),
 });
 
 export type TeamRecord = Static<typeof TeamRecordSchema>;

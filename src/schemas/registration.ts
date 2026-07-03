@@ -29,6 +29,7 @@ export const RegistrationCreationSchema = Type.Object({
 
 export const RegistrationsCreationSchema = Type.Array(
   RegistrationCreationSchema,
+  { maxItems: 4 },
 );
 
 export type FetchRegistrationsQueryString = Static<

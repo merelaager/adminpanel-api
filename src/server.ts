@@ -1,10 +1,12 @@
 import path from "node:path";
-import "dotenv/config";
 
 import Fastify from "fastify";
 import fastifyAutoload from "@fastify/autoload";
+import fastifyEnv from "@fastify/env";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
+
+import { envSchema } from "./config/env";
 
 const fastify = Fastify({
   logger: true,
@@ -22,7 +24,8 @@ const allowedStaticOrigins = [
   "https://sild.merelaager.ee",
 ];
 const allowedDomainPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
-const isProduction = process.env.NODE_ENV === "production";
+
+fastify.register(fastifyEnv, { schema: envSchema, dotenv: true });
 
 fastify.register(cors, {
   credentials: true,
@@ -30,7 +33,8 @@ fastify.register(cors, {
     if (
       !origin ||
       allowedStaticOrigins.includes(origin) ||
-      (!isProduction && allowedDomainPattern.test(origin))
+      (fastify.config.NODE_ENV !== "production" &&
+        allowedDomainPattern.test(origin))
     ) {
       cb(null, true);
       return;
@@ -60,9 +64,9 @@ fastify.register(fastifyAutoload, {
 });
 
 const start = async () => {
-  const serverPort = process.env.PORT ? parseInt(process.env.PORT) : 4000;
   try {
-    await fastify.listen({ port: serverPort });
+    await fastify.ready();
+    await fastify.listen({ port: fastify.config.PORT });
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);

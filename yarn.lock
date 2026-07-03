@@ -337,6 +337,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@fastify/env@npm:^7.0.0":
+  version: 7.0.0
+  resolution: "@fastify/env@npm:7.0.0"
+  dependencies:
+    env-schema: "npm:^7.0.0"
+    fastify-plugin: "npm:^5.0.0"
+  checksum: 10c0/9d783bbec495cace1749f4cd176b79bd61735268fe6b5fc5a7d98880f8ee83f73556ed4da1e52a4ffe6ea2a2d3e393d8487805cc27a0c9560a34c967852b9bfb
+  languageName: node
+  linkType: hard
+
 "@fastify/error@npm:^4.0.0":
   version: 4.2.0
   resolution: "@fastify/error@npm:4.2.0"
@@ -1625,6 +1635,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"env-schema@npm:^7.0.0":
+  version: 7.0.0
+  resolution: "env-schema@npm:7.0.0"
+  dependencies:
+    ajv: "npm:^8.12.0"
+  checksum: 10c0/de1c32bdd174e874ea9fe39bf7272aea656ca2ef3c1cb12048d7bda0849aa7be7828744b128e8c62151ac052c618f4fc3804cb29174ce5b9f10f72214b91671d
+  languageName: node
+  linkType: hard
+
 "es-define-property@npm:^1.0.1":
   version: 1.0.1
   resolution: "es-define-property@npm:1.0.1"
@@ -2590,6 +2609,7 @@ __metadata:
     "@fastify/autoload": "npm:^6.3.1"
     "@fastify/cookie": "npm:^11.0.2"
     "@fastify/cors": "npm:^11.2.0"
+    "@fastify/env": "npm:^7.0.0"
     "@fastify/rate-limit": "npm:^11.0.0"
     "@fastify/session": "npm:^11.1.1"
     "@fastify/type-provider-typebox": "npm:^6.1.0"

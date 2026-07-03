@@ -1,5 +1,3 @@
-import "dotenv/config";
-
 import fp from "fastify-plugin";
 import fastifySession from "@fastify/session";
 import fastifyCookie from "@fastify/cookie";
@@ -15,21 +13,14 @@ declare module "fastify" {
 
 export default fp(
   async (fastify) => {
-    const sessionSecret = process.env.COOKIE_SECRET;
-    const cookieDomain = process.env.COOKIE_DOMAIN;
-
-    if (!sessionSecret) {
-      throw new Error("Could not find session secret");
-    }
-
     const defaultTTL = 1000 * 60 * 60 * 7;
 
     fastify.register(fastifyCookie);
     fastify.register(fastifySession, {
-      secret: sessionSecret,
+      secret: fastify.config.COOKIE_SECRET,
       cookie: {
-        secure: process.env.NODE_ENV !== "development",
-        domain: cookieDomain,
+        secure: fastify.config.NODE_ENV !== "development",
+        domain: fastify.config.COOKIE_DOMAIN,
         sameSite: "lax",
         httpOnly: true,
         maxAge: defaultTTL,

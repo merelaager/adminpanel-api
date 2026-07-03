@@ -144,10 +144,10 @@ export const addGradeHandler = async (
     select: { score: true, createdAt: true, tentNr: true, id: true },
   });
 
-  return res.status(StatusCodes.OK).send(
+  return res.status(StatusCodes.CREATED).send(
     createSuccessResponse({
       ...result,
-      scoreId: result.score,
+      scoreId: result.id,
       createdAt: result.createdAt.toISOString(),
     }),
   );

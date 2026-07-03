@@ -81,7 +81,7 @@ const onlyHasAllowedKeys = <
 
 interface IRegistrationsFetchHandler extends RouteGenericInterface {
   Querystring: FetchRegistrationsQueryString;
-  Response: JSendResponse<typeof UnknownData, typeof UnknownData> | JSendError;
+  Reply: JSendResponse<typeof UnknownData, typeof UnknownData> | JSendError;
 }
 
 export const registrationsFetchHandler = async (
@@ -270,7 +270,7 @@ export const patchRegistrationData = async (
 };
 
 interface IRegistrationsCampersSyncHandler extends RouteGenericInterface {
-  Response: void;
+  Reply: void;
 }
 
 export const registrationsCampersSyncHandler = async (

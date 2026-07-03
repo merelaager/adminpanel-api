@@ -162,8 +162,10 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         params: ShiftTentQuerySchema,
         body: AddGradeSchema,
-        [StatusCodes.OK]: SuccessResponse(TentScoreSchema),
-        [StatusCodes.FORBIDDEN]: FailResponse(RequestPermissionsFail),
+        response: {
+          [StatusCodes.OK]: SuccessResponse(TentScoreSchema),
+          [StatusCodes.FORBIDDEN]: FailResponse(RequestPermissionsFail),
+        },
       },
     },
     addGradeHandler,

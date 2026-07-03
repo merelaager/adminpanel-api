@@ -172,26 +172,28 @@ export const inviteUserHandler = async (
     select: { id: true },
   });
 
-  if (!staffMember) {
-    await prisma.shiftStaff.create({
-      data: {
-        shiftNr,
-        year: currentYear,
-        name: req.body.name,
-        role: displayRole,
-        userId: user?.id ?? null,
-      },
-    });
-  } else if (user) {
-    // Link the existing staff entry with the existing user.
-    await prisma.shiftStaff.update({
-      where: { id: staffMember.id },
-      data: { userId: user.id },
-    });
-  }
-
   // Do not send an account creation email if the user already exists.
-  if (user) return res.status(StatusCodes.NO_CONTENT).send(null);
+  if (user) {
+    if (!staffMember) {
+      await prisma.shiftStaff.create({
+        data: {
+          shiftNr,
+          year: currentYear,
+          name: req.body.name,
+          role: displayRole,
+          userId: user.id,
+        },
+      });
+    } else {
+      // Link the existing staff entry with the existing user.
+      await prisma.shiftStaff.update({
+        where: { id: staffMember.id },
+        data: { userId: user.id },
+      });
+    }
+
+    return res.status(StatusCodes.NO_CONTENT).send(null);
+  }
 
   const dbRole = await prisma.role.findUnique({
     where: { roleName: permissionRoleMap[desiredRole as PermissionRole] },
@@ -205,8 +207,22 @@ export const inviteUserHandler = async (
   }
 
   const token = uuidv4();
-  await prisma.signupToken.create({
-    data: { token, email, shiftNr, displayRole, roleId: dbRole.id },
+  await prisma.$transaction(async (tx) => {
+    if (!staffMember) {
+      await tx.shiftStaff.create({
+        data: {
+          shiftNr,
+          year: currentYear,
+          name: req.body.name,
+          role: displayRole,
+          userId: null,
+        },
+      });
+    }
+
+    await tx.signupToken.create({
+      data: { token, email, shiftNr, displayRole, roleId: dbRole.id },
+    });
   });
 
   const mailService = new MailService(req.server.mailer);
@@ -344,31 +360,33 @@ export const signupUserHandler = async (
   const passwordHash = await bcrypt.hash(req.body.password, saltRounds);
 
   try {
-    const user = await prisma.user.create({
-      data: {
-        username: username.trim(),
-        currentShift: signupData.shiftNr,
-        name: req.body.name.trim(),
-        email: signupData.email,
-        nickname: req.body.nickname || req.body.name.split(" ")[0],
-        password: passwordHash,
-      },
-    });
-    // Consume the token.
-    await prisma.signupToken.update({
-      where: { token },
-      data: { isExpired: true, usedDate: new Date() },
-    });
-    // Assign permissions
-    if (signupData.roleId) {
-      await prisma.userRoles.create({
+    await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
         data: {
-          shiftNr: signupData.shiftNr,
-          userId: user.id,
-          roleId: signupData.roleId,
+          username: username.trim(),
+          currentShift: signupData.shiftNr,
+          name: req.body.name.trim(),
+          email: signupData.email,
+          nickname: req.body.nickname || req.body.name.split(" ")[0],
+          password: passwordHash,
         },
       });
-    }
+      // Consume the token.
+      await tx.signupToken.update({
+        where: { token },
+        data: { isExpired: true, usedDate: new Date() },
+      });
+      // Assign permissions
+      if (signupData.roleId) {
+        await tx.userRoles.create({
+          data: {
+            shiftNr: signupData.shiftNr,
+            userId: user.id,
+            roleId: signupData.roleId,
+          },
+        });
+      }
+    });
   } catch (err) {
     req.log.error({ err }, "Failed to create user during signup");
     if (err instanceof Prisma.PrismaClientKnownRequestError) {

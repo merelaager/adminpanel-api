@@ -24,10 +24,11 @@ export type CamperBillingInfo = Prisma.RegistrationGetPayload<{
 }>;
 
 const createBillDatabaseEntry = async (
+  tx: Prisma.TransactionClient,
   contactName: string,
   billTotal: number,
 ) => {
-  const newBill = await prisma.bill.create({
+  const newBill = await tx.bill.create({
     data: { contactName, billTotal },
   });
   return newBill.id;
@@ -43,17 +44,19 @@ export const createAndAssignBill = async (
     email: registeredCampers[0].contactEmail,
   };
 
-  if (isNaN(billNr)) {
-    billNr = await createBillDatabaseEntry(contact.name, billTotal);
-  }
+  await prisma.$transaction(async (tx) => {
+    if (isNaN(billNr)) {
+      billNr = await createBillDatabaseEntry(tx, contact.name, billTotal);
+    }
 
-  for (const camper of registeredCampers) {
-    if (camper.billId) continue;
-    await prisma.registration.update({
-      where: { id: camper.id },
-      data: { billId: billNr },
-    });
-  }
+    for (const camper of registeredCampers) {
+      if (camper.billId) continue;
+      await tx.registration.update({
+        where: { id: camper.id },
+        data: { billId: billNr },
+      });
+    }
+  });
 
   const campersBillData = registeredCampers.map((reg) => {
     return {

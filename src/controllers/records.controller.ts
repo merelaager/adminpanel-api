@@ -6,6 +6,7 @@ import prisma from "#app/utils/prisma";
 import { canEditShiftBasic } from "#app/utils/permissions";
 import { getSessionUser } from "#app/utils/session";
 import { getChildAgeAtShiftStart } from "#app/utils/age";
+import { getCurrentCampYear } from "#app/utils/campYear";
 
 import { PatchRecordSchema, RecordParamsSchema } from "#app/schemas/record";
 import { RequestPermissionsFail } from "#app/schemas/responses";
@@ -23,7 +24,7 @@ export const toggleRecord = async (
   isRegistered: boolean,
 ) => {
   const { childId, shiftNr } = recordBasis;
-  const currentYear = new Date().getFullYear();
+  const currentYear = getCurrentCampYear();
 
   // If the record exists, toggle it on/off.
   // Else, create the record, e.g. when the registration is first approved.
@@ -101,7 +102,7 @@ export const patchRecordHandler = async (
       where: {
         id: teamId,
         shiftNr: record.shiftNr,
-        year: new Date().getUTCFullYear(),
+        year: getCurrentCampYear(),
       },
       select: { id: true },
     });

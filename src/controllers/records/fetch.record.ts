@@ -5,6 +5,7 @@ import { Type } from "@sinclair/typebox";
 import type { Prisma } from "#app/generated/prisma/client";
 import prisma from "#app/utils/prisma";
 import { getAgeAtDate } from "#app/utils/age";
+import { getCurrentCampYear } from "#app/utils/campYear";
 import { canEditShiftBasic, canViewShiftBasic } from "#app/utils/permissions";
 import { getSessionUser } from "#app/utils/session";
 import { createFailResponse, createSuccessResponse } from "#app/utils/jsend";
@@ -39,7 +40,7 @@ export const forceSyncRecordsHandler = async (
 
   if (!forceSync) return res.status(StatusCodes.NOT_MODIFIED).send();
 
-  const year = new Date().getUTCFullYear();
+  const year = getCurrentCampYear();
 
   const registrations = await prisma.registration.findMany({
     where: { shiftNr },
@@ -167,7 +168,7 @@ const fetchShiftRecords = async (
   }
 
   const records = await prisma.record.findMany({
-    where: { shiftNr, year: new Date().getUTCFullYear(), isActive: true },
+    where: { shiftNr, year: getCurrentCampYear(), isActive: true },
     include: recordRelations,
   });
 

@@ -14,6 +14,7 @@ import {
 import type { JSendFail, JSendResponse } from "#app/schemas/jsend";
 import { canEditShiftBasic, canViewShiftBasic } from "#app/utils/permissions";
 import { getSessionUser } from "#app/utils/session";
+import { getCurrentCampYear } from "#app/utils/campYear";
 import { RequestPermissionsFail } from "#app/schemas/responses";
 import type { Route } from "#app/schemas/route";
 
@@ -42,7 +43,7 @@ export const fetchTeamsHandler = async (
   }
 
   const teams: TeamRecord[] = await prisma.team.findMany({
-    where: { shiftNr, year: new Date().getUTCFullYear() },
+    where: { shiftNr, year: getCurrentCampYear() },
     select: {
       id: true,
       shiftNr: true,
@@ -73,7 +74,7 @@ export const teamCreationHandler = async (
   const { userId } = getSessionUser(req);
 
   const { shiftNr, name } = req.body;
-  const year = new Date().getUTCFullYear();
+  const year = getCurrentCampYear();
 
   const isAuthorised = await canEditShiftBasic(userId, shiftNr);
   if (!isAuthorised) {

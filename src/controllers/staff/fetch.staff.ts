@@ -6,6 +6,7 @@ import prisma from "#app/utils/prisma";
 import { canViewShiftStaff } from "#app/utils/permissions";
 import { getSessionUser } from "#app/utils/session";
 import { createFailResponse, createSuccessResponse } from "#app/utils/jsend";
+import { getCurrentCampYear } from "#app/utils/campYear";
 
 import { ShiftResourceFetchParams } from "#app/schemas/shift";
 import { ShiftStaffMember, ShiftStaffSchema } from "#app/schemas/staff";
@@ -38,7 +39,7 @@ export const fetchShiftStaff = async (
       .send(createFailResponse({ permissions: "Puuduvad õigused päringuks." }));
   }
 
-  const currentYear = new Date().getUTCFullYear();
+  const currentYear = getCurrentCampYear();
   const rawShiftStaff = await prisma.shiftStaff.findMany({
     where: { year: currentYear, shiftNr },
     orderBy: {

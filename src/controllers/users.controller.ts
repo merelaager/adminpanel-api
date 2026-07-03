@@ -11,6 +11,7 @@ import {
   TOKEN_EXPIRY_HOURS,
   TOKEN_EXPIRY_MS,
 } from "#app/constants/auth";
+import { getCurrentCampYear } from "#app/utils/campYear";
 import prisma from "#app/utils/prisma";
 import { deleteUserSessions, getSessionUser } from "#app/utils/session";
 import MailService from "#app/services/mailService";
@@ -164,7 +165,7 @@ export const inviteUserHandler = async (
 
   // TODO: find a more elegant and flexible way to do this.
   const displayRole = desiredRole === "instructor" ? "full" : "part";
-  const currentYear = new Date().getUTCFullYear();
+  const currentYear = getCurrentCampYear();
 
   // Register the user as a staff member, if not already.
   const staffMember = await prisma.shiftStaff.findUnique({
@@ -241,7 +242,7 @@ export const inviteUserHandler = async (
     req.log.error({ err, email }, "Failed to send signup token email");
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       status: "error",
-      message: "Ootamatu viga arve saatmise.",
+      message: "Ootamatu viga regamispääsmiku saatmisel.",
     });
   }
 

@@ -6,6 +6,7 @@ import prisma from "#app/utils/prisma";
 import { canEditShiftBasic, canViewShiftBasic } from "#app/utils/permissions";
 import { getSessionUser } from "#app/utils/session";
 import { createFailResponse, createSuccessResponse } from "#app/utils/jsend";
+import { getCurrentCampYear } from "#app/utils/campYear";
 
 import {
   AddGradeSchema,
@@ -35,7 +36,7 @@ export const fetchTentHandler = async (
       .send(createFailResponse({ permissions: "Puuduvad õigused päringuks." }));
   }
 
-  const currentYear = new Date().getUTCFullYear();
+  const currentYear = getCurrentCampYear();
 
   const records = await prisma.record.findMany({
     where: { shiftNr, year: currentYear, tentNr, isActive: true },
@@ -88,7 +89,7 @@ export const fetchTentsHandler = async (
       .send(createFailResponse({ permissions: "Puuduvad õigused päringuks." }));
   }
 
-  const currentYear = new Date().getUTCFullYear();
+  const currentYear = getCurrentCampYear();
 
   const tentScores = await prisma.tentScore.findMany({
     where: { shiftNr, year: currentYear },
@@ -131,7 +132,7 @@ export const addGradeHandler = async (
       .send(createFailResponse({ permissions: "Puuduvad õigused päringuks." }));
   }
 
-  const currentYear = new Date().getUTCFullYear();
+  const currentYear = getCurrentCampYear();
   const result = await prisma.tentScore.create({
     data: {
       shiftNr,

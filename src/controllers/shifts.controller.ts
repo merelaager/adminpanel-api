@@ -10,6 +10,7 @@ import { Type } from "@sinclair/typebox";
 
 import prisma from "#app/utils/prisma";
 import { getSessionUser } from "#app/utils/session";
+import { getCurrentCampYear } from "#app/utils/campYear";
 import {
   generateShiftCamperListPDF,
   PrintEntry,
@@ -239,7 +240,7 @@ export const fetchShiftRecordsHandler = async (
       .send(createFailResponse({ permissions: "Puuduvad õigused päringuks." }));
   }
 
-  const currentYear = new Date().getUTCFullYear();
+  const currentYear = getCurrentCampYear();
 
   const rawRecords = await prisma.record.findMany({
     where: { shiftNr, year: currentYear, isActive: true },

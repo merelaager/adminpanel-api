@@ -38,8 +38,6 @@ export const CamperRecordSchema = Type.Object({
   ageAtCamp: Type.Integer(),
 });
 
-export type UserParams = Static<typeof UserParamsSchema>;
-
 export const UserParamsSchema = Type.Object({
   userId: Type.Integer(),
 });
@@ -55,16 +53,12 @@ export const PatchUserSchema = Type.Partial(
   ),
 );
 
-export type PatchUserBody = Static<typeof PatchUserSchema>;
-
 export const CreateInviteSchema = Type.Object({
   email: Type.String({ format: "email" }),
   name: Type.String(),
   shiftNr: Type.Integer(),
   role: Type.String(),
 });
-
-export type CreateInviteBody = Static<typeof CreateInviteSchema>;
 
 export const SignupSchema = Type.Object({
   username: Type.String(),
@@ -75,8 +69,6 @@ export const SignupSchema = Type.Object({
   token: Type.String(),
 });
 
-export type SignupBody = Static<typeof SignupSchema>;
-
 export const ResetPasswordSchema = Type.Union([
   Type.Object({
     email: Type.String(),
@@ -86,5 +78,3 @@ export const ResetPasswordSchema = Type.Union([
     password: Type.String(),
   }),
 ]);
-
-export type RequestPasswordResetBody = Static<typeof ResetPasswordSchema>;

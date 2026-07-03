@@ -1,8 +1,4 @@
-import type {
-  FastifyReply,
-  FastifyRequest,
-  RouteGenericInterface,
-} from "fastify";
+import type { FastifyReply, FastifyRequest } from "fastify";
 import { StatusCodes } from "http-status-codes";
 import { Type } from "@sinclair/typebox";
 
@@ -11,10 +7,11 @@ import { canEditShiftBasic } from "#app/utils/permissions";
 import { getSessionUser } from "#app/utils/session";
 import { getChildAgeAtShiftStart } from "#app/utils/age";
 
-import type { PatchRecordBody, RecordParams } from "#app/schemas/record";
+import { PatchRecordSchema, RecordParamsSchema } from "#app/schemas/record";
 import { RequestPermissionsFail } from "#app/schemas/responses";
 import type { JSendFail } from "#app/schemas/jsend";
 import { createFailResponse } from "#app/utils/jsend";
+import type { Route } from "#app/schemas/route";
 
 type RecordCreateData = {
   childId: number;
@@ -63,11 +60,12 @@ const PatchRecordFailData = Type.Union([
   RequestPermissionsFail,
 ]);
 
-interface IPatchRecord extends RouteGenericInterface {
-  Params: RecordParams;
-  Body: PatchRecordBody;
+type IPatchRecord = Route<{
+  params: typeof RecordParamsSchema;
+  body: typeof PatchRecordSchema;
+}> & {
   Reply: JSendFail<typeof PatchRecordFailData> | null;
-}
+};
 
 export const patchRecordHandler = async (
   req: FastifyRequest<IPatchRecord>,

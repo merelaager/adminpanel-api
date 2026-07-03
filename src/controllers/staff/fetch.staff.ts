@@ -1,8 +1,4 @@
-import type {
-  FastifyReply,
-  FastifyRequest,
-  RouteGenericInterface,
-} from "fastify";
+import type { FastifyReply, FastifyRequest } from "fastify";
 import { StatusCodes } from "http-status-codes";
 import { Type } from "@sinclair/typebox";
 
@@ -15,18 +11,18 @@ import { ShiftResourceFetchParams } from "#app/schemas/shift";
 import { ShiftStaffMember, ShiftStaffSchema } from "#app/schemas/staff";
 import type { JSendResponse } from "#app/schemas/jsend";
 import { RequestPermissionsFail } from "#app/schemas/responses";
+import type { Route } from "#app/schemas/route";
 
 export const FetchShiftStaffData = Type.Object({
   staff: Type.Array(ShiftStaffSchema),
 });
 
-interface IFetchShiftStaff extends RouteGenericInterface {
-  Params: ShiftResourceFetchParams;
+type IFetchShiftStaff = Route<{ params: typeof ShiftResourceFetchParams }> & {
   Reply: JSendResponse<
     typeof FetchShiftStaffData,
     typeof RequestPermissionsFail
   >;
-}
+};
 
 export const fetchShiftStaff = async (
   req: FastifyRequest<IFetchShiftStaff>,

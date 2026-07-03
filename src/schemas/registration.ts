@@ -3,9 +3,6 @@ import { Static, Type } from "@sinclair/typebox";
 const STRING_MAX = 255;
 
 export type CreateRegistrationData = Static<typeof RegistrationCreationSchema>;
-export type CreateRegistrationsBody = Static<
-  typeof RegistrationsCreationSchema
->;
 
 export const RegistrationCreationSchema = Type.Object({
   name: Type.String(),
@@ -31,10 +28,6 @@ export const RegistrationsCreationSchema = Type.Array(
   RegistrationCreationSchema,
   { maxItems: 4 },
 );
-
-export type FetchRegistrationsQueryString = Static<
-  typeof RegistrationsFetchSchema
->;
 
 export const RegistrationsFetchSchema = Type.Object({
   shiftNr: Type.Integer(),
@@ -85,6 +78,10 @@ export const PatchRegistrationSchema = Type.Object(
     additionalProperties: false,
   },
 );
+
+export const PatchRegistrationParamsSchema = Type.Object({
+  regId: Type.Integer(),
+});
 
 export type EmailReceiptInfo = {
   name: string;

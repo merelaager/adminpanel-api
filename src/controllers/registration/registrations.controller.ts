@@ -15,13 +15,14 @@ import { Permissions, PermissionPrefixes } from "#app/constants/permissions";
 import { toggleRecord } from "#app/controllers/records.controller";
 
 import {
-  FetchRegistrationsQueryString,
   FilteredRegistrationSchema,
   PatchRegistrationBody,
+  RegistrationsFetchSchema,
 } from "#app/schemas/registration";
 
 import type { JSendError, JSendResponse } from "#app/schemas/jsend";
 import { UnknownData } from "#app/schemas/jsend";
+import type { Route } from "#app/schemas/route";
 
 export const fetchUserShiftPermissions = async (
   userId: number,
@@ -80,10 +81,11 @@ const onlyHasAllowedKeys = <
   );
 };
 
-interface IRegistrationsFetchHandler extends RouteGenericInterface {
-  Querystring: FetchRegistrationsQueryString;
+type IRegistrationsFetchHandler = Route<{
+  querystring: typeof RegistrationsFetchSchema;
+}> & {
   Reply: JSendResponse<typeof UnknownData, typeof UnknownData> | JSendError;
-}
+};
 
 export const registrationsFetchHandler = async (
   req: FastifyRequest<IRegistrationsFetchHandler>,
@@ -272,9 +274,9 @@ export const patchRegistrationData = async (
   return true;
 };
 
-interface IRegistrationsCampersSyncHandler extends RouteGenericInterface {
+type IRegistrationsCampersSyncHandler = RouteGenericInterface & {
   Reply: void;
-}
+};
 
 export const registrationsCampersSyncHandler = async (
   req: FastifyRequest<IRegistrationsCampersSyncHandler>,

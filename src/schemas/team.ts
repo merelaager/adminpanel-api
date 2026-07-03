@@ -1,12 +1,8 @@
 import { Static, Type } from "@sinclair/typebox";
 
-export type FetchTeamsQueryString = Static<typeof TeamsFetchSchema>;
-
 export const TeamsFetchSchema = Type.Object({
   shiftNr: Type.Integer(),
 });
-
-export type TeamCreationBody = Static<typeof TeamCreationSchema>;
 
 export const TeamCreationSchema = Type.Object({
   shiftNr: Type.Integer(),

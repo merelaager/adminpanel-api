@@ -37,14 +37,15 @@ import { CamperRecord, CamperRecordSchema } from "#app/schemas/user";
 import { RequestPermissionsFail } from "#app/schemas/responses";
 import type { JSendError, JSendFail, JSendResponse } from "#app/schemas/jsend";
 import { ParentBillSchema } from "#app/schemas/billing";
+import type { Route } from "#app/schemas/route";
 
 export const FetchShiftsData = Type.Object({
   shifts: Type.Array(Type.Integer()),
 });
 
-interface IFetchShiftsHandler extends RouteGenericInterface {
+type IFetchShiftsHandler = RouteGenericInterface & {
   Reply: JSendResponse<typeof FetchShiftsData>;
-}
+};
 
 export const fetchShiftsHandler = async (
   _: FastifyRequest<IFetchShiftsHandler>,
@@ -66,13 +67,14 @@ export const FetchShiftPdfFailData = Type.Union([
   Type.Object({ shift: Type.String() }),
 ]);
 
-interface IFetchShiftPdfHandler extends RouteGenericInterface {
-  Params: ShiftResourceFetchParams;
+type IFetchShiftPdfHandler = Route<{
+  params: typeof ShiftResourceFetchParams;
+}> & {
   Reply:
     | ReadStream
     | JSendFail<typeof FetchShiftPdfFailData | typeof RequestPermissionsFail>
     | JSendError;
-}
+};
 
 export const fetchShiftPdfHandler = async (
   req: FastifyRequest<IFetchShiftPdfHandler>,
@@ -155,13 +157,12 @@ export const FetchShiftUsersData = Type.Object({
   users: Type.Array(UserWithShiftRoleSchema),
 });
 
-interface IFetchShiftUsers extends RouteGenericInterface {
-  Params: ShiftResourceFetchParams;
+type IFetchShiftUsers = Route<{ params: typeof ShiftResourceFetchParams }> & {
   Reply: JSendResponse<
     typeof FetchShiftUsersData,
     typeof RequestPermissionsFail
   >;
-}
+};
 
 export const fetchShiftUsersHandler = async (
   req: FastifyRequest<IFetchShiftUsers>,
@@ -215,13 +216,14 @@ export const FetchShiftRecordsData = Type.Object({
   records: Type.Array(CamperRecordSchema),
 });
 
-interface IFetchShiftCampers extends RouteGenericInterface {
-  Params: ShiftResourceFetchParams;
+type IFetchShiftCampers = Route<{
+  params: typeof ShiftResourceFetchParams;
+}> & {
   Reply: JSendResponse<
     typeof FetchShiftRecordsData,
     typeof RequestPermissionsFail
   >;
-}
+};
 
 export const fetchShiftRecordsHandler = async (
   req: FastifyRequest<IFetchShiftCampers>,
@@ -274,13 +276,12 @@ export const FetchShiftEmailsData = Type.Object({
   emails: Type.Array(Type.String()),
 });
 
-interface IFetchShiftEmails extends RouteGenericInterface {
-  Params: ShiftResourceFetchParams;
+type IFetchShiftEmails = Route<{ params: typeof ShiftResourceFetchParams }> & {
   Reply: JSendResponse<
     typeof FetchShiftEmailsData,
     typeof RequestPermissionsFail
   >;
-}
+};
 
 export const fetchShiftEmailsHandler = async (
   req: FastifyRequest<IFetchShiftEmails>,
@@ -324,13 +325,14 @@ export const FetchShiftBillingData = Type.Object({
   records: Type.Array(ParentBillSchema),
 });
 
-interface IFetchShiftBillingInfo extends RouteGenericInterface {
-  Params: ShiftResourceFetchParams;
+type IFetchShiftBillingInfo = Route<{
+  params: typeof ShiftResourceFetchParams;
+}> & {
   Reply: JSendResponse<
     typeof FetchShiftBillingData,
     typeof RequestPermissionsFail
   >;
-}
+};
 
 export const fetchShiftBillingHandler = async (
   req: FastifyRequest<IFetchShiftBillingInfo>,

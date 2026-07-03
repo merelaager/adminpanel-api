@@ -1,4 +1,4 @@
-import { FastifyReply, FastifyRequest, RouteGenericInterface } from "fastify";
+import { FastifyReply, FastifyRequest } from "fastify";
 import { Static } from "@sinclair/typebox";
 import { StatusCodes } from "http-status-codes";
 import { v4 as uuidv4 } from "uuid";
@@ -11,16 +11,17 @@ import { deleteUserSessions, getSessionUser } from "#app/utils/session";
 import MailService from "#app/services/mailService";
 
 import {
-  type CreateInviteBody,
-  type PatchUserBody,
-  RequestPasswordResetBody,
-  type SignupBody,
+  CreateInviteSchema,
+  PatchUserSchema,
+  ResetPasswordSchema,
+  SignupSchema,
   UserCreateSchema,
-  type UserParams,
+  UserParamsSchema,
 } from "#app/schemas/user";
 import type { JSendError, JSendResponse } from "#app/schemas/jsend";
 import { UnknownData } from "#app/schemas/jsend";
 import { createFailResponse } from "#app/utils/jsend";
+import type { Route } from "#app/schemas/route";
 
 export type UserCreateBasis = Static<typeof UserCreateSchema>;
 
@@ -79,11 +80,12 @@ export const validatePasswordPolicy = (password: string): string | null => {
   return null;
 };
 
-interface IPatchUserHandler extends RouteGenericInterface {
-  Params: UserParams;
-  Body: PatchUserBody;
+type IPatchUserHandler = Route<{
+  params: typeof UserParamsSchema;
+  body: typeof PatchUserSchema;
+}> & {
   Reply: JSendResponse<typeof UnknownData, typeof UnknownData> | null;
-}
+};
 
 export const patchUserHandler = async (
   req: FastifyRequest<IPatchUserHandler>,
@@ -119,13 +121,12 @@ export const patchUserHandler = async (
   return res.status(StatusCodes.NO_CONTENT).send(null);
 };
 
-interface IInviteUserHandler extends RouteGenericInterface {
-  Body: CreateInviteBody;
+type IInviteUserHandler = Route<{ body: typeof CreateInviteSchema }> & {
   Reply:
     | JSendResponse<typeof UnknownData, typeof UnknownData>
     | JSendError
     | null;
-}
+};
 
 export const inviteUserHandler = async (
   req: FastifyRequest<IInviteUserHandler>,
@@ -239,10 +240,9 @@ export const inviteUserHandler = async (
   return res.status(StatusCodes.NO_CONTENT).send(null);
 };
 
-interface IRequestPasswordResetHandler extends RouteGenericInterface {
-  Body: RequestPasswordResetBody;
-  Reply: null;
-}
+type IRequestPasswordResetHandler = Route<{
+  body: typeof ResetPasswordSchema;
+}> & { Reply: null };
 
 export const resetPasswordHandler = async (
   req: FastifyRequest<IRequestPasswordResetHandler>,
@@ -310,13 +310,12 @@ export const resetPasswordHandler = async (
   return res.status(StatusCodes.NO_CONTENT).send(null);
 };
 
-interface ISignupUserHandler extends RouteGenericInterface {
-  Body: SignupBody;
+type ISignupUserHandler = Route<{ body: typeof SignupSchema }> & {
   Reply:
     | JSendResponse<typeof UnknownData, typeof UnknownData>
     | JSendError
     | null;
-}
+};
 
 export const signupUserHandler = async (
   req: FastifyRequest<ISignupUserHandler>,

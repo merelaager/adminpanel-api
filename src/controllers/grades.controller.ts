@@ -1,21 +1,17 @@
-import type {
-  FastifyReply,
-  FastifyRequest,
-  RouteGenericInterface,
-} from "fastify";
+import type { FastifyReply, FastifyRequest } from "fastify";
 import { StatusCodes } from "http-status-codes";
 
 import prisma from "#app/utils/prisma";
 
-import { GradeDeleteParams } from "#app/schemas/grades";
+import { GradeDeleteSchema } from "#app/schemas/grades";
 import { canEditShiftBasic } from "#app/utils/permissions";
 import { createFailResponse } from "#app/utils/jsend";
 import { getSessionUser } from "#app/utils/session";
+import type { Route } from "#app/schemas/route";
 
-interface IDeleteGradeHandler extends RouteGenericInterface {
-  Params: GradeDeleteParams;
+type IDeleteGradeHandler = Route<{ params: typeof GradeDeleteSchema }> & {
   Reply: never;
-}
+};
 
 export const deleteGradeHandler = async (
   req: FastifyRequest<IDeleteGradeHandler>,

@@ -1,8 +1,4 @@
-import type {
-  FastifyReply,
-  FastifyRequest,
-  RouteGenericInterface,
-} from "fastify";
+import type { FastifyReply, FastifyRequest } from "fastify";
 import { StatusCodes } from "http-status-codes";
 import { Type } from "@sinclair/typebox";
 
@@ -12,18 +8,18 @@ import { getSessionUser } from "#app/utils/session";
 import { createFailResponse, createSuccessResponse } from "#app/utils/jsend";
 
 import {
-  AddScoreBody,
+  AddGradeSchema,
   ShiftResourceFetchParams,
-  TentQueryParams,
+  ShiftTentQuerySchema,
 } from "#app/schemas/shift";
 import type { JSendResponse } from "#app/schemas/jsend";
 import { TentInfoSchema, TentScoreSchema } from "#app/schemas/tent";
 import { RequestPermissionsFail } from "#app/schemas/responses";
+import type { Route } from "#app/schemas/route";
 
-interface IFetchTentHandler extends RouteGenericInterface {
-  Params: TentQueryParams;
+type IFetchTentHandler = Route<{ params: typeof ShiftTentQuerySchema }> & {
   Reply: JSendResponse<typeof TentInfoSchema, typeof RequestPermissionsFail>;
-}
+};
 
 export const fetchTentHandler = async (
   req: FastifyRequest<IFetchTentHandler>,
@@ -72,10 +68,11 @@ export const FetchTentsData = Type.Object({
   scores: Type.Array(TentScoreSchema),
 });
 
-interface IFetchTentsHandler extends RouteGenericInterface {
-  Params: ShiftResourceFetchParams;
+type IFetchTentsHandler = Route<{
+  params: typeof ShiftResourceFetchParams;
+}> & {
   Reply: JSendResponse<typeof FetchTentsData, typeof RequestPermissionsFail>;
-}
+};
 
 export const fetchTentsHandler = async (
   req: FastifyRequest<IFetchTentsHandler>,
@@ -112,11 +109,12 @@ export const fetchTentsHandler = async (
   );
 };
 
-interface IAddGradeHandler extends RouteGenericInterface {
-  Params: TentQueryParams;
-  Body: AddScoreBody;
+type IAddGradeHandler = Route<{
+  params: typeof ShiftTentQuerySchema;
+  body: typeof AddGradeSchema;
+}> & {
   Reply: JSendResponse<typeof TentScoreSchema, typeof RequestPermissionsFail>;
-}
+};
 
 export const addGradeHandler = async (
   req: FastifyRequest<IAddGradeHandler>,

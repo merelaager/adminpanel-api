@@ -1,8 +1,4 @@
-import type {
-  FastifyReply,
-  FastifyRequest,
-  RouteGenericInterface,
-} from "fastify";
+import type { FastifyReply, FastifyRequest } from "fastify";
 import { StatusCodes } from "http-status-codes";
 import { Type } from "@sinclair/typebox";
 
@@ -14,18 +10,18 @@ import { getSessionUser } from "#app/utils/session";
 import { createFailResponse, createSuccessResponse } from "#app/utils/jsend";
 
 import {
-  FetchRecordsQueryString,
   FlattenedRecord,
   FlattenedRecordSchema,
-  ForceSyncBody,
+  ForceSyncSchema,
+  RecordsFetchSchema,
 } from "#app/schemas/record";
 import { RequestPermissionsFail } from "#app/schemas/responses";
 import type { JSendResponse } from "#app/schemas/jsend";
+import type { Route } from "#app/schemas/route";
 
-interface IForceSyncHandler extends RouteGenericInterface {
-  Body: ForceSyncBody;
+type IForceSyncHandler = Route<{ body: typeof ForceSyncSchema }> & {
   Reply: void;
-}
+};
 
 export const forceSyncRecordsHandler = async (
   req: FastifyRequest<IForceSyncHandler>,
@@ -125,10 +121,11 @@ export const FetchRecordsData = Type.Object({
   records: Type.Array(FlattenedRecordSchema),
 });
 
-interface IFetchRecordsHandler extends RouteGenericInterface {
-  Querystring: FetchRecordsQueryString;
+type IFetchRecordsHandler = Route<{
+  querystring: typeof RecordsFetchSchema;
+}> & {
   Reply: JSendResponse<typeof FetchRecordsData, typeof RequestPermissionsFail>;
-}
+};
 
 type FetchRecordsReply = FastifyReply<IFetchRecordsHandler>;
 

@@ -2,13 +2,9 @@ import { Static, Type } from "@sinclair/typebox";
 
 import type { RoleName } from "#app/constants/roles";
 
-export type SingleBillSendBody = Static<typeof SingleBillSendSchema>;
-
 export const SingleBillSendSchema = Type.Object({
   email: Type.String({ format: "email" }),
 });
-
-export type ShiftResourceFetchParams = Static<typeof ShiftResourceFetchParams>;
 
 export const ShiftResourceFetchParams = Type.Object({
   shiftNr: Type.Integer(),
@@ -42,10 +38,6 @@ export const ShiftTentQuerySchema = Type.Object({
   tentNr: Type.Integer(),
 });
 
-export type TentQueryParams = Static<typeof ShiftTentQuerySchema>;
-
 export const AddGradeSchema = Type.Object({
   score: Type.Integer(),
 });
-
-export type AddScoreBody = Static<typeof AddGradeSchema>;

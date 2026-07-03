@@ -15,10 +15,6 @@ export const RecordsFetchSchema = Type.Union([
   CamperRecordsFilterSchema,
 ]);
 
-export type FetchRecordsQueryString = Static<typeof RecordsFetchSchema>;
-
-export type ForceSyncBody = Static<typeof ForceSyncSchema>;
-
 export const ForceSyncSchema = Type.Object({
   shiftNr: Type.Integer(),
   forceSync: Type.Boolean(), // Make intent explicit, just in case.
@@ -39,13 +35,9 @@ export const FlattenedRecordSchema = Type.Object({
   shiftNr: Type.Integer(),
 });
 
-export type RecordParams = Static<typeof RecordParamsSchema>;
-
 export const RecordParamsSchema = Type.Object({
   recordId: Type.Integer(),
 });
-
-export type PatchRecordBody = Static<typeof PatchRecordSchema>;
 
 export const PatchRecordSchema = Type.Partial(
   Type.Object(

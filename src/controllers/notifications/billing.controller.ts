@@ -1,4 +1,4 @@
-import { FastifyReply, FastifyRequest, RouteGenericInterface } from "fastify";
+import { FastifyReply, FastifyRequest } from "fastify";
 import { StatusCodes } from "http-status-codes";
 
 import prisma from "#app/utils/prisma";
@@ -13,17 +13,17 @@ import {
   registrationInclude,
 } from "#app/controllers/bills.controller";
 
-import type { SingleBillSendBody } from "#app/schemas/shift";
+import { SingleBillSendSchema } from "#app/schemas/shift";
 import type { JSendError, JSendResponse } from "#app/schemas/jsend";
 import { UnknownData } from "#app/schemas/jsend";
+import type { Route } from "#app/schemas/route";
 
-interface ISendBillHandler extends RouteGenericInterface {
-  Body: SingleBillSendBody;
+type ISendBillHandler = Route<{ body: typeof SingleBillSendSchema }> & {
   Reply:
     | JSendResponse<typeof UnknownData, typeof UnknownData>
     | JSendError
     | null;
-}
+};
 
 export const sendBillHandler = async (
   req: FastifyRequest<ISendBillHandler>,

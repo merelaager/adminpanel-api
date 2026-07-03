@@ -6,13 +6,14 @@ import prisma from "#app/utils/prisma";
 import { deleteUserSessions, getSessionUser } from "#app/utils/session";
 import type { User } from "#app/generated/prisma/client";
 
-import type { ChangePasswordBody, LoginBody } from "#app/schemas/auth";
+import { CredentialsSchema, PasswordSchema } from "#app/schemas/auth";
 import type { UserInfo } from "#app/schemas/user";
 import type { JSendResponse } from "#app/schemas/jsend";
 import { UnknownData } from "#app/schemas/jsend";
 import { createFailResponse } from "#app/utils/jsend";
 import { validatePasswordPolicy } from "./users.controller";
 import { Permissions } from "#app/constants/permissions";
+import type { Route } from "#app/schemas/route";
 
 interface IUserInfoHandler extends RouteGenericInterface {
   Reply: JSendResponse<typeof UnknownData, typeof UnknownData> | null;
@@ -36,10 +37,9 @@ export const userInfoHandler = async (
   });
 };
 
-interface ILoginHandler extends RouteGenericInterface {
-  Body: LoginBody;
+type ILoginHandler = Route<{ body: typeof CredentialsSchema }> & {
   Reply: JSendResponse<typeof UnknownData, typeof UnknownData>;
-}
+};
 
 export const loginHandler = async (
   req: FastifyRequest<ILoginHandler>,
@@ -75,10 +75,9 @@ export const loginHandler = async (
   });
 };
 
-interface ISetPasswordHandler extends RouteGenericInterface {
-  Body: ChangePasswordBody;
+type ISetPasswordHandler = Route<{ body: typeof PasswordSchema }> & {
   Reply: JSendResponse<typeof UnknownData, typeof UnknownData> | null;
-}
+};
 
 export const setPasswordHandler = async (
   req: FastifyRequest<ISetPasswordHandler>,

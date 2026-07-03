@@ -1,25 +1,23 @@
-import type {
-  FastifyReply,
-  FastifyRequest,
-  RouteGenericInterface,
-} from "fastify";
+import type { FastifyReply, FastifyRequest } from "fastify";
 import { StatusCodes } from "http-status-codes";
 
 import prisma from "#app/utils/prisma";
 import { createErrorResponse, createSuccessResponse } from "#app/utils/jsend";
 
 import type { JSendError, JSendResponse } from "#app/schemas/jsend";
-import { AppPlatformQueryParams, AppVersionData } from "#app/schemas/app";
+import { AppPlatformQuery, AppVersionData } from "#app/schemas/app";
+import type { Route } from "#app/schemas/route";
 
 const GENERAL_INFO_KEY_BY_PLATFORM = {
   android: "androidVersion",
   ios: "iosVersion",
 } as const;
 
-interface IFetchAppVersionHandler extends RouteGenericInterface {
-  Querystring: AppPlatformQueryParams;
+type IFetchAppVersionHandler = Route<{
+  querystring: typeof AppPlatformQuery;
+}> & {
   Reply: JSendResponse<typeof AppVersionData> | JSendError;
-}
+};
 
 export const fetchAppVersionHandler = async (
   req: FastifyRequest<IFetchAppVersionHandler>,

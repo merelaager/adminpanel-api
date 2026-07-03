@@ -7,7 +7,7 @@ import {
   fetchBillHandler,
 } from "#app/controllers/bills.controller";
 
-import { BillCreationSchema } from "#app/schemas/bill";
+import { BillCreationSchema, BillParamsSchema } from "#app/schemas/bill";
 import {
   ErrorResponseRef,
   FailResponse,
@@ -19,7 +19,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
     "/:billId",
     {
       schema: {
-        params: Type.Object({ billId: Type.Integer() }),
+        params: BillParamsSchema,
         response: {
           [StatusCodes.FORBIDDEN]: FailResponse(
             Type.Object({ permissions: Type.String() }),

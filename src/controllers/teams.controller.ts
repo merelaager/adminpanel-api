@@ -1,8 +1,4 @@
-import type {
-  FastifyReply,
-  FastifyRequest,
-  RouteGenericInterface,
-} from "fastify";
+import type { FastifyReply, FastifyRequest } from "fastify";
 import { StatusCodes } from "http-status-codes";
 import { Type } from "@sinclair/typebox";
 
@@ -10,26 +6,26 @@ import prisma from "#app/utils/prisma";
 import { createFailResponse, createSuccessResponse } from "#app/utils/jsend";
 
 import {
-  FetchTeamsQueryString,
-  TeamCreationBody,
+  TeamCreationSchema,
   TeamRecord,
   TeamRecordSchema,
+  TeamsFetchSchema,
 } from "#app/schemas/team";
 import type { JSendFail, JSendResponse } from "#app/schemas/jsend";
 import { canEditShiftBasic, canViewShiftBasic } from "#app/utils/permissions";
 import { getSessionUser } from "#app/utils/session";
 import { RequestPermissionsFail } from "#app/schemas/responses";
+import type { Route } from "#app/schemas/route";
 
 export const FetchTeamsData = Type.Object({
   teams: Type.Array(TeamRecordSchema),
 });
 
-interface IFetchTeamsHandler extends RouteGenericInterface {
-  Querystring: FetchTeamsQueryString;
+type IFetchTeamsHandler = Route<{ querystring: typeof TeamsFetchSchema }> & {
   Reply:
     | JSendResponse<typeof FetchTeamsData>
     | JSendFail<typeof RequestPermissionsFail>;
-}
+};
 
 export const fetchTeamsHandler = async (
   req: FastifyRequest<IFetchTeamsHandler>,
@@ -64,12 +60,11 @@ export const TeamCreationFailData = Type.Object({
   name: Type.String(),
 });
 
-interface ITeamCreationHandler extends RouteGenericInterface {
-  Body: TeamCreationBody;
+type ITeamCreationHandler = Route<{ body: typeof TeamCreationSchema }> & {
   Reply: JSendFail<
     typeof TeamCreationFailData | typeof RequestPermissionsFail
   > | null;
-}
+};
 
 export const teamCreationHandler = async (
   req: FastifyRequest<ITeamCreationHandler>,

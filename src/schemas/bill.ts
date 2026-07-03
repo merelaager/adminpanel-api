@@ -1,7 +1,9 @@
-import { Static, Type } from "@sinclair/typebox";
-
-export type BillCreationBody = Static<typeof BillCreationSchema>;
+import { Type } from "@sinclair/typebox";
 
 export const BillCreationSchema = Type.Object({
   email: Type.String({ format: "email" }),
+});
+
+export const BillParamsSchema = Type.Object({
+  billId: Type.Integer(),
 });

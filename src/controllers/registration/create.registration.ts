@@ -1,9 +1,4 @@
-import type {
-  FastifyBaseLogger,
-  FastifyReply,
-  FastifyRequest,
-  RouteGenericInterface,
-} from "fastify";
+import type { FastifyBaseLogger, FastifyReply, FastifyRequest } from "fastify";
 import { v4 as uuidv4 } from "uuid";
 import type { Transporter } from "nodemailer";
 import { StatusCodes } from "http-status-codes";
@@ -20,10 +15,11 @@ import {
 } from "#app/utils/jsend";
 
 import {
-  CreateRegistrationsBody,
   EmailReceiptInfo,
+  RegistrationsCreationSchema,
 } from "#app/schemas/registration";
 import { JSendError, JSendResponse } from "#app/schemas/jsend";
+import type { Route } from "#app/schemas/route";
 
 const validateDate = (year: number, month: number, date: number) => {
   if (month < 0 || month > 11 || date < 0) return false;
@@ -88,15 +84,16 @@ export const FormRegistrationFailData = Type.Record(
   Type.String(),
 );
 
-interface IFormRegistrationHandler extends RouteGenericInterface {
-  Body: CreateRegistrationsBody;
+type IFormRegistrationHandler = Route<{
+  body: typeof RegistrationsCreationSchema;
+}> & {
   Reply:
     | JSendResponse<
         typeof FormRegistrationData,
         typeof FormRegistrationFailData
       >
     | JSendError;
-}
+};
 
 export const formRegistrationHandler = async (
   req: FastifyRequest<IFormRegistrationHandler>,

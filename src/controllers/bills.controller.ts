@@ -1,6 +1,6 @@
 import fs from "fs";
 import { ReadStream } from "node:fs";
-import { FastifyReply, FastifyRequest, RouteGenericInterface } from "fastify";
+import { FastifyReply, FastifyRequest } from "fastify";
 import { StatusCodes } from "http-status-codes";
 import { Prisma } from "#app/generated/prisma/client";
 
@@ -11,7 +11,8 @@ import { generateBillPdf } from "#app/utils/bill-builder";
 
 import type { JSendError, JSendResponse } from "#app/schemas/jsend";
 import { UnknownData } from "#app/schemas/jsend";
-import type { BillCreationBody } from "#app/schemas/bill";
+import { BillCreationSchema, BillParamsSchema } from "#app/schemas/bill";
+import type { Route } from "#app/schemas/route";
 
 export const registrationInclude = {
   child: {
@@ -71,10 +72,9 @@ export const createAndAssignBill = async (
   return billNr;
 };
 
-interface ICreateBillHandler extends RouteGenericInterface {
-  Body: BillCreationBody;
+type ICreateBillHandler = Route<{ body: typeof BillCreationSchema }> & {
   Reply: JSendResponse<typeof UnknownData, typeof UnknownData> | JSendError;
-}
+};
 
 export const createBillHandler = async (
   req: FastifyRequest<ICreateBillHandler>,
@@ -146,10 +146,9 @@ export const createBillHandler = async (
   });
 };
 
-interface IFetchBillHandler extends RouteGenericInterface {
-  Params: { billId: number };
+type IFetchBillHandler = Route<{ params: typeof BillParamsSchema }> & {
   Reply: JSendResponse<typeof UnknownData, typeof UnknownData> | ReadStream;
-}
+};
 
 export const fetchBillHandler = async (
   req: FastifyRequest<IFetchBillHandler>,

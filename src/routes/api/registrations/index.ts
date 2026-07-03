@@ -16,7 +16,7 @@ import {
 
 import {
   FilteredRegistrationSchema,
-  PatchRegistrationBody,
+  PatchRegistrationParamsSchema,
   PatchRegistrationSchema,
   RegistrationsCreationSchema,
   RegistrationsFetchSchema,
@@ -27,10 +27,7 @@ import {
   SuccessResponse,
 } from "#app/schemas/jsend";
 import { getSessionUser } from "#app/utils/session";
-
-interface PatchParams {
-  regId: number;
-}
+import type { Route } from "#app/schemas/route";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(
@@ -70,7 +67,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
 
   const patchSchema = <RouteShorthandOptions>{
     schema: {
-      params: Type.Object({ regId: Type.Integer() }),
+      params: PatchRegistrationParamsSchema,
       body: PatchRegistrationSchema,
       response: {
         [StatusCodes.NOT_FOUND]: FailResponse(
@@ -80,34 +77,35 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
     },
   };
 
-  fastify.patch<{ Params: PatchParams; Body: PatchRegistrationBody }>(
-    "/:regId",
-    patchSchema,
-    async (request, reply) => {
-      const { userId } = getSessionUser(request);
-      const { regId } = request.params;
+  fastify.patch<
+    Route<{
+      params: typeof PatchRegistrationParamsSchema;
+      body: typeof PatchRegistrationSchema;
+    }>
+  >("/:regId", patchSchema, async (request, reply) => {
+    const { userId } = getSessionUser(request);
+    const { regId } = request.params;
 
-      const status = await patchRegistrationData(
-        userId,
-        regId,
-        request.body,
-        fastify.prisma,
-      );
+    const status = await patchRegistrationData(
+      userId,
+      regId,
+      request.body,
+      fastify.prisma,
+    );
 
-      // Do not leak whether the reg does not exist or whether the
-      // user has insufficient permissions.
-      if (!status) {
-        return reply.status(StatusCodes.NOT_FOUND).send({
-          status: "fail",
-          data: {
-            message: `Registreerimist ei leitud või puuduvad piisavad õigused. (id: ${regId})`,
-          },
-        });
-      }
+    // Do not leak whether the reg does not exist or whether the
+    // user has insufficient permissions.
+    if (!status) {
+      return reply.status(StatusCodes.NOT_FOUND).send({
+        status: "fail",
+        data: {
+          message: `Registreerimist ei leitud või puuduvad piisavad õigused. (id: ${regId})`,
+        },
+      });
+    }
 
-      return reply.status(StatusCodes.NO_CONTENT).send();
-    },
-  );
+    return reply.status(StatusCodes.NO_CONTENT).send();
+  });
 };
 
 export default plugin;

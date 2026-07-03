@@ -13,7 +13,7 @@ export const RegistrationCreationSchema = Type.Object({
   sex: Type.Optional(Type.Union([Type.Literal("M"), Type.Literal("F")])),
   dob: Type.Optional(Type.String({ format: "date-time" })), // TypeBox uses ISO strings for date
   addendum: Type.Optional(Type.String({ maxLength: STRING_MAX })),
-  shiftNr: Type.Number({ minimum: 1, maximum: 4 }), // TODO: make the shift max dynamic
+  shiftNr: Type.Integer({ minimum: 1, maximum: 4 }), // TODO: make the shift max dynamic
   isNew: Type.Boolean(),
   shirtSize: Type.String({ maxLength: 10 }),
   road: Type.String({ maxLength: STRING_MAX }),
@@ -49,7 +49,7 @@ export const FilteredRegistrationSchema = Type.Object({
   child: Type.Object({
     name: Type.String(),
     sex: Type.Union([Type.Literal("M"), Type.Literal("F")]),
-    currentAge: Type.Number(),
+    currentAge: Type.Integer(),
   }),
   shiftNr: Type.Integer(),
   isRegistered: Type.Boolean(),
@@ -77,8 +77,8 @@ export const PatchRegistrationSchema = Type.Object(
   {
     isRegistered: Type.Optional(Type.Boolean()),
     isOld: Type.Optional(Type.Boolean()),
-    pricePaid: Type.Optional(Type.Number()),
-    priceToPay: Type.Optional(Type.Number()),
+    pricePaid: Type.Optional(Type.Integer()),
+    priceToPay: Type.Optional(Type.Integer()),
   },
   {
     additionalProperties: false,

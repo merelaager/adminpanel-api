@@ -26,8 +26,8 @@ export const UserInfoSchema = Type.Object({
 export type CamperRecord = Static<typeof CamperRecordSchema>;
 
 export const CamperRecordSchema = Type.Object({
-  id: Type.Number(),
-  childId: Type.Number(),
+  id: Type.Integer(),
+  childId: Type.Integer(),
   childName: Type.String(),
   childSex: Type.Union([Type.Literal("M"), Type.Literal("F")]),
   shiftNr: Type.Integer(),

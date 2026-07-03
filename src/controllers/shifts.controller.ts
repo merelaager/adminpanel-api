@@ -35,7 +35,7 @@ import type { JSendError, JSendFail, JSendResponse } from "../schemas/jsend";
 import { ParentBillSchema } from "../schemas/billing";
 
 export const FetchShiftsData = Type.Object({
-  shifts: Type.Array(Type.Number()),
+  shifts: Type.Array(Type.Integer()),
 });
 
 interface IFetchShiftsHandler extends RouteGenericInterface {

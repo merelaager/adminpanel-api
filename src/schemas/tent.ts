@@ -1,10 +1,10 @@
 import { Static, Type } from "@sinclair/typebox";
 
 export const TentScoreSchema = Type.Object({
-  scoreId: Type.Number(),
-  score: Type.Number(),
+  scoreId: Type.Integer(),
+  score: Type.Integer(),
   createdAt: Type.String(),
-  tentNr: Type.Number(),
+  tentNr: Type.Integer(),
 });
 
 export const TentInfoSchema = Type.Object({

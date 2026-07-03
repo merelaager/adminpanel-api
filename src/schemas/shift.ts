@@ -9,7 +9,7 @@ export const SingleBillSendSchema = Type.Object({
 export type ShiftResourceFetchParams = Static<typeof ShiftResourceFetchParams>;
 
 export const ShiftResourceFetchParams = Type.Object({
-  shiftNr: Type.Number(),
+  shiftNr: Type.Integer(),
 });
 
 export const RoleNameMap: { [key: string]: string } = {
@@ -23,22 +23,22 @@ export const RoleNameMap: { [key: string]: string } = {
 export type UserWithShiftRole = Static<typeof UserWithShiftRoleSchema>;
 
 export const UserWithShiftRoleSchema = Type.Object({
-  userId: Type.Number(),
+  userId: Type.Integer(),
   name: Type.String(),
-  shiftNr: Type.Number(),
+  shiftNr: Type.Integer(),
   role: Type.String(),
-  roleId: Type.Number(),
+  roleId: Type.Integer(),
 });
 
 export const ShiftTentQuerySchema = Type.Object({
-  shiftNr: Type.Number(),
-  tentNr: Type.Number(),
+  shiftNr: Type.Integer(),
+  tentNr: Type.Integer(),
 });
 
 export type TentQueryParams = Static<typeof ShiftTentQuerySchema>;
 
 export const AddGradeSchema = Type.Object({
-  score: Type.Number(),
+  score: Type.Integer(),
 });
 
 export type AddScoreBody = Static<typeof AddGradeSchema>;

@@ -95,7 +95,10 @@ export const sendBillHandler = async (
     });
   }
 
-  const mailService = new MailService(req.server.mailer);
+  const mailService = new MailService(
+    req.server.mailer,
+    req.server.config.APP_URL,
+  );
   try {
     await mailService.sendBill(email, billNr, regCampers, resCampers);
 

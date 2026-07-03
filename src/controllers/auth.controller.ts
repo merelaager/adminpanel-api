@@ -6,6 +6,7 @@ import prisma from "#app/utils/prisma";
 import { deleteUserSessions, getSessionUser } from "#app/utils/session";
 import type { User } from "#app/generated/prisma/client";
 
+import { SALT_ROUNDS } from "#app/constants/auth";
 import { CredentialsSchema, PasswordSchema } from "#app/schemas/auth";
 import type { UserInfo } from "#app/schemas/user";
 import type { JSendResponse } from "#app/schemas/jsend";
@@ -100,8 +101,7 @@ export const setPasswordHandler = async (
       .send(createFailResponse({ password: rejectReason }));
   }
 
-  const saltRounds = 10;
-  const passwordHash = await bcrypt.hash(password, saltRounds);
+  const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
   await prisma.user.update({
     where: { id: userId },

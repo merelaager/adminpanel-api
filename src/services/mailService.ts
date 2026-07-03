@@ -11,9 +11,11 @@ import type { CamperBillingInfo } from "#app/controllers/bills.controller";
 
 class MailService {
   private transporter: Transporter;
+  private appUrl: string;
 
-  constructor(transporter: Transporter) {
+  constructor(transporter: Transporter, appUrl: string) {
     this.transporter = transporter;
+    this.appUrl = appUrl;
   }
 
   async sendRegistrationReceipt(campers: EmailReceiptInfo[], email: string) {
@@ -58,7 +60,7 @@ class MailService {
   }
 
   async sendPasswordResetToken(email: string, token: string) {
-    const link = `https://sild.merelaager.ee/password-reset?token=${token}`;
+    const link = `${this.appUrl}/password-reset?token=${token}`;
     return this.transporter.sendMail({
       from: {
         name: "Merelaager — süsteem",
@@ -75,7 +77,7 @@ class MailService {
   async sendSignupToken(email: string, token: string, name: string) {
     const safeEmail = encodeURIComponent(email);
     const safeName = encodeURIComponent(name);
-    const link = `https://sild.merelaager.ee/signup?token=${token}&email=${safeEmail}&name=${safeName}`;
+    const link = `${this.appUrl}/signup?token=${token}&email=${safeEmail}&name=${safeName}`;
     return this.transporter.sendMail({
       from: {
         name: "Merelaager — süsteem",

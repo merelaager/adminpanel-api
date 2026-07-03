@@ -2,6 +2,11 @@ import fs from "fs";
 import PDFDoc from "pdfkit";
 
 import prisma from "./prisma";
+import {
+  REGISTRATION_FEE,
+  SENIORITY_DISCOUNTS,
+  SHIFT_PRICES,
+} from "#app/constants/pricing";
 import PDFDocument = PDFKit.PDFDocument;
 import PDFDocumentOptions = PDFKit.PDFDocumentOptions;
 
@@ -48,10 +53,7 @@ const BILL_META: PDFDocumentOptions = {
 
 const getBillDeadline = async (shiftNumbers: number[]) => {
   // Compute the deadline which is one month before the start of the first shift.
-  let firstShift = 10;
-  shiftNumbers.forEach((shiftNr) => {
-    if (shiftNr < firstShift) firstShift = shiftNr;
-  });
+  const firstShift = Math.min(...shiftNumbers);
 
   const shiftStartDate = (
     await prisma.shiftInfo.findUnique({
@@ -189,27 +191,27 @@ export const generateBillPdf = async (
     childShortOld: {
       txt: "7päevane vahetus vanale olijale",
       count: 0,
-      price: 140,
+      price: SHIFT_PRICES[0] - SENIORITY_DISCOUNTS[0] - REGISTRATION_FEE,
     },
     childShortNew: {
       txt: "7päevane vahetus uuele tulijale",
       count: 0,
-      price: 150,
+      price: SHIFT_PRICES[0] - REGISTRATION_FEE,
     },
     childOld: {
       txt: "12päevane vahetus vanale olijale",
       count: 0,
-      price: 240,
+      price: SHIFT_PRICES[1] - SENIORITY_DISCOUNTS[1] - REGISTRATION_FEE,
     },
     childNew: {
       txt: "12päevane vahetus uuele tulijale",
       count: 0,
-      price: 260,
+      price: SHIFT_PRICES[1] - REGISTRATION_FEE,
     },
     booking: {
       txt: "Broneerimistasu",
       count: regCount,
-      price: 100,
+      price: REGISTRATION_FEE,
     },
   };
 

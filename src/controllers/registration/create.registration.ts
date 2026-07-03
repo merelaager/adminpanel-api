@@ -20,6 +20,7 @@ import {
 } from "#app/schemas/registration";
 import { JSendError, JSendResponse } from "#app/schemas/jsend";
 import type { Route } from "#app/schemas/route";
+import { SENIORITY_DISCOUNTS, SHIFT_PRICES } from "#app/constants/pricing";
 
 const validateDate = (year: number, month: number, date: number) => {
   if (month < 0 || month > 11 || date < 0) return false;
@@ -60,18 +61,14 @@ const parseIdCode = (code: string): IDCodeParseResult => {
 };
 
 const computePrice = (shiftNr: number, isOld: boolean) => {
-  // TODO: fetch price dynamically.
-  const shiftPrices = [250, 360, 360, 360];
-  const seniorityDiscounts = [10, 20, 20, 20];
-
   // This should never happen.
-  if (shiftNr < 1 || shiftNr > shiftPrices.length) {
+  if (shiftNr < 1 || shiftNr > SHIFT_PRICES.length) {
     return -1;
   }
 
   // The shift number is 1-indexed.
-  let price = shiftPrices[shiftNr - 1];
-  if (isOld) price -= seniorityDiscounts[shiftNr - 1];
+  let price = SHIFT_PRICES[shiftNr - 1];
+  if (isOld) price -= SENIORITY_DISCOUNTS[shiftNr - 1];
   return price;
 };
 
@@ -99,7 +96,7 @@ export const formRegistrationHandler = async (
   req: FastifyRequest<IFormRegistrationHandler>,
   res: FastifyReply<IFormRegistrationHandler>,
 ): Promise<never> => {
-  const { mailer, regorder } = req.server;
+  const { mailer, regorder, config } = req.server;
   const registrations = req.body;
 
   const registrationId = uuidv4();
@@ -286,6 +283,7 @@ export const formRegistrationHandler = async (
       camperBasicInfo,
       registrationEmailChoices,
       mailer,
+      config.APP_URL,
       req.log,
     );
   }
@@ -299,6 +297,7 @@ const sendRegistrationEmails = async (
   registrations: EmailReceiptInfo[],
   emailChoices: boolean[],
   mailer: Transporter,
+  appUrl: string,
   log: FastifyBaseLogger,
 ) => {
   // Group children by email.
@@ -320,7 +319,7 @@ const sendRegistrationEmails = async (
     }
   }
 
-  const mailService = new MailService(mailer);
+  const mailService = new MailService(mailer, appUrl);
 
   for (const [email, entries] of Object.entries(childContacts)) {
     try {

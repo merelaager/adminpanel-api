@@ -6,6 +6,11 @@ import bcrypt from "bcrypt";
 import { Prisma, type PrismaClient } from "#app/generated/prisma/client";
 
 import { canEditShiftMembers, canViewShiftBasic } from "#app/utils/permissions";
+import {
+  SALT_ROUNDS,
+  TOKEN_EXPIRY_HOURS,
+  TOKEN_EXPIRY_MS,
+} from "#app/constants/auth";
 import prisma from "#app/utils/prisma";
 import { deleteUserSessions, getSessionUser } from "#app/utils/session";
 import MailService from "#app/services/mailService";
@@ -226,7 +231,10 @@ export const inviteUserHandler = async (
     });
   });
 
-  const mailService = new MailService(req.server.mailer);
+  const mailService = new MailService(
+    req.server.mailer,
+    req.server.config.APP_URL,
+  );
   try {
     await mailService.sendSignupToken(email, token, req.body.name);
   } catch (err) {
@@ -264,7 +272,10 @@ export const resetPasswordHandler = async (
       data: { token, userId: userData.id },
     });
 
-    const mailService = new MailService(req.server.mailer);
+    const mailService = new MailService(
+      req.server.mailer,
+      req.server.config.APP_URL,
+    );
     try {
       await mailService.sendPasswordResetToken(email, token);
     } catch (err) {
@@ -290,14 +301,13 @@ export const resetPasswordHandler = async (
   }
 
   const isOlderThan24h =
-    Date.now() - new Date(tokenEntry.createdAt).getTime() > 24 * 60 * 60 * 1000;
+    Date.now() - new Date(tokenEntry.createdAt).getTime() > TOKEN_EXPIRY_MS;
   if (isOlderThan24h) {
     await prisma.resetToken.delete({ where: { token } });
     return res.status(StatusCodes.FORBIDDEN).send();
   }
 
-  const saltRounds = 10;
-  const passwordHash = await bcrypt.hash(password, saltRounds);
+  const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
   await prisma.user.update({
     where: { id: tokenEntry.userId },
@@ -345,7 +355,7 @@ export const signupUserHandler = async (
 
   const diffMs = Math.abs(now.getTime() - signupData.createdAt.getTime());
   const diffHours = diffMs / (1000 * 60 * 60);
-  if (diffHours > 24) {
+  if (diffHours > TOKEN_EXPIRY_HOURS) {
     await prisma.signupToken.update({
       where: { token },
       data: { isExpired: true },
@@ -356,8 +366,7 @@ export const signupUserHandler = async (
     });
   }
 
-  const saltRounds = 10;
-  const passwordHash = await bcrypt.hash(req.body.password, saltRounds);
+  const passwordHash = await bcrypt.hash(req.body.password, SALT_ROUNDS);
 
   try {
     await prisma.$transaction(async (tx) => {

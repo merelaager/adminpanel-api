@@ -3,6 +3,7 @@ import { JSONSchemaType } from "env-schema";
 export interface EnvConfig {
   NODE_ENV: string;
   PORT: number;
+  APP_URL: string;
   COOKIE_SECRET: string;
   COOKIE_DOMAIN?: string;
   MAILGUN_API_KEY: string;
@@ -27,6 +28,7 @@ export const envSchema: JSONSchemaType<EnvConfig> = {
   properties: {
     NODE_ENV: { type: "string", default: "development" },
     PORT: { type: "number", default: 4000 },
+    APP_URL: { type: "string", default: "https://sild.merelaager.ee" },
     COOKIE_SECRET: { type: "string" },
     COOKIE_DOMAIN: { type: "string", nullable: true },
     MAILGUN_API_KEY: { type: "string" },

@@ -1,21 +1,21 @@
 import { FastifyReply, FastifyRequest, RouteGenericInterface } from "fastify";
 import { StatusCodes } from "http-status-codes";
 
-import prisma from "../../utils/prisma";
-import { isUserBoss } from "../../utils/permissions";
-import { getSessionUser } from "../../utils/session";
+import prisma from "#app/utils/prisma";
+import { isUserBoss } from "#app/utils/permissions";
+import { getSessionUser } from "#app/utils/session";
 
-import MailService from "../../services/mailService";
+import MailService from "#app/services/mailService";
 
 import {
   CamperBillingInfo,
   createAndAssignBill,
   registrationInclude,
-} from "../bills.controller";
+} from "#app/controllers/bills.controller";
 
-import type { SingleBillSendBody } from "../../schemas/shift";
-import type { JSendError, JSendResponse } from "../../schemas/jsend";
-import { UnknownData } from "../../schemas/jsend";
+import type { SingleBillSendBody } from "#app/schemas/shift";
+import type { JSendError, JSendResponse } from "#app/schemas/jsend";
+import { UnknownData } from "#app/schemas/jsend";
 
 interface ISendBillHandler extends RouteGenericInterface {
   Body: SingleBillSendBody;

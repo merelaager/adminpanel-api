@@ -8,22 +8,22 @@ import { v4 as uuidv4 } from "uuid";
 import type { Transporter } from "nodemailer";
 import { StatusCodes } from "http-status-codes";
 import { Type } from "@sinclair/typebox";
-import { type Child, Prisma } from "../../generated/prisma/client";
+import { type Child, Prisma } from "#app/generated/prisma/client";
 
-import MailService from "../../services/mailService";
+import MailService from "#app/services/mailService";
 
-import prisma from "../../utils/prisma";
+import prisma from "#app/utils/prisma";
 import {
   createErrorResponse,
   createFailResponse,
   createSuccessResponse,
-} from "../../utils/jsend";
+} from "#app/utils/jsend";
 
 import {
   CreateRegistrationsBody,
   EmailReceiptInfo,
-} from "../../schemas/registration";
-import { JSendError, JSendResponse } from "../../schemas/jsend";
+} from "#app/schemas/registration";
+import { JSendError, JSendResponse } from "#app/schemas/jsend";
 
 const validateDate = (year: number, month: number, date: number) => {
   if (month < 0 || month > 11 || date < 0) return false;

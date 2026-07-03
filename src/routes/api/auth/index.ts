@@ -6,16 +6,16 @@ import {
   loginHandler,
   setPasswordHandler,
   userInfoHandler,
-} from "../../../controllers/auth.controller";
-import { signupUserHandler } from "../../../controllers/users.controller";
+} from "#app/controllers/auth.controller";
+import { signupUserHandler } from "#app/controllers/users.controller";
 
-import { CredentialsSchema, PasswordSchema } from "../../../schemas/auth";
-import { SignupSchema, UserInfoSchema } from "../../../schemas/user";
+import { CredentialsSchema, PasswordSchema } from "#app/schemas/auth";
+import { SignupSchema, UserInfoSchema } from "#app/schemas/user";
 import {
   ErrorResponseRef,
   FailResponse,
   SuccessResponse,
-} from "../../../schemas/jsend";
+} from "#app/schemas/jsend";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(

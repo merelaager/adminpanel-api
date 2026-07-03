@@ -6,19 +6,19 @@ import type {
 import { StatusCodes } from "http-status-codes";
 import { Type } from "@sinclair/typebox";
 
-import prisma from "../utils/prisma";
-import { createFailResponse, createSuccessResponse } from "../utils/jsend";
+import prisma from "#app/utils/prisma";
+import { createFailResponse, createSuccessResponse } from "#app/utils/jsend";
 
 import {
   FetchTeamsQueryString,
   TeamCreationBody,
   TeamRecord,
   TeamRecordSchema,
-} from "../schemas/team";
-import type { JSendFail, JSendResponse } from "../schemas/jsend";
-import { isShiftMember } from "../utils/permissions";
-import { getSessionUser } from "../utils/session";
-import { RequestPermissionsFail } from "../schemas/responses";
+} from "#app/schemas/team";
+import type { JSendFail, JSendResponse } from "#app/schemas/jsend";
+import { isShiftMember } from "#app/utils/permissions";
+import { getSessionUser } from "#app/utils/session";
+import { RequestPermissionsFail } from "#app/schemas/responses";
 
 export const FetchTeamsData = Type.Object({
   teams: Type.Array(TeamRecordSchema),

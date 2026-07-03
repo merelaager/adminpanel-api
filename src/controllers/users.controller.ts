@@ -3,12 +3,12 @@ import { Static } from "@sinclair/typebox";
 import { StatusCodes } from "http-status-codes";
 import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcrypt";
-import { Prisma, type PrismaClient } from "../generated/prisma/client";
+import { Prisma, type PrismaClient } from "#app/generated/prisma/client";
 
-import { isShiftBoss, isShiftMember } from "../utils/permissions";
-import prisma from "../utils/prisma";
-import { getSessionUser } from "../utils/session";
-import MailService from "../services/mailService";
+import { isShiftBoss, isShiftMember } from "#app/utils/permissions";
+import prisma from "#app/utils/prisma";
+import { getSessionUser } from "#app/utils/session";
+import MailService from "#app/services/mailService";
 
 import {
   type CreateInviteBody,
@@ -17,10 +17,10 @@ import {
   type SignupBody,
   UserCreateSchema,
   type UserParams,
-} from "../schemas/user";
-import type { JSendError, JSendResponse } from "../schemas/jsend";
-import { UnknownData } from "../schemas/jsend";
-import { createFailResponse } from "../utils/jsend";
+} from "#app/schemas/user";
+import type { JSendError, JSendResponse } from "#app/schemas/jsend";
+import { UnknownData } from "#app/schemas/jsend";
+import { createFailResponse } from "#app/utils/jsend";
 
 export type UserCreateBasis = Static<typeof UserCreateSchema>;
 

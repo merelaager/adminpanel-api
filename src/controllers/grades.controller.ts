@@ -5,12 +5,12 @@ import type {
 } from "fastify";
 import { StatusCodes } from "http-status-codes";
 
-import prisma from "../utils/prisma";
+import prisma from "#app/utils/prisma";
 
-import { GradeDeleteParams } from "../schemas/grades";
-import { isShiftMember } from "../utils/permissions";
-import { createFailResponse } from "../utils/jsend";
-import { getSessionUser } from "../utils/session";
+import { GradeDeleteParams } from "#app/schemas/grades";
+import { isShiftMember } from "#app/utils/permissions";
+import { createFailResponse } from "#app/utils/jsend";
+import { getSessionUser } from "#app/utils/session";
 
 interface IDeleteGradeHandler extends RouteGenericInterface {
   Params: GradeDeleteParams;

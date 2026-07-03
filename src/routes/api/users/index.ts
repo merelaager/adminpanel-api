@@ -5,14 +5,14 @@ import { StatusCodes } from "http-status-codes";
 import {
   inviteUserHandler,
   patchUserHandler,
-} from "../../../controllers/users.controller";
+} from "#app/controllers/users.controller";
 
 import {
   CreateInviteSchema,
   PatchUserSchema,
   UserParamsSchema,
-} from "../../../schemas/user";
-import { ErrorResponseRef, FailResponse } from "../../../schemas/jsend";
+} from "#app/schemas/user";
+import { ErrorResponseRef, FailResponse } from "#app/schemas/jsend";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.patch(

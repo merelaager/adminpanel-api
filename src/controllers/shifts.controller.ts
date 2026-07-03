@@ -8,18 +8,18 @@ import type {
 import { StatusCodes } from "http-status-codes";
 import { Type } from "@sinclair/typebox";
 
-import prisma from "../utils/prisma";
-import { getSessionUser } from "../utils/session";
+import prisma from "#app/utils/prisma";
+import { getSessionUser } from "#app/utils/session";
 import {
   generateShiftCamperListPDF,
   PrintEntry,
-} from "../utils/shift-pdf-builder";
-import { isShiftBoss, isShiftMember } from "../utils/permissions";
+} from "#app/utils/shift-pdf-builder";
+import { isShiftBoss, isShiftMember } from "#app/utils/permissions";
 import {
   createErrorResponse,
   createFailResponse,
   createSuccessResponse,
-} from "../utils/jsend";
+} from "#app/utils/jsend";
 
 import { fetchUserShiftPermissions } from "./registration/registrations.controller";
 
@@ -28,11 +28,11 @@ import {
   ShiftResourceFetchParams,
   type UserWithShiftRole,
   UserWithShiftRoleSchema,
-} from "../schemas/shift";
-import { CamperRecord, CamperRecordSchema } from "../schemas/user";
-import { RequestPermissionsFail } from "../schemas/responses";
-import type { JSendError, JSendFail, JSendResponse } from "../schemas/jsend";
-import { ParentBillSchema } from "../schemas/billing";
+} from "#app/schemas/shift";
+import { CamperRecord, CamperRecordSchema } from "#app/schemas/user";
+import { RequestPermissionsFail } from "#app/schemas/responses";
+import type { JSendError, JSendFail, JSendResponse } from "#app/schemas/jsend";
+import { ParentBillSchema } from "#app/schemas/billing";
 
 export const FetchShiftsData = Type.Object({
   shifts: Type.Array(Type.Integer()),

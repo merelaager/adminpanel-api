@@ -6,15 +6,15 @@ import type {
 import { StatusCodes } from "http-status-codes";
 import { Type } from "@sinclair/typebox";
 
-import prisma from "../../utils/prisma";
-import { canViewShiftStaff } from "../../utils/permissions";
-import { getSessionUser } from "../../utils/session";
-import { createFailResponse, createSuccessResponse } from "../../utils/jsend";
+import prisma from "#app/utils/prisma";
+import { canViewShiftStaff } from "#app/utils/permissions";
+import { getSessionUser } from "#app/utils/session";
+import { createFailResponse, createSuccessResponse } from "#app/utils/jsend";
 
-import { ShiftResourceFetchParams } from "../../schemas/shift";
-import { ShiftStaffMember, ShiftStaffSchema } from "../../schemas/staff";
-import type { JSendResponse } from "../../schemas/jsend";
-import { RequestPermissionsFail } from "../../schemas/responses";
+import { ShiftResourceFetchParams } from "#app/schemas/shift";
+import { ShiftStaffMember, ShiftStaffSchema } from "#app/schemas/staff";
+import type { JSendResponse } from "#app/schemas/jsend";
+import { RequestPermissionsFail } from "#app/schemas/responses";
 
 export const FetchShiftStaffData = Type.Object({
   staff: Type.Array(ShiftStaffSchema),

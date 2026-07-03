@@ -5,11 +5,11 @@ import type {
 } from "fastify";
 import { StatusCodes } from "http-status-codes";
 
-import prisma from "../utils/prisma";
-import { createErrorResponse, createSuccessResponse } from "../utils/jsend";
+import prisma from "#app/utils/prisma";
+import { createErrorResponse, createSuccessResponse } from "#app/utils/jsend";
 
-import type { JSendError, JSendResponse } from "../schemas/jsend";
-import { AppPlatformQueryParams, AppVersionData } from "../schemas/app";
+import type { JSendError, JSendResponse } from "#app/schemas/jsend";
+import { AppPlatformQueryParams, AppVersionData } from "#app/schemas/app";
 
 const GENERAL_INFO_KEY_BY_PLATFORM = {
   android: "androidVersion",

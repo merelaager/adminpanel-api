@@ -1,6 +1,6 @@
 import { FastifyPluginAsync } from "fastify";
 import fp from "fastify-plugin";
-import prisma from "../../utils/prisma";
+import prisma from "#app/utils/prisma";
 
 export type TRegOrder = InstanceType<typeof RegOrder>;
 

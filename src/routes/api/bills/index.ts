@@ -5,14 +5,14 @@ import { StatusCodes } from "http-status-codes";
 import {
   createBillHandler,
   fetchBillHandler,
-} from "../../../controllers/bills.controller";
+} from "#app/controllers/bills.controller";
 
-import { BillCreationSchema } from "../../../schemas/bill";
+import { BillCreationSchema } from "#app/schemas/bill";
 import {
   ErrorResponseRef,
   FailResponse,
   SuccessResponse,
-} from "../../../schemas/jsend";
+} from "#app/schemas/jsend";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(

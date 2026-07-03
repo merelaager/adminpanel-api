@@ -2,10 +2,10 @@ import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import { Type } from "@sinclair/typebox";
 import { StatusCodes } from "http-status-codes";
 
-import { sendBillHandler } from "../../../controllers/notifications/billing.controller";
+import { sendBillHandler } from "#app/controllers/notifications/billing.controller";
 
-import { SingleBillSendSchema } from "../../../schemas/shift";
-import { ErrorResponseRef, FailResponse } from "../../../schemas/jsend";
+import { SingleBillSendSchema } from "#app/schemas/shift";
+import { ErrorResponseRef, FailResponse } from "#app/schemas/jsend";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.post(

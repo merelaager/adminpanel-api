@@ -6,15 +6,15 @@ import type {
 import { StatusCodes } from "http-status-codes";
 import { Type } from "@sinclair/typebox";
 
-import prisma from "../utils/prisma";
-import { isShiftMember } from "../utils/permissions";
-import { getSessionUser } from "../utils/session";
-import { getChildAgeAtShiftStart } from "../utils/age";
+import prisma from "#app/utils/prisma";
+import { isShiftMember } from "#app/utils/permissions";
+import { getSessionUser } from "#app/utils/session";
+import { getChildAgeAtShiftStart } from "#app/utils/age";
 
-import type { PatchRecordBody, RecordParams } from "../schemas/record";
-import { RequestPermissionsFail } from "../schemas/responses";
-import type { JSendFail } from "../schemas/jsend";
-import { createFailResponse } from "../utils/jsend";
+import type { PatchRecordBody, RecordParams } from "#app/schemas/record";
+import { RequestPermissionsFail } from "#app/schemas/responses";
+import type { JSendFail } from "#app/schemas/jsend";
+import { createFailResponse } from "#app/utils/jsend";
 
 type RecordCreateData = {
   childId: number;

@@ -5,8 +5,8 @@ import {
   getEmailRegistrationBodyPre,
 } from "./email/email-registration-html";
 
-import type { EmailReceiptInfo } from "../schemas/registration";
-import type { CamperBillingInfo } from "../controllers/bills.controller";
+import type { EmailReceiptInfo } from "#app/schemas/registration";
+import type { CamperBillingInfo } from "#app/controllers/bills.controller";
 
 export const getRegistrationReceipt = async (campers: EmailReceiptInfo[]) => {
   const shifts: number[] = [];

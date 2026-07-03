@@ -2,7 +2,7 @@ import type { FastifyError, FastifyPluginAsync } from "fastify";
 import fp from "fastify-plugin";
 import { StatusCodes } from "http-status-codes";
 
-import { createFailResponse } from "../../utils/jsend";
+import { createFailResponse } from "#app/utils/jsend";
 
 const fieldFromValidationError = (
   instancePath: string,

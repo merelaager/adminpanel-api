@@ -1,6 +1,6 @@
 import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
-import { resetPasswordHandler } from "../../../controllers/users.controller";
-import { ResetPasswordSchema } from "../../../schemas/user";
+import { resetPasswordHandler } from "#app/controllers/users.controller";
+import { ResetPasswordSchema } from "#app/schemas/user";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.put(

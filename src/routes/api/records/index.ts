@@ -6,21 +6,21 @@ import {
   FetchRecordsData,
   fetchRecordsHandler,
   forceSyncRecordsHandler,
-} from "../../../controllers/records/fetch.record";
+} from "#app/controllers/records/fetch.record";
 import {
   PatchRecordFailDataNF,
   PatchRecordFailDataUE,
   patchRecordHandler,
-} from "../../../controllers/records.controller";
+} from "#app/controllers/records.controller";
 
 import {
   ForceSyncSchema,
   PatchRecordSchema,
   RecordParamsSchema,
   RecordsFetchSchema,
-} from "../../../schemas/record";
-import { FailResponse, SuccessResponse } from "../../../schemas/jsend";
-import { RequestPermissionsFail } from "../../../schemas/responses";
+} from "#app/schemas/record";
+import { FailResponse, SuccessResponse } from "#app/schemas/jsend";
+import { RequestPermissionsFail } from "#app/schemas/responses";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(

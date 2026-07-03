@@ -6,19 +6,19 @@ import type {
 import { StatusCodes } from "http-status-codes";
 import { Type } from "@sinclair/typebox";
 
-import prisma from "../utils/prisma";
-import { isShiftMember } from "../utils/permissions";
-import { getSessionUser } from "../utils/session";
-import { createFailResponse, createSuccessResponse } from "../utils/jsend";
+import prisma from "#app/utils/prisma";
+import { isShiftMember } from "#app/utils/permissions";
+import { getSessionUser } from "#app/utils/session";
+import { createFailResponse, createSuccessResponse } from "#app/utils/jsend";
 
 import {
   AddScoreBody,
   ShiftResourceFetchParams,
   TentQueryParams,
-} from "../schemas/shift";
-import type { JSendResponse } from "../schemas/jsend";
-import { TentInfoSchema, TentScoreSchema } from "../schemas/tent";
-import { RequestPermissionsFail } from "../schemas/responses";
+} from "#app/schemas/shift";
+import type { JSendResponse } from "#app/schemas/jsend";
+import { TentInfoSchema, TentScoreSchema } from "#app/schemas/tent";
+import { RequestPermissionsFail } from "#app/schemas/responses";
 
 interface IFetchTentHandler extends RouteGenericInterface {
   Params: TentQueryParams;

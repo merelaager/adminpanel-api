@@ -2,15 +2,15 @@ import bcrypt from "bcrypt";
 import { FastifyReply, FastifyRequest, RouteGenericInterface } from "fastify";
 import { StatusCodes } from "http-status-codes";
 
-import prisma from "../utils/prisma";
-import { getSessionUser } from "../utils/session";
-import type { User } from "../generated/prisma/client";
+import prisma from "#app/utils/prisma";
+import { getSessionUser } from "#app/utils/session";
+import type { User } from "#app/generated/prisma/client";
 
-import type { ChangePasswordBody, LoginBody } from "../schemas/auth";
-import type { UserInfo } from "../schemas/user";
-import type { JSendResponse } from "../schemas/jsend";
-import { UnknownData } from "../schemas/jsend";
-import { createFailResponse } from "../utils/jsend";
+import type { ChangePasswordBody, LoginBody } from "#app/schemas/auth";
+import type { UserInfo } from "#app/schemas/user";
+import type { JSendResponse } from "#app/schemas/jsend";
+import { UnknownData } from "#app/schemas/jsend";
+import { createFailResponse } from "#app/utils/jsend";
 import { validatePasswordPolicy } from "./users.controller";
 
 interface IUserInfoHandler extends RouteGenericInterface {

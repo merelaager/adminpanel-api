@@ -7,12 +7,12 @@ import {
   patchRegistrationData,
   registrationsCampersSyncHandler,
   registrationsFetchHandler,
-} from "../../../controllers/registration/registrations.controller";
+} from "#app/controllers/registration/registrations.controller";
 import {
   FormRegistrationData,
   FormRegistrationFailData,
   formRegistrationHandler,
-} from "../../../controllers/registration/create.registration";
+} from "#app/controllers/registration/create.registration";
 
 import {
   FilteredRegistrationSchema,
@@ -20,13 +20,13 @@ import {
   PatchRegistrationSchema,
   RegistrationsCreationSchema,
   RegistrationsFetchSchema,
-} from "../../../schemas/registration";
+} from "#app/schemas/registration";
 import {
   ErrorResponseRef,
   FailResponse,
   SuccessResponse,
-} from "../../../schemas/jsend";
-import { getSessionUser } from "../../../utils/session";
+} from "#app/schemas/jsend";
+import { getSessionUser } from "#app/utils/session";
 
 interface PatchParams {
   regId: number;

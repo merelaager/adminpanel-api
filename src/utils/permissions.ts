@@ -1,6 +1,6 @@
 import prisma from "./prisma";
 
-import { Permissions } from "../constants/permissions";
+import { Permissions } from "#app/constants/permissions";
 
 export const isUserBoss = async (userId: number) => {
   const userBossInstances = await prisma.userRoles.findMany({

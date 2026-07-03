@@ -14,30 +14,30 @@ import {
   fetchShiftsHandler,
   FetchShiftUsersData,
   fetchShiftUsersHandler,
-} from "../../../controllers/shifts.controller";
+} from "#app/controllers/shifts.controller";
 import {
   fetchShiftStaff,
   FetchShiftStaffData,
-} from "../../../controllers/staff/fetch.staff";
+} from "#app/controllers/staff/fetch.staff";
 import {
   addGradeHandler,
   fetchTentHandler,
   FetchTentsData,
   fetchTentsHandler,
-} from "../../../controllers/tent.controller";
+} from "#app/controllers/tent.controller";
 
 import {
   AddGradeSchema,
   ShiftResourceFetchParams,
   ShiftTentQuerySchema,
-} from "../../../schemas/shift";
-import { TentInfoSchema, TentScoreSchema } from "../../../schemas/tent";
+} from "#app/schemas/shift";
+import { TentInfoSchema, TentScoreSchema } from "#app/schemas/tent";
 import {
   ErrorResponseRef,
   FailResponse,
   SuccessResponse,
-} from "../../../schemas/jsend";
-import { RequestPermissionsFail } from "../../../schemas/responses";
+} from "#app/schemas/jsend";
+import { RequestPermissionsFail } from "#app/schemas/responses";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(

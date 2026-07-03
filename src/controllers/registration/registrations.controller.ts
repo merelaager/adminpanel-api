@@ -4,23 +4,23 @@ import type {
   RouteGenericInterface,
 } from "fastify";
 import { StatusCodes } from "http-status-codes";
-import type { PrismaClient, Registration } from "../../generated/prisma/client";
+import type { PrismaClient, Registration } from "#app/generated/prisma/client";
 
-import prisma from "../../utils/prisma";
-import { getSessionUser } from "../../utils/session";
-import { getAgeAtDate } from "../../utils/age";
-import { isSuperRoot } from "../../utils/permissions";
+import prisma from "#app/utils/prisma";
+import { getSessionUser } from "#app/utils/session";
+import { getAgeAtDate } from "#app/utils/age";
+import { isSuperRoot } from "#app/utils/permissions";
 
-import { toggleRecord } from "../records.controller";
+import { toggleRecord } from "#app/controllers/records.controller";
 
 import {
   FetchRegistrationsQueryString,
   FilteredRegistrationSchema,
   PatchRegistrationBody,
-} from "../../schemas/registration";
+} from "#app/schemas/registration";
 
-import type { JSendError, JSendResponse } from "../../schemas/jsend";
-import { UnknownData } from "../../schemas/jsend";
+import type { JSendError, JSendResponse } from "#app/schemas/jsend";
+import { UnknownData } from "#app/schemas/jsend";
 
 export const fetchUserShiftPermissions = async (
   userId: number,

@@ -1,6 +1,6 @@
 import type { FastifyRequest } from "fastify";
 
-import type { Auth } from "../schemas/auth";
+import type { Auth } from "#app/schemas/auth";
 
 export const getSessionUser = (request: FastifyRequest): Auth => {
   const user = request.session.user;

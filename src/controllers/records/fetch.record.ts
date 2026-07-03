@@ -6,21 +6,21 @@ import type {
 import { StatusCodes } from "http-status-codes";
 import { Type } from "@sinclair/typebox";
 
-import type { Prisma } from "../../generated/prisma/client";
-import prisma from "../../utils/prisma";
-import { getAgeAtDate } from "../../utils/age";
-import { isShiftMember } from "../../utils/permissions";
-import { getSessionUser } from "../../utils/session";
-import { createFailResponse, createSuccessResponse } from "../../utils/jsend";
+import type { Prisma } from "#app/generated/prisma/client";
+import prisma from "#app/utils/prisma";
+import { getAgeAtDate } from "#app/utils/age";
+import { isShiftMember } from "#app/utils/permissions";
+import { getSessionUser } from "#app/utils/session";
+import { createFailResponse, createSuccessResponse } from "#app/utils/jsend";
 
 import {
   FetchRecordsQueryString,
   FlattenedRecord,
   FlattenedRecordSchema,
   ForceSyncBody,
-} from "../../schemas/record";
-import { RequestPermissionsFail } from "../../schemas/responses";
-import type { JSendResponse } from "../../schemas/jsend";
+} from "#app/schemas/record";
+import { RequestPermissionsFail } from "#app/schemas/responses";
+import type { JSendResponse } from "#app/schemas/jsend";
 
 interface IForceSyncHandler extends RouteGenericInterface {
   Body: ForceSyncBody;

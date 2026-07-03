@@ -4,10 +4,10 @@ import { Transporter } from "nodemailer";
 import {
   getConfirmationReceipt,
   getRegistrationReceipt,
-} from "../utils/email-builder";
+} from "#app/utils/email-builder";
 
-import type { EmailReceiptInfo } from "../schemas/registration";
-import type { CamperBillingInfo } from "../controllers/bills.controller";
+import type { EmailReceiptInfo } from "#app/schemas/registration";
+import type { CamperBillingInfo } from "#app/controllers/bills.controller";
 
 class MailService {
   private transporter: Transporter;

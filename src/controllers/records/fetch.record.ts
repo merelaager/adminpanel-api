@@ -31,7 +31,15 @@ export const forceSyncRecordsHandler = async (
   req: FastifyRequest<IForceSyncHandler>,
   res: FastifyReply<IForceSyncHandler>,
 ): Promise<never> => {
+  const { userId } = getSessionUser(req);
   const { shiftNr, forceSync } = req.body;
+
+  const isAuthorised = await isShiftMember(userId, shiftNr);
+  if (!isAuthorised) {
+    return res
+      .status(StatusCodes.FORBIDDEN)
+      .send(createFailResponse({ permissions: "Puuduvad õigused päringuks." }));
+  }
 
   if (!forceSync) return res.status(StatusCodes.NOT_MODIFIED).send();
 

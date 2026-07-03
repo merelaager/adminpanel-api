@@ -34,7 +34,8 @@ export const deleteGradeHandler = async (
         );
     }
 
-    await prisma.tentScore.delete({
+    // Use deleteMany to prevent potential rate with regular delete.
+    await prisma.tentScore.deleteMany({
       where: { id: gradeId },
     });
   }

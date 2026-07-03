@@ -19,6 +19,7 @@ import {
   type UserParams,
 } from "../schemas/user";
 import type { JSendResponse } from "../types/jsend";
+import { createFailResponse } from "../utils/jsend";
 
 export type UserCreateBasis = Static<typeof UserCreateSchema>;
 
@@ -70,6 +71,11 @@ export const createUser = async (
 
     return { success: false, userError: isUserError, error: errorMessage };
   }
+};
+
+export const validatePasswordPolicy = (password: string): string | null => {
+  if (password.length < 8) return "Salasõna on liiga lühike.";
+  return null;
 };
 
 interface IPatchUserHandler extends RouteGenericInterface {
@@ -258,6 +264,13 @@ export const resetPasswordHandler = async (
     return res.status(StatusCodes.FORBIDDEN).send();
   }
 
+  const rejectReason = validatePasswordPolicy(password);
+  if (!rejectReason) {
+    return res
+      .status(StatusCodes.UNPROCESSABLE_ENTITY)
+      .send(createFailResponse({ password: rejectReason }));
+  }
+
   const isOlderThan24h =
     Date.now() - new Date(tokenEntry.createdAt).getTime() > 24 * 60 * 60 * 1000;
   if (isOlderThan24h) {
@@ -287,8 +300,10 @@ export const signupUserHandler = async (
   req: FastifyRequest<ISignupUserHandler>,
   res: FastifyReply<ISignupUserHandler>,
 ): Promise<never> => {
+  const { token, username, password } = req.body;
+
   const signupData = await prisma.signupToken.findUnique({
-    where: { token: req.body.token, isExpired: false },
+    where: { token, isExpired: false },
   });
 
   if (!signupData) {
@@ -298,13 +313,20 @@ export const signupUserHandler = async (
     });
   }
 
+  const rejectReason = validatePasswordPolicy(password);
+  if (!rejectReason) {
+    return res
+      .status(StatusCodes.UNPROCESSABLE_ENTITY)
+      .send(createFailResponse({ password: rejectReason }));
+  }
+
   const now = new Date();
 
   const diffMs = Math.abs(now.getTime() - signupData.createdAt.getTime());
   const diffHours = diffMs / (1000 * 60 * 60);
   if (diffHours > 24) {
     await prisma.signupToken.update({
-      where: { token: req.body.token },
+      where: { token },
       data: { isExpired: true },
     });
     return res.status(StatusCodes.FORBIDDEN).send({
@@ -319,17 +341,17 @@ export const signupUserHandler = async (
   try {
     const user = await prisma.user.create({
       data: {
-        username: req.body.username.trim(),
+        username: username.trim(),
         currentShift: signupData.shiftNr,
         name: req.body.name.trim(),
-        email: req.body.email,
+        email: signupData.email,
         nickname: req.body.nickname || req.body.name.split(" ")[0],
         password: passwordHash,
       },
     });
     // Consume the token.
     await prisma.signupToken.update({
-      where: { token: req.body.token },
+      where: { token },
       data: { isExpired: true, usedDate: new Date() },
     });
     // Assign permissions
@@ -349,7 +371,7 @@ export const signupUserHandler = async (
         return res.status(StatusCodes.CONFLICT).send({
           status: "fail",
           data: {
-            conflict: "Kasutajanimi või meiliaadress on juba kasutuses.",
+            conflict: "Kasutajanimi on juba kasutuses.",
           },
         });
       }

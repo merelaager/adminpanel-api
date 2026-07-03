@@ -9,6 +9,8 @@ import type { User } from "../generated/prisma/client";
 import type { JSendResponse } from "../types/jsend";
 import type { ChangePasswordBody, LoginBody } from "../schemas/auth";
 import type { UserInfo } from "../schemas/user";
+import { createFailResponse } from "../utils/jsend";
+import { validatePasswordPolicy } from "./users.controller";
 
 interface IUserInfoHandler extends RouteGenericInterface {
   Reply: JSendResponse | null;
@@ -77,6 +79,13 @@ export const setPasswordHandler = async (
 ) => {
   const { userId } = getSessionUser(req);
   const { password } = req.body;
+
+  const rejectReason = validatePasswordPolicy(password);
+  if (!rejectReason) {
+    return res
+      .status(StatusCodes.UNPROCESSABLE_ENTITY)
+      .send(createFailResponse({ password: rejectReason }));
+  }
 
   const saltRounds = 10;
   const passwordHash = await bcrypt.hash(password, saltRounds);

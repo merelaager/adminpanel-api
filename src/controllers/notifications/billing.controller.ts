@@ -114,7 +114,7 @@ export const sendBillHandler = async (
     req.log.error({ err, email }, "Failed to send bill email");
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
       status: "error",
-      message: "Ootamatu viga arve saatmise.",
+      message: "Ootamatu viga arve saatmisel.",
     });
   }
 

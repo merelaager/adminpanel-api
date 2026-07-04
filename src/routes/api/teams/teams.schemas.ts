@@ -19,3 +19,7 @@ export const TeamRecordSchema = Type.Object({
   place: Type.Union([Type.Integer(), Type.Null()]),
   captainId: Type.Union([Type.Integer(), Type.Null()]),
 });
+
+export const FetchTeamsData = Type.Object({
+  teams: Type.Array(TeamRecordSchema),
+});

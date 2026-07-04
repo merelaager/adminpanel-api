@@ -4,7 +4,7 @@ import type {
   RouteGenericInterface,
 } from "fastify";
 import { StatusCodes } from "http-status-codes";
-import type { PrismaClient, Registration } from "#app/generated/prisma/client";
+import type { Registration } from "#app/generated/prisma/client";
 
 import prisma from "#app/lib/prisma";
 import { getSessionUser } from "#app/lib/session";
@@ -162,7 +162,6 @@ export const patchRegistrationData = async (
   userId: number,
   regId: number,
   patchData: PatchRegistrationBody,
-  prisma: PrismaClient,
 ) => {
   // TODO: avoid an extra request by querying the shift of the registration.
   // Get the shift of the registration and the child the registration pertains to.

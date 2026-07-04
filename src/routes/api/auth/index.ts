@@ -33,7 +33,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         response: {
           [StatusCodes.OK]: SuccessResponse(UserInfoSchema),
-          [StatusCodes.FORBIDDEN]: Type.Null(),
+          [StatusCodes.FORBIDDEN]: {},
         },
       },
     },
@@ -42,12 +42,10 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       const info = await getUserInfo(userId);
 
       if (info === null) {
-        return reply.status(StatusCodes.FORBIDDEN).send(null);
+        return reply.status(StatusCodes.FORBIDDEN).send();
       }
 
-      return reply
-        .status(StatusCodes.OK)
-        .send(createSuccessResponse(info));
+      return reply.status(StatusCodes.OK).send(createSuccessResponse(info));
     },
   );
 
@@ -76,9 +74,11 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
 
       const user = await authenticateUser(username, password);
       if (!user) {
-        return reply.code(StatusCodes.UNAUTHORIZED).send(
-          createFailResponse({ message: "Vale kasutajanimi või parool." }),
-        );
+        return reply
+          .code(StatusCodes.UNAUTHORIZED)
+          .send(
+            createFailResponse({ message: "Vale kasutajanimi või parool." }),
+          );
       }
 
       await request.session.regenerate();
@@ -104,7 +104,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         body: SignupSchema,
         response: {
-          [StatusCodes.CREATED]: Type.Null(),
+          [StatusCodes.CREATED]: {},
           [StatusCodes.FORBIDDEN]: FailResponse(
             Type.Object({ token: Type.String() }),
           ),
@@ -145,7 +145,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
             .status(StatusCodes.INTERNAL_SERVER_ERROR)
             .send(createErrorResponse("Serveri viga kasutaja loomisel."));
         case "created":
-          return reply.status(StatusCodes.CREATED).send(null);
+          return reply.status(StatusCodes.CREATED).send();
       }
     },
   );
@@ -155,6 +155,15 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
     {
       schema: {
         body: PasswordSchema,
+        response: {
+          [StatusCodes.NO_CONTENT]: {},
+          [StatusCodes.UNAUTHORIZED]: FailResponse(
+            Type.Object({ currentPassword: Type.String() }),
+          ),
+          [StatusCodes.UNPROCESSABLE_ENTITY]: FailResponse(
+            Type.Object({ password: Type.String() }),
+          ),
+        },
       },
     },
     async (request, reply) => {
@@ -180,7 +189,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
           .send(createFailResponse({ password: result.reason }));
       }
 
-      return reply.status(StatusCodes.NO_CONTENT).send(null);
+      return reply.status(StatusCodes.NO_CONTENT).send();
     },
   );
 

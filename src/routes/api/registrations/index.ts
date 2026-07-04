@@ -131,7 +131,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         params: PatchRegistrationParamsSchema,
         body: PatchRegistrationSchema,
         response: {
-          [StatusCodes.NO_CONTENT]: Type.Null(),
+          [StatusCodes.NO_CONTENT]: {},
           [StatusCodes.NOT_FOUND]: FailResponse(
             Type.Object({ message: Type.String() }),
           ),
@@ -154,7 +154,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         );
       }
 
-      return reply.status(StatusCodes.NO_CONTENT).send(null);
+      return reply.status(StatusCodes.NO_CONTENT).send();
     },
   );
 };

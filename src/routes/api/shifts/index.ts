@@ -1,11 +1,14 @@
 import fs from "fs";
 import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
-import { Type } from "@sinclair/typebox";
 import { StatusCodes } from "http-status-codes";
 
-import { requireRegistrationView, requireShiftPermission } from "#app/lib/guards";
+import {
+  requireRegistrationView,
+  requireShiftPermission,
+} from "#app/lib/guards";
 import { Permissions } from "#app/constants/permissions";
 import {
+  BinaryResponse,
   createErrorResponse,
   createFailResponse,
   createSuccessResponse,
@@ -73,7 +76,10 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         params: ShiftResourceFetchParams,
         response: {
-          [StatusCodes.OK]: Type.Unknown(),
+          [StatusCodes.OK]: BinaryResponse(
+            "application/pdf",
+            "The shift camper-list PDF.",
+          ),
           [StatusCodes.NOT_FOUND]: FailResponse(FetchShiftPdfFailData),
           [StatusCodes.FORBIDDEN]: FailResponse(RequestPermissionsFail),
           [StatusCodes.INTERNAL_SERVER_ERROR]: ErrorResponseRef,
@@ -127,7 +133,9 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
     },
     async (request, reply) => {
       const users = await fetchShiftUsers(request.params.shiftNr);
-      return reply.status(StatusCodes.OK).send(createSuccessResponse({ users }));
+      return reply
+        .status(StatusCodes.OK)
+        .send(createSuccessResponse({ users }));
     },
   );
 
@@ -154,7 +162,10 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(
     "/:shiftNr/records",
     {
-      preHandler: requireShiftPermission(Permissions.VIEW_SHIFT_BASIC, "params"),
+      preHandler: requireShiftPermission(
+        Permissions.VIEW_SHIFT_BASIC,
+        "params",
+      ),
       schema: {
         params: ShiftResourceFetchParams,
         response: {
@@ -194,7 +205,10 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(
     "/:shiftNr/staff",
     {
-      preHandler: requireShiftPermission(Permissions.VIEW_SHIFT_STAFF, "params"),
+      preHandler: requireShiftPermission(
+        Permissions.VIEW_SHIFT_STAFF,
+        "params",
+      ),
       schema: {
         params: ShiftResourceFetchParams,
         response: {
@@ -205,14 +219,19 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
     },
     async (request, reply) => {
       const staff = await fetchShiftStaff(request.params.shiftNr);
-      return reply.status(StatusCodes.OK).send(createSuccessResponse({ staff }));
+      return reply
+        .status(StatusCodes.OK)
+        .send(createSuccessResponse({ staff }));
     },
   );
 
   fastify.get(
     "/:shiftNr/tents/:tentNr",
     {
-      preHandler: requireShiftPermission(Permissions.VIEW_SHIFT_BASIC, "params"),
+      preHandler: requireShiftPermission(
+        Permissions.VIEW_SHIFT_BASIC,
+        "params",
+      ),
       schema: {
         params: ShiftTentQuerySchema,
         response: {
@@ -231,7 +250,10 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(
     "/:shiftNr/tents",
     {
-      preHandler: requireShiftPermission(Permissions.VIEW_SHIFT_BASIC, "params"),
+      preHandler: requireShiftPermission(
+        Permissions.VIEW_SHIFT_BASIC,
+        "params",
+      ),
       schema: {
         params: ShiftResourceFetchParams,
         response: {
@@ -251,7 +273,10 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.post(
     "/:shiftNr/tents/:tentNr",
     {
-      preHandler: requireShiftPermission(Permissions.EDIT_SHIFT_BASIC, "params"),
+      preHandler: requireShiftPermission(
+        Permissions.EDIT_SHIFT_BASIC,
+        "params",
+      ),
       schema: {
         params: ShiftTentQuerySchema,
         body: AddGradeSchema,

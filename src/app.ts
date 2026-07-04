@@ -5,6 +5,8 @@ import fastifyAutoload from "@fastify/autoload";
 import fastifyEnv from "@fastify/env";
 import cors from "@fastify/cors";
 import rateLimit from "@fastify/rate-limit";
+import fastifySwagger from "@fastify/swagger";
+import fastifySwaggerUi from "@fastify/swagger-ui";
 
 import { envSchema } from "./config/env";
 
@@ -18,10 +20,14 @@ const allowedDomainPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 
 export interface BuildAppOptions {
   rateLimit?: boolean;
+  docs?: boolean;
 }
 
 export const buildApp = (opts: BuildAppOptions = {}): FastifyInstance => {
-  const { rateLimit: enableRateLimit = true } = opts;
+  const {
+    rateLimit: enableRateLimit = true,
+    docs: enableDocs = process.env.NODE_ENV !== "production",
+  } = opts;
 
   const fastify = Fastify({
     logger: true,
@@ -57,6 +63,50 @@ export const buildApp = (opts: BuildAppOptions = {}): FastifyInstance => {
   if (enableRateLimit) {
     fastify.register(rateLimit, {
       global: false,
+    });
+  }
+
+  fastify.register(fastifySwagger, {
+    openapi: {
+      info: {
+        title: "Merelaager API",
+        version: "1.0.0",
+      },
+      components: {
+        securitySchemes: {
+          sessionCookie: {
+            type: "apiKey",
+            in: "cookie",
+            name: "sessionId",
+          },
+        },
+      },
+    },
+    transform: ({ schema, url, route }) => {
+      // Group operations in the UI by feature.
+      const feature = url.split("/").filter(Boolean)[1];
+      const tags =
+        schema?.tags ??
+        (feature ? [feature[0].toUpperCase() + feature.slice(1)] : undefined);
+
+      // Document session auth on every route not opted out via
+      // config: { public: true }.
+      const secured = !(route.config?.public || schema?.hide);
+
+      return {
+        url,
+        schema: {
+          ...schema,
+          ...(tags ? { tags } : {}),
+          ...(secured ? { security: [{ sessionCookie: [] }] } : {}),
+        },
+      };
+    },
+  });
+
+  if (enableDocs) {
+    fastify.register(fastifySwaggerUi, {
+      routePrefix: "/documentation",
     });
   }
 

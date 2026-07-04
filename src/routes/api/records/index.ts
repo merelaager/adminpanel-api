@@ -51,7 +51,9 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       if (records === null) {
         return reply
           .status(StatusCodes.FORBIDDEN)
-          .send(createFailResponse({ permissions: "Ligipääsuõigused puuduvad" }));
+          .send(
+            createFailResponse({ permissions: "Ligipääsuõigused puuduvad" }),
+          );
       }
 
       return reply
@@ -66,6 +68,12 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       preHandler: requireShiftPermission(Permissions.EDIT_SHIFT_BASIC, "body"),
       schema: {
         body: ForceSyncSchema,
+        response: {
+          [StatusCodes.NO_CONTENT]: {},
+          [StatusCodes.NOT_MODIFIED]: {},
+          [StatusCodes.NOT_FOUND]: {},
+          [StatusCodes.FORBIDDEN]: FailResponse(RequestPermissionsFail),
+        },
       },
     },
     async (request, reply) => {
@@ -90,7 +98,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         params: RecordParamsSchema,
         body: PatchRecordSchema,
         response: {
-          [StatusCodes.NO_CONTENT]: Type.Null(),
+          [StatusCodes.NO_CONTENT]: {},
           [StatusCodes.NOT_FOUND]: FailResponse(PatchRecordFailDataNF),
           [StatusCodes.BAD_REQUEST]: FailResponse(
             Type.Object({ tentNr: Type.String() }),
@@ -109,13 +117,11 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       const result = await patchRecord(userId, recordId, request.body);
 
       if (result === "record-not-found") {
-        return reply
-          .status(StatusCodes.NOT_FOUND)
-          .send(
-            createFailResponse({
-              recordId: `Kirjet ei leitud. (id: ${recordId})`,
-            }),
-          );
+        return reply.status(StatusCodes.NOT_FOUND).send(
+          createFailResponse({
+            recordId: `Kirjet ei leitud. (id: ${recordId})`,
+          }),
+        );
       }
 
       if (result === "forbidden") {
@@ -134,7 +140,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         );
       }
 
-      return reply.status(StatusCodes.NO_CONTENT).send(null);
+      return reply.status(StatusCodes.NO_CONTENT).send();
     },
   );
 };

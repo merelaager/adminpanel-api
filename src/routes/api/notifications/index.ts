@@ -29,7 +29,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         body: SingleBillSendSchema,
         response: {
-          [StatusCodes.NO_CONTENT]: Type.Null(),
+          [StatusCodes.NO_CONTENT]: {},
           [StatusCodes.FORBIDDEN]: FailResponse(
             Type.Object({ permissions: Type.String() }),
           ),
@@ -93,7 +93,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
           .send(createErrorResponse("Ootamatu viga arve saatmisel."));
       }
 
-      return reply.status(StatusCodes.NO_CONTENT).send(null);
+      return reply.status(StatusCodes.NO_CONTENT).send();
     },
   );
 };

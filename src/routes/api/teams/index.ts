@@ -1,5 +1,4 @@
 import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
-import { Type } from "@sinclair/typebox";
 import { StatusCodes } from "http-status-codes";
 
 import { requireShiftPermission } from "#app/lib/guards";
@@ -33,7 +32,9 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
     },
     async (request, reply) => {
       const teams = await fetchTeams(request.query.shiftNr);
-      return reply.status(StatusCodes.OK).send(createSuccessResponse({ teams }));
+      return reply
+        .status(StatusCodes.OK)
+        .send(createSuccessResponse({ teams }));
     },
   );
 
@@ -44,7 +45,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         body: TeamCreationSchema,
         response: {
-          [StatusCodes.CREATED]: Type.Null(),
+          [StatusCodes.CREATED]: {},
           [StatusCodes.FORBIDDEN]: FailResponse(RequestPermissionsFail),
         },
       },
@@ -52,7 +53,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
     async (request, reply) => {
       const { shiftNr, name } = request.body;
       await createTeam(shiftNr, name);
-      return reply.status(StatusCodes.CREATED).send(null);
+      return reply.status(StatusCodes.CREATED).send();
     },
   );
 };

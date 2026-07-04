@@ -1,5 +1,4 @@
 import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
-import { Type } from "@sinclair/typebox";
 import { StatusCodes } from "http-status-codes";
 
 import { getSessionUser } from "#app/lib/session";
@@ -19,7 +18,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         params: GradeDeleteSchema,
         response: {
-          [StatusCodes.NO_CONTENT]: Type.Null(),
+          [StatusCodes.NO_CONTENT]: {},
           [StatusCodes.FORBIDDEN]: FailResponse(RequestPermissionsFail),
         },
       },
@@ -36,7 +35,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
           );
       }
 
-      return reply.status(StatusCodes.NO_CONTENT).send(null);
+      return reply.status(StatusCodes.NO_CONTENT).send();
     },
   );
 };

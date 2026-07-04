@@ -56,6 +56,18 @@ export function FailResponse<T extends TSchema>(dataSchema: T) {
 
 export const UnknownData = Type.Unknown();
 
+// Documents a non-JSON binary response (e.g. a streamed file download) for
+// OpenAPI. It carries no JSON schema, so Fastify streams the body through
+// untouched instead of trying to serialise it as JSON.
+export const BinaryResponse = (mediaType: string, description: string) => ({
+  description,
+  content: {
+    [mediaType]: {
+      schema: { type: "string", format: "binary" },
+    },
+  },
+});
+
 const ERROR_RESPONSE_ID = "JSendError";
 
 export const ErrorResponse = Type.Object(

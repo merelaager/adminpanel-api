@@ -7,6 +7,7 @@ import { StatusCodes } from "http-status-codes";
 import { requireAnyShiftPermission } from "#app/lib/guards";
 import { Permissions } from "#app/constants/permissions";
 import {
+  BinaryResponse,
   createErrorResponse,
   createFailResponse,
   createSuccessResponse,
@@ -32,7 +33,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         params: BillParamsSchema,
         response: {
-          [StatusCodes.OK]: Type.Unknown(),
+          [StatusCodes.OK]: BinaryResponse("application/pdf", "The bill PDF."),
           [StatusCodes.FORBIDDEN]: FailResponse(
             Type.Object({ permissions: Type.String() }),
           ),

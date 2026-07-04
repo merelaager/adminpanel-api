@@ -27,7 +27,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         params: UserParamsSchema,
         body: PatchUserSchema,
         response: {
-          [StatusCodes.NO_CONTENT]: Type.Null(),
+          [StatusCodes.NO_CONTENT]: {},
           [StatusCodes.FORBIDDEN]: FailResponse(
             Type.Partial(
               Type.Object({
@@ -61,7 +61,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         );
       }
 
-      return reply.status(StatusCodes.NO_CONTENT).send(null);
+      return reply.status(StatusCodes.NO_CONTENT).send();
     },
   );
 
@@ -76,7 +76,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         body: CreateInviteSchema,
         response: {
-          [StatusCodes.NO_CONTENT]: Type.Null(),
+          [StatusCodes.NO_CONTENT]: {},
           [StatusCodes.UNPROCESSABLE_ENTITY]: FailResponse(
             Type.Object({
               role: Type.String(),
@@ -110,10 +110,12 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       if (result === "mail-failed") {
         return reply
           .status(StatusCodes.INTERNAL_SERVER_ERROR)
-          .send(createErrorResponse("Ootamatu viga regamispääsmiku saatmisel."));
+          .send(
+            createErrorResponse("Ootamatu viga regamispääsmiku saatmisel."),
+          );
       }
 
-      return reply.status(StatusCodes.NO_CONTENT).send(null);
+      return reply.status(StatusCodes.NO_CONTENT).send();
     },
   );
 };

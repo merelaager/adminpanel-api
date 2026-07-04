@@ -1,7 +1,8 @@
 import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
+import { Type } from "@sinclair/typebox";
 import { StatusCodes } from "http-status-codes";
 
-import { createFailResponse } from "#app/lib/jsend";
+import { createFailResponse, FailResponse } from "#app/lib/jsend";
 
 import {
   PasswordResetConfirmSchema,
@@ -22,6 +23,9 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       },
       schema: {
         body: PasswordResetRequestSchema,
+        response: {
+          [StatusCodes.ACCEPTED]: {},
+        },
       },
     },
     async (request, reply) => {
@@ -49,6 +53,13 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       },
       schema: {
         body: PasswordResetConfirmSchema,
+        response: {
+          [StatusCodes.NO_CONTENT]: {},
+          [StatusCodes.FORBIDDEN]: {},
+          [StatusCodes.UNPROCESSABLE_ENTITY]: FailResponse(
+            Type.Object({ password: Type.String() }),
+          ),
+        },
       },
     },
     async (request, reply) => {
@@ -65,7 +76,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
           .send(createFailResponse({ password: result.reason }));
       }
 
-      return reply.status(StatusCodes.NO_CONTENT).send(null);
+      return reply.status(StatusCodes.NO_CONTENT).send();
     },
   );
 };

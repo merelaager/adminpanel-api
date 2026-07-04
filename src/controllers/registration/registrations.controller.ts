@@ -6,10 +6,10 @@ import type {
 import { StatusCodes } from "http-status-codes";
 import type { PrismaClient, Registration } from "#app/generated/prisma/client";
 
-import prisma from "#app/utils/prisma";
-import { getSessionUser } from "#app/utils/session";
-import { getAgeAtDate } from "#app/utils/age";
-import { isSuperRoot } from "#app/utils/permissions";
+import prisma from "#app/lib/prisma";
+import { getSessionUser } from "#app/lib/session";
+import { getAgeAtDate } from "#app/lib/age";
+import { fetchUserShiftPermissions, isSuperRoot } from "#app/lib/permissions";
 import { Permissions, PermissionPrefixes } from "#app/constants/permissions";
 
 import { toggleRecord } from "#app/controllers/records.controller";
@@ -20,42 +20,9 @@ import {
   RegistrationsFetchSchema,
 } from "#app/schemas/registration";
 
-import type { JSendError, JSendResponse } from "#app/schemas/jsend";
-import { UnknownData } from "#app/schemas/jsend";
+import type { JSendError, JSendResponse } from "#app/lib/jsend";
+import { UnknownData } from "#app/lib/jsend";
 import type { Route } from "#app/schemas/route";
-
-export const fetchUserShiftPermissions = async (
-  userId: number,
-  shiftNr: number,
-  permissionPrefix: PermissionPrefixes,
-) => {
-  const userShiftRolesRaw = await prisma.userRoles.findMany({
-    where: { userId, shiftNr },
-    select: {
-      role: {
-        select: {
-          role_permissions: {
-            where: {
-              permission: {
-                permissionName: { startsWith: permissionPrefix },
-              },
-            },
-            select: { permission: { select: { permissionName: true } } },
-          },
-        },
-      },
-    },
-  });
-
-  const shiftPermissions = new Set<string>();
-  for (const shiftRole of userShiftRolesRaw) {
-    for (const permission of shiftRole.role.role_permissions) {
-      shiftPermissions.add(permission.permission.permissionName);
-    }
-  }
-
-  return shiftPermissions;
-};
 
 const objectHasAllowedKey = <
   FullModel extends object,

@@ -7,18 +7,18 @@ import { type Child, Prisma } from "#app/generated/prisma/client";
 
 import MailService from "#app/services/mailService";
 
-import prisma from "#app/utils/prisma";
+import prisma from "#app/lib/prisma";
 import {
   createErrorResponse,
   createFailResponse,
   createSuccessResponse,
-} from "#app/utils/jsend";
+} from "#app/lib/jsend";
 
 import {
   EmailReceiptInfo,
   RegistrationsCreationSchema,
 } from "#app/schemas/registration";
-import { JSendError, JSendResponse } from "#app/schemas/jsend";
+import { JSendError, JSendResponse } from "#app/lib/jsend";
 import type { Route } from "#app/schemas/route";
 import { SENIORITY_DISCOUNTS, SHIFT_PRICES } from "#app/constants/pricing";
 

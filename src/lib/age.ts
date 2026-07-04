@@ -1,4 +1,4 @@
-import prisma from "./prisma";
+import prisma from "#app/lib/prisma";
 
 export const getAgeAtDate = (birthday: Date, targetDate: Date) => {
   let ageAtTarget = targetDate.getUTCFullYear() - birthday.getUTCFullYear();

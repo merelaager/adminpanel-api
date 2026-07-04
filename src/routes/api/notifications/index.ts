@@ -5,7 +5,7 @@ import { StatusCodes } from "http-status-codes";
 import { sendBillHandler } from "#app/controllers/notifications/billing.controller";
 
 import { SingleBillSendSchema } from "#app/schemas/shift";
-import { ErrorResponseRef, FailResponse } from "#app/schemas/jsend";
+import { ErrorResponseRef, FailResponse } from "#app/lib/jsend";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.post(

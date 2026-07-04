@@ -1,6 +1,9 @@
-import prisma from "./prisma";
+import prisma from "#app/lib/prisma";
 
-import { Permissions } from "#app/constants/permissions";
+import {
+  Permissions,
+  PermissionPrefixes,
+} from "#app/constants/permissions";
 
 export const isSuperRoot = async (userId: number) => {
   const user = await prisma.user.findUnique({
@@ -10,7 +13,7 @@ export const isSuperRoot = async (userId: number) => {
   return user !== null;
 };
 
-const userHasShiftPermission = async (
+export const userHasShiftPermission = async (
   userId: number,
   shiftNr: number,
   permission: Permissions,
@@ -75,7 +78,7 @@ export const userHasShiftPermissionInAnyOf = async (
   return userShiftRole !== null;
 };
 
-const userHasPermissionInAnyShift = async (
+export const userHasPermissionInAnyShift = async (
   userId: number,
   permission: Permissions,
 ): Promise<boolean> => {
@@ -100,3 +103,67 @@ const userHasPermissionInAnyShift = async (
 
 export const canEditRegistrationPriceAnyShift = (userId: number) =>
   userHasPermissionInAnyShift(userId, Permissions.EDIT_REGISTRATION_PRICE);
+
+export const fetchUserShiftPermissions = async (
+  userId: number,
+  shiftNr: number,
+  permissionPrefix: PermissionPrefixes,
+) => {
+  const userShiftRolesRaw = await prisma.userRoles.findMany({
+    where: { userId, shiftNr },
+    select: {
+      role: {
+        select: {
+          role_permissions: {
+            where: {
+              permission: {
+                permissionName: { startsWith: permissionPrefix },
+              },
+            },
+            select: { permission: { select: { permissionName: true } } },
+          },
+        },
+      },
+    },
+  });
+
+  const shiftPermissions = new Set<string>();
+  for (const shiftRole of userShiftRolesRaw) {
+    for (const permission of shiftRole.role.role_permissions) {
+      shiftPermissions.add(permission.permission.permissionName);
+    }
+  }
+
+  return shiftPermissions;
+};
+
+export type RegistrationViewFlags = {
+  pii: boolean;
+  financial: boolean;
+  contact: boolean;
+};
+
+export const getRegistrationViewFlags = async (
+  userId: number,
+  shiftNr: number,
+): Promise<RegistrationViewFlags> => {
+  const shiftViewPermissions = await fetchUserShiftPermissions(
+    userId,
+    shiftNr,
+    PermissionPrefixes.REGISTRATION_VIEW,
+  );
+
+  const pii =
+    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_FULL) ||
+    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_PERSONAL_INFO);
+
+  const financial =
+    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_FULL) ||
+    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_PRICE);
+
+  const contact =
+    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_FULL) ||
+    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_CONTACT);
+
+  return { pii, financial, contact };
+};

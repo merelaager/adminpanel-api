@@ -1,7 +1,7 @@
 import fs from "fs";
 import PDFDoc from "pdfkit";
 
-import prisma from "./prisma";
+import prisma from "#app/lib/prisma";
 import {
   REGISTRATION_FEE,
   SENIORITY_DISCOUNTS,

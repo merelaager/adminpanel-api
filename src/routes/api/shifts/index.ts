@@ -36,8 +36,8 @@ import {
   ErrorResponseRef,
   FailResponse,
   SuccessResponse,
-} from "#app/schemas/jsend";
-import { RequestPermissionsFail } from "#app/schemas/responses";
+} from "#app/lib/jsend";
+import { RequestPermissionsFail } from "#app/lib/jsend";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(

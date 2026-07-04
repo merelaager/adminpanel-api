@@ -2,8 +2,8 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { StatusCodes } from "http-status-codes";
 import { Type } from "@sinclair/typebox";
 
-import prisma from "#app/utils/prisma";
-import { createFailResponse, createSuccessResponse } from "#app/utils/jsend";
+import prisma from "#app/lib/prisma";
+import { createFailResponse, createSuccessResponse } from "#app/lib/jsend";
 
 import {
   TeamCreationSchema,
@@ -11,11 +11,11 @@ import {
   TeamRecordSchema,
   TeamsFetchSchema,
 } from "#app/schemas/team";
-import type { JSendFail, JSendResponse } from "#app/schemas/jsend";
-import { canEditShiftBasic, canViewShiftBasic } from "#app/utils/permissions";
-import { getSessionUser } from "#app/utils/session";
-import { getCurrentCampYear } from "#app/utils/campYear";
-import { RequestPermissionsFail } from "#app/schemas/responses";
+import type { JSendFail, JSendResponse } from "#app/lib/jsend";
+import { canEditShiftBasic, canViewShiftBasic } from "#app/lib/permissions";
+import { getSessionUser } from "#app/lib/session";
+import { getCurrentCampYear } from "#app/lib/camp-year";
+import { RequestPermissionsFail } from "#app/lib/jsend";
 import type { Route } from "#app/schemas/route";
 
 export const FetchTeamsData = Type.Object({

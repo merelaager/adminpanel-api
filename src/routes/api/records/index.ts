@@ -19,8 +19,8 @@ import {
   RecordParamsSchema,
   RecordsFetchSchema,
 } from "#app/schemas/record";
-import { FailResponse, SuccessResponse } from "#app/schemas/jsend";
-import { RequestPermissionsFail } from "#app/schemas/responses";
+import { FailResponse, SuccessResponse } from "#app/lib/jsend";
+import { RequestPermissionsFail } from "#app/lib/jsend";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(

@@ -89,3 +89,12 @@ export type EmailReceiptInfo = {
   contactEmail: string;
   registrationId: string;
 };
+
+export const FormRegistrationData = Type.Object({
+  registrationId: Type.String(),
+});
+
+export const FormRegistrationFailData = Type.Record(
+  Type.String(),
+  Type.String(),
+);

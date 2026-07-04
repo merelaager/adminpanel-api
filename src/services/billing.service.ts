@@ -77,6 +77,12 @@ export const createAndAssignBill = async (
     const targetBillNr =
       billNr ?? (await createBillDatabaseEntry(tx, contact.name, billTotal));
 
+    // When reusing an existing bill, keep its total in sync with the current
+    // camper set. The create path already sets billTotal on the new row.
+    if (billNr !== null) {
+      await tx.bill.update({ where: { id: billNr }, data: { billTotal } });
+    }
+
     for (const camper of registeredCampers) {
       if (camper.billId) continue;
       await tx.registration.update({

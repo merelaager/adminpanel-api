@@ -20,7 +20,3 @@ export const SignupSchema = Type.Object({
 });
 
 export type SignupBody = Static<typeof SignupSchema>;
-
-export interface Auth {
-  userId: number;
-}

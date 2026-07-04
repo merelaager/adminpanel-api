@@ -12,8 +12,16 @@ test("route table matches committed snapshot", async () => {
   const routes = app.printRoutes({ commonPrefix: false });
   await app.close();
 
-  if (!existsSync(snapshotPath)) {
+  if (process.env.UPDATE_SNAPSHOT === "1") {
     writeFileSync(snapshotPath, routes);
+    return;
+  }
+
+  if (!existsSync(snapshotPath)) {
+    assert.fail(
+      `Route snapshot missing at ${snapshotPath}. ` +
+        `Regenerate it intentionally with UPDATE_SNAPSHOT=1.`,
+    );
   }
 
   const expected = readFileSync(snapshotPath, "utf8");

@@ -4,7 +4,7 @@ import fastifyCookie from "@fastify/cookie";
 import { PrismaSessionStore } from "@quixo3/prisma-session-store";
 
 import prisma from "#app/lib/prisma";
-import type { Auth } from "#app/routes/api/auth/auth.schemas";
+import type { Auth } from "#app/lib/session";
 
 declare module "fastify" {
   interface Session {

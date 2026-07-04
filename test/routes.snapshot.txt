@@ -1,4 +1,5 @@
 ├── /api/account/password (PUT)
+│   └── -reset (POST)
 ├── /api/app/version (GET, HEAD)
 ├── /api/auth/me (GET, HEAD)
 ├── /api/auth/login (POST)

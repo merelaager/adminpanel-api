@@ -1,19 +1,12 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { StatusCodes } from "http-status-codes";
-import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcrypt";
 import { Prisma } from "#app/generated/prisma/client";
 
-import {
-  SALT_ROUNDS,
-  TOKEN_EXPIRY_HOURS,
-  TOKEN_EXPIRY_MS,
-} from "#app/constants/auth";
+import { SALT_ROUNDS, TOKEN_EXPIRY_HOURS } from "#app/constants/auth";
 import prisma from "#app/lib/prisma";
-import { deleteUserSessions } from "#app/lib/session";
-import MailService from "#app/services/mail.service";
 
-import { ResetPasswordSchema, SignupSchema } from "#app/schemas/user";
+import { SignupSchema } from "#app/schemas/user";
 import type { JSendError, JSendResponse } from "#app/lib/jsend";
 import { UnknownData } from "#app/lib/jsend";
 import { createFailResponse } from "#app/lib/jsend";
@@ -22,78 +15,6 @@ import type { Route } from "#app/schemas/route";
 export const validatePasswordPolicy = (password: string): string | null => {
   if (password.length < 8) return "Salasõna on liiga lühike.";
   return null;
-};
-
-type IRequestPasswordResetHandler = Route<{
-  body: typeof ResetPasswordSchema;
-}> & { Reply: null };
-
-export const resetPasswordHandler = async (
-  req: FastifyRequest<IRequestPasswordResetHandler>,
-  res: FastifyReply<IRequestPasswordResetHandler>,
-) => {
-  if ("email" in req.body) {
-    const email = req.body.email;
-    const userData = await prisma.user.findUnique({
-      where: { email },
-      select: { id: true },
-    });
-
-    if (userData === null) {
-      return res.status(StatusCodes.ACCEPTED).send();
-    }
-
-    const token = uuidv4();
-    await prisma.resetToken.create({
-      data: { token, userId: userData.id },
-    });
-
-    const mailService = new MailService(
-      req.server.mailer,
-      req.server.config.APP_URL,
-    );
-    try {
-      await mailService.sendPasswordResetToken(email, token);
-    } catch (err) {
-      req.log.error({ err, email }, "Failed to send password reset email");
-    }
-
-    return res.status(StatusCodes.ACCEPTED).send();
-  }
-
-  const { token, password } = req.body;
-  const tokenEntry = await prisma.resetToken.findUnique({
-    where: { token },
-  });
-  if (!tokenEntry) {
-    return res.status(StatusCodes.FORBIDDEN).send();
-  }
-
-  const rejectReason = validatePasswordPolicy(password);
-  if (rejectReason) {
-    return res
-      .status(StatusCodes.UNPROCESSABLE_ENTITY)
-      .send(createFailResponse({ password: rejectReason }));
-  }
-
-  const isOlderThan24h =
-    Date.now() - new Date(tokenEntry.createdAt).getTime() > TOKEN_EXPIRY_MS;
-  if (isOlderThan24h) {
-    await prisma.resetToken.delete({ where: { token } });
-    return res.status(StatusCodes.FORBIDDEN).send();
-  }
-
-  const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
-
-  await prisma.user.update({
-    where: { id: tokenEntry.userId },
-    data: { password: passwordHash },
-  });
-
-  await deleteUserSessions(tokenEntry.userId);
-  await prisma.resetToken.deleteMany({ where: { userId: tokenEntry.userId } });
-
-  return res.status(StatusCodes.NO_CONTENT).send(null);
 };
 
 type ISignupUserHandler = Route<{ body: typeof SignupSchema }> & {

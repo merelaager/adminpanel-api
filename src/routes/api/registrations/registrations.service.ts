@@ -1,28 +1,15 @@
-import type {
-  FastifyReply,
-  FastifyRequest,
-  RouteGenericInterface,
-} from "fastify";
-import { StatusCodes } from "http-status-codes";
 import type { Registration } from "#app/generated/prisma/client";
 
 import prisma from "#app/lib/prisma";
-import { getSessionUser } from "#app/lib/session";
 import { getAgeAtDate } from "#app/lib/age";
-import { fetchUserShiftPermissions, isSuperRoot } from "#app/lib/permissions";
+import { fetchUserShiftPermissions } from "#app/lib/permissions";
 import { Permissions, PermissionPrefixes } from "#app/constants/permissions";
-
 import { toggleRecord } from "#app/services/camp-records.service";
 
-import {
+import type {
   FilteredRegistrationSchema,
   PatchRegistrationBody,
-  RegistrationsFetchSchema,
-} from "#app/schemas/registration";
-
-import type { JSendError, JSendResponse } from "#app/lib/jsend";
-import { UnknownData } from "#app/lib/jsend";
-import type { Route } from "#app/schemas/route";
+} from "./registrations.schemas";
 
 const objectHasAllowedKey = <
   FullModel extends object,
@@ -34,38 +21,16 @@ const objectHasAllowedKey = <
   return allowedKeys.some((key) => key in obj);
 };
 
-// Keep this function for potential future use.
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const onlyHasAllowedKeys = <
-  FullModel extends object,
-  Patch extends Partial<FullModel>,
->(
-  obj: Patch,
-  allowedKeys: readonly (keyof FullModel)[],
-): boolean => {
-  return Object.keys(obj).every((key) =>
-    allowedKeys.includes(key as keyof FullModel),
-  );
-};
+export type FetchRegistrationsResult =
+  | { status: "no-shift" }
+  | { status: "ok"; registrations: FilteredRegistrationSchema[] };
 
-type IRegistrationsFetchHandler = Route<{
-  querystring: typeof RegistrationsFetchSchema;
-}> & {
-  Reply: JSendResponse<typeof UnknownData, typeof UnknownData> | JSendError;
-};
-
-export const registrationsFetchHandler = async (
-  req: FastifyRequest<IRegistrationsFetchHandler>,
-  res: FastifyReply<IRegistrationsFetchHandler>,
-): Promise<never> => {
-  const { userId } = getSessionUser(req);
-  const { shiftNr } = req.query;
-
+export const fetchRegistrations = async (
+  userId: number,
+  shiftNr: number,
+): Promise<FetchRegistrationsResult> => {
   if (!shiftNr) {
-    return res.status(StatusCodes.NOT_IMPLEMENTED).send({
-      status: "error",
-      message: "Provide a query string for the shift, i.e. ?shiftNr=X",
-    });
+    return { status: "no-shift" };
   }
 
   // Fetch the user's registration view permissions for the given shift.
@@ -75,9 +40,7 @@ export const registrationsFetchHandler = async (
     PermissionPrefixes.REGISTRATION_VIEW,
   );
   if (shiftViewPermissions.size === 0) {
-    return res
-      .status(StatusCodes.OK)
-      .send({ status: "success", data: { registrations: [] } });
+    return { status: "ok", registrations: [] };
   }
 
   const canViewPII =
@@ -153,9 +116,7 @@ export const registrationsFetchHandler = async (
     },
   );
 
-  return res
-    .status(StatusCodes.OK)
-    .send({ status: "success", data: { registrations } });
+  return { status: "ok", registrations };
 };
 
 export const patchRegistrationData = async (
@@ -205,53 +166,35 @@ export const patchRegistrationData = async (
     return false;
   }
 
-  // Additional manual checking is not necessary, as this is taken
-  // care of by the request validation based on the JSON schema.
-  // Still, keep it here (commented out) for an example or future needs.
-  // const allAllowedKeys = [
-  //   ...priceEditKeys,
-  //   ...regEditKeys,
-  // ] as const satisfies readonly (keyof Registration)[];
-  // if (!onlyHasAllowedKeys(patchData, allAllowedKeys)) {
-  //   return false;
-  // }
-
-  await prisma.registration.update({
-    where: { id: regId },
-    data: patchData,
-  });
-
-  // If the child is registered, the camp record must be updated accordingly.
-  // Likewise, if the child was de-registered.
   const isRegisteredKey = "isRegistered" satisfies keyof Registration;
-  if (
-    isRegisteredKey in patchData &&
-    typeof patchData[isRegisteredKey] === "boolean"
-  ) {
-    await toggleRecord(
-      {
-        childId: regShift.childId,
-        shiftNr: regShift.shiftNr,
-      },
-      patchData[isRegisteredKey],
-    );
-  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.registration.update({
+      where: { id: regId },
+      data: patchData,
+    });
+
+    // If the child is registered, the camp record must be updated accordingly.
+    // Likewise, if the child was de-registered.
+    if (
+      isRegisteredKey in patchData &&
+      typeof patchData[isRegisteredKey] === "boolean"
+    ) {
+      await toggleRecord(
+        {
+          childId: regShift.childId,
+          shiftNr: regShift.shiftNr,
+        },
+        patchData[isRegisteredKey],
+        tx,
+      );
+    }
+  });
 
   return true;
 };
 
-type IRegistrationsCampersSyncHandler = RouteGenericInterface & {
-  Reply: void;
-};
-
-export const registrationsCampersSyncHandler = async (
-  req: FastifyRequest<IRegistrationsCampersSyncHandler>,
-  res: FastifyReply<IRegistrationsCampersSyncHandler>,
-): Promise<never> => {
-  const { userId } = getSessionUser(req);
-  if (!(await isSuperRoot(userId)))
-    return res.status(StatusCodes.FORBIDDEN).send();
-
+export const syncCampers = async (): Promise<void> => {
   const registrations = await prisma.registration.findMany();
 
   const updates = registrations
@@ -269,6 +212,4 @@ export const registrationsCampersSyncHandler = async (
   if (updates.length > 0) {
     await prisma.$transaction(updates);
   }
-
-  return res.status(StatusCodes.NO_CONTENT).send();
 };

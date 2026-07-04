@@ -6,7 +6,7 @@ import {
   getRegistrationReceipt,
 } from "#app/services/email-templates";
 
-import type { EmailReceiptInfo } from "#app/schemas/registration";
+import type { EmailReceiptInfo } from "#app/routes/api/registrations/registrations.schemas";
 import type { CamperBillingInfo } from "#app/services/billing.service";
 
 class MailService {

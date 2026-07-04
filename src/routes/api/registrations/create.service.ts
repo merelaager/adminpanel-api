@@ -1,26 +1,16 @@
-import type { FastifyBaseLogger, FastifyReply, FastifyRequest } from "fastify";
 import { v4 as uuidv4 } from "uuid";
 import type { Transporter } from "nodemailer";
-import { StatusCodes } from "http-status-codes";
-import { Type } from "@sinclair/typebox";
+import type { FastifyBaseLogger } from "fastify";
 import { type Child, Prisma } from "#app/generated/prisma/client";
 
-import MailService from "#app/services/mail.service";
-
 import prisma from "#app/lib/prisma";
-import {
-  createErrorResponse,
-  createFailResponse,
-  createSuccessResponse,
-} from "#app/lib/jsend";
-
-import {
-  EmailReceiptInfo,
-  RegistrationsCreationSchema,
-} from "#app/schemas/registration";
-import { JSendError, JSendResponse } from "#app/lib/jsend";
-import type { Route } from "#app/schemas/route";
+import MailService from "#app/services/mail.service";
 import { SENIORITY_DISCOUNTS, SHIFT_PRICES } from "#app/constants/pricing";
+
+import type {
+  CreateRegistrationData,
+  EmailReceiptInfo,
+} from "./registrations.schemas";
 
 const validateDate = (year: number, month: number, date: number) => {
   if (month < 0 || month > 11 || date < 0) return false;
@@ -30,7 +20,7 @@ const validateDate = (year: number, month: number, date: number) => {
 
 type IDCodeParseResult = { error: string } | { sex: "M" | "F"; dob: string };
 
-const parseIdCode = (code: string): IDCodeParseResult => {
+export const parseIdCode = (code: string): IDCodeParseResult => {
   if (code.length !== 11 || !/^\d+$/.test(code)) {
     return { error: "ID code must be 11 digits long" };
   }
@@ -60,7 +50,7 @@ const parseIdCode = (code: string): IDCodeParseResult => {
   return { sex, dob };
 };
 
-const computePrice = (shiftNr: number, isOld: boolean) => {
+export const computePrice = (shiftNr: number, isOld: boolean) => {
   // This should never happen.
   if (shiftNr < 1 || shiftNr > SHIFT_PRICES.length) {
     return -1;
@@ -72,39 +62,19 @@ const computePrice = (shiftNr: number, isOld: boolean) => {
   return price;
 };
 
-export const FormRegistrationData = Type.Object({
-  registrationId: Type.String(),
-});
+export type CreateRegistrationsResult =
+  | { status: "bad-request"; failData: Record<string, string> }
+  | { status: "db-error" }
+  | { status: "created"; registrationId: string };
 
-export const FormRegistrationFailData = Type.Record(
-  Type.String(),
-  Type.String(),
-);
-
-type IFormRegistrationHandler = Route<{
-  body: typeof RegistrationsCreationSchema;
-}> & {
-  Reply:
-    | JSendResponse<
-        typeof FormRegistrationData,
-        typeof FormRegistrationFailData
-      >
-    | JSendError;
-};
-
-export const formRegistrationHandler = async (
-  req: FastifyRequest<IFormRegistrationHandler>,
-  res: FastifyReply<IFormRegistrationHandler>,
-): Promise<never> => {
-  const { mailer, regorder, config } = req.server;
-  const registrations = req.body;
-
+export const createRegistrations = async (
+  registrations: CreateRegistrationData[],
+  currentOrder: number,
+  mailer: Transporter,
+  appUrl: string,
+  log: FastifyBaseLogger,
+): Promise<CreateRegistrationsResult> => {
   const registrationId = uuidv4();
-
-  // Keep track of the relative order of registrations.
-  // Order numbers are wasted if the registration fails (e.g. the request is malformed),
-  // but this is not a problem for the current use case, and it avoids looping twice.
-  const currentOrder = regorder.getOrder();
 
   const registrationEntries: Prisma.RegistrationCreateManyInput[] = [];
 
@@ -119,11 +89,10 @@ export const formRegistrationHandler = async (
     if (entry.idCode) {
       const parsedData = parseIdCode(entry.idCode);
       if ("error" in parsedData) {
-        return res.status(StatusCodes.BAD_REQUEST).send(
-          createFailResponse({
-            [`[${index}].idCode`]: parsedData.error,
-          }),
-        );
+        return {
+          status: "bad-request",
+          failData: { [`[${index}].idCode`]: parsedData.error },
+        };
       }
 
       // Override the sex and birthday info even if set.
@@ -136,9 +105,7 @@ export const formRegistrationHandler = async (
       if (!sex) failData[`[${index}].sex`] = "property is required";
       if (!dob) failData[`[${index}].dob`] = "property is required";
 
-      return res
-        .status(StatusCodes.BAD_REQUEST)
-        .send(createFailResponse(failData));
+      return { status: "bad-request", failData };
     }
 
     const childName = entry.name.trim().replace(/\s+/g, " ");
@@ -156,7 +123,7 @@ export const formRegistrationHandler = async (
 
       if (childInstance !== null) {
         if (childInstance.name !== childName) {
-          req.log.warn(
+          log.warn(
             {
               childId: childInstance.id,
               oldName: childInstance.name,
@@ -172,7 +139,7 @@ export const formRegistrationHandler = async (
 
         // This should never happen, but better safe than sorry!
         if (childInstance.birthYear && childInstance.birthYear !== birthYear) {
-          req.log.warn(
+          log.warn(
             { idCode: entry.idCode, childId: childInstance.id },
             "ID code matches an existing child but the birth year is different",
           );
@@ -188,7 +155,7 @@ export const formRegistrationHandler = async (
 
       if (childInstance !== null) {
         if (childInstance.birthYear && childInstance.birthYear !== birthYear) {
-          req.log.warn(
+          log.warn(
             {
               childId: childInstance.id,
               childName: childInstance.name,
@@ -219,7 +186,7 @@ export const formRegistrationHandler = async (
     let priceToPay = computePrice(entry.shiftNr, isOld);
     if (priceToPay < 0) {
       priceToPay = 360;
-      req.log.error({ entry }, "Invalid shift identifier");
+      log.error({ entry }, "Invalid shift identifier");
     }
 
     const registrationEntry: Prisma.RegistrationCreateManyInput = {
@@ -272,10 +239,8 @@ export const formRegistrationHandler = async (
       data: registrationEntries,
     });
   } catch (err) {
-    req.log.error({ err }, "Failed to create registrations");
-    return res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .send(createErrorResponse("Error communicating with the database"));
+    log.error({ err }, "Failed to create registrations");
+    return { status: "db-error" };
   }
 
   if (registrationEmailChoices.includes(true)) {
@@ -283,14 +248,12 @@ export const formRegistrationHandler = async (
       camperBasicInfo,
       registrationEmailChoices,
       mailer,
-      config.APP_URL,
-      req.log,
+      appUrl,
+      log,
     );
   }
 
-  return res
-    .status(StatusCodes.CREATED)
-    .send(createSuccessResponse({ registrationId }));
+  return { status: "created", registrationId };
 };
 
 const sendRegistrationEmails = async (

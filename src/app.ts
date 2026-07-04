@@ -25,6 +25,8 @@ export const buildApp = (opts: BuildAppOptions = {}): FastifyInstance => {
 
   const fastify = Fastify({
     logger: true,
+    // No-op without proxy
+    trustProxy: true,
     ajv: {
       customOptions: {
         removeAdditional: false,

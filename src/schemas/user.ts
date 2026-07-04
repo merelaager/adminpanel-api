@@ -23,21 +23,6 @@ export const UserInfoSchema = Type.Object({
   managedShifts: Type.Array(Type.Integer()),
 });
 
-export type CamperRecord = Static<typeof CamperRecordSchema>;
-
-export const CamperRecordSchema = Type.Object({
-  id: Type.Integer(),
-  childId: Type.Integer(),
-  childName: Type.String(),
-  childSex: Type.Union([Type.Literal("M"), Type.Literal("F")]),
-  shiftNr: Type.Integer(),
-  year: Type.Integer(),
-  tentNr: Type.Union([Type.Integer(), Type.Null()]),
-  teamId: Type.Union([Type.Integer(), Type.Null()]),
-  isPresent: Type.Boolean(),
-  ageAtCamp: Type.Integer(),
-});
-
 export const UserParamsSchema = Type.Object({
   userId: Type.Integer(),
 });

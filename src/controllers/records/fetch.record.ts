@@ -3,16 +3,16 @@ import { StatusCodes } from "http-status-codes";
 import { Type } from "@sinclair/typebox";
 
 import type { Prisma } from "#app/generated/prisma/client";
-import prisma from "#app/utils/prisma";
-import { getAgeAtDate } from "#app/utils/age";
-import { getCurrentCampYear } from "#app/utils/campYear";
+import prisma from "#app/lib/prisma";
+import { getAgeAtDate } from "#app/lib/age";
+import { getCurrentCampYear } from "#app/lib/camp-year";
 import {
   canEditShiftBasic,
   canViewShiftBasic,
   userHasShiftPermissionInAnyOf,
-} from "#app/utils/permissions";
-import { getSessionUser } from "#app/utils/session";
-import { createFailResponse, createSuccessResponse } from "#app/utils/jsend";
+} from "#app/lib/permissions";
+import { getSessionUser } from "#app/lib/session";
+import { createFailResponse, createSuccessResponse } from "#app/lib/jsend";
 import { Permissions } from "#app/constants/permissions";
 
 import {
@@ -21,8 +21,8 @@ import {
   ForceSyncSchema,
   RecordsFetchSchema,
 } from "#app/schemas/record";
-import { RequestPermissionsFail } from "#app/schemas/responses";
-import type { JSendResponse } from "#app/schemas/jsend";
+import { RequestPermissionsFail } from "#app/lib/jsend";
+import type { JSendResponse } from "#app/lib/jsend";
 import type { Route } from "#app/schemas/route";
 
 type IForceSyncHandler = Route<{ body: typeof ForceSyncSchema }> & {

@@ -1,9 +1,9 @@
 import { FastifyReply, FastifyRequest } from "fastify";
 import { StatusCodes } from "http-status-codes";
 
-import prisma from "#app/utils/prisma";
-import { canEditRegistrationPriceAnyShift } from "#app/utils/permissions";
-import { getSessionUser } from "#app/utils/session";
+import prisma from "#app/lib/prisma";
+import { canEditRegistrationPriceAnyShift } from "#app/lib/permissions";
+import { getSessionUser } from "#app/lib/session";
 
 import MailService from "#app/services/mailService";
 
@@ -14,8 +14,8 @@ import {
 } from "#app/controllers/bills.controller";
 
 import { SingleBillSendSchema } from "#app/schemas/shift";
-import type { JSendError, JSendResponse } from "#app/schemas/jsend";
-import { UnknownData } from "#app/schemas/jsend";
+import type { JSendError, JSendResponse } from "#app/lib/jsend";
+import { UnknownData } from "#app/lib/jsend";
 import type { Route } from "#app/schemas/route";
 
 type ISendBillHandler = Route<{ body: typeof SingleBillSendSchema }> & {

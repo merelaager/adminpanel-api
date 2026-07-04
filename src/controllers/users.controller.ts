@@ -5,15 +5,15 @@ import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcrypt";
 import { Prisma, type PrismaClient } from "#app/generated/prisma/client";
 
-import { canEditShiftMembers, canViewShiftBasic } from "#app/utils/permissions";
+import { canEditShiftMembers, canViewShiftBasic } from "#app/lib/permissions";
 import {
   SALT_ROUNDS,
   TOKEN_EXPIRY_HOURS,
   TOKEN_EXPIRY_MS,
 } from "#app/constants/auth";
-import { getCurrentCampYear } from "#app/utils/campYear";
-import prisma from "#app/utils/prisma";
-import { deleteUserSessions, getSessionUser } from "#app/utils/session";
+import { getCurrentCampYear } from "#app/lib/camp-year";
+import prisma from "#app/lib/prisma";
+import { deleteUserSessions, getSessionUser } from "#app/lib/session";
 import MailService from "#app/services/mailService";
 
 import {
@@ -24,9 +24,9 @@ import {
   UserCreateSchema,
   UserParamsSchema,
 } from "#app/schemas/user";
-import type { JSendError, JSendResponse } from "#app/schemas/jsend";
-import { UnknownData } from "#app/schemas/jsend";
-import { createFailResponse } from "#app/utils/jsend";
+import type { JSendError, JSendResponse } from "#app/lib/jsend";
+import { UnknownData } from "#app/lib/jsend";
+import { createFailResponse } from "#app/lib/jsend";
 import type { Route } from "#app/schemas/route";
 
 export type UserCreateBasis = Static<typeof UserCreateSchema>;

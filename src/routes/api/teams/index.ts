@@ -9,7 +9,7 @@ import {
 } from "#app/controllers/teams.controller";
 
 import { TeamCreationSchema, TeamsFetchSchema } from "#app/schemas/team";
-import { FailResponse, SuccessResponse } from "#app/schemas/jsend";
+import { FailResponse, SuccessResponse } from "#app/lib/jsend";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(

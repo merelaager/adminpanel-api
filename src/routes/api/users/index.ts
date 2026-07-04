@@ -12,7 +12,7 @@ import {
   PatchUserSchema,
   UserParamsSchema,
 } from "#app/schemas/user";
-import { ErrorResponseRef, FailResponse } from "#app/schemas/jsend";
+import { ErrorResponseRef, FailResponse } from "#app/lib/jsend";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.patch(

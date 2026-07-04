@@ -1,12 +1,12 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { StatusCodes } from "http-status-codes";
 
-import prisma from "#app/utils/prisma";
+import prisma from "#app/lib/prisma";
 
 import { GradeDeleteSchema } from "#app/schemas/grades";
-import { canEditShiftBasic } from "#app/utils/permissions";
-import { createFailResponse } from "#app/utils/jsend";
-import { getSessionUser } from "#app/utils/session";
+import { canEditShiftBasic } from "#app/lib/permissions";
+import { createFailResponse } from "#app/lib/jsend";
+import { getSessionUser } from "#app/lib/session";
 import type { Route } from "#app/schemas/route";
 
 type IDeleteGradeHandler = Route<{ params: typeof GradeDeleteSchema }> & {

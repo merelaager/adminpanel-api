@@ -3,7 +3,7 @@ import { StatusCodes } from "http-status-codes";
 
 import { fetchAppVersionHandler } from "#app/controllers/app.controller";
 import { AppPlatformQuery, AppVersionData } from "#app/schemas/app";
-import { ErrorResponseRef, SuccessResponse } from "#app/schemas/jsend";
+import { ErrorResponseRef, SuccessResponse } from "#app/lib/jsend";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(

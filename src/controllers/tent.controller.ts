@@ -2,20 +2,20 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { StatusCodes } from "http-status-codes";
 import { Type } from "@sinclair/typebox";
 
-import prisma from "#app/utils/prisma";
-import { canEditShiftBasic, canViewShiftBasic } from "#app/utils/permissions";
-import { getSessionUser } from "#app/utils/session";
-import { createFailResponse, createSuccessResponse } from "#app/utils/jsend";
-import { getCurrentCampYear } from "#app/utils/campYear";
+import prisma from "#app/lib/prisma";
+import { canEditShiftBasic, canViewShiftBasic } from "#app/lib/permissions";
+import { getSessionUser } from "#app/lib/session";
+import { createFailResponse, createSuccessResponse } from "#app/lib/jsend";
+import { getCurrentCampYear } from "#app/lib/camp-year";
 
 import {
   AddGradeSchema,
   ShiftResourceFetchParams,
   ShiftTentQuerySchema,
 } from "#app/schemas/shift";
-import type { JSendResponse } from "#app/schemas/jsend";
+import type { JSendResponse } from "#app/lib/jsend";
 import { TentInfoSchema, TentScoreSchema } from "#app/schemas/tent";
-import { RequestPermissionsFail } from "#app/schemas/responses";
+import { RequestPermissionsFail } from "#app/lib/jsend";
 import type { Route } from "#app/schemas/route";
 
 type IFetchTentHandler = Route<{ params: typeof ShiftTentQuerySchema }> & {

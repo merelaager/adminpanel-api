@@ -2,16 +2,16 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { StatusCodes } from "http-status-codes";
 import { Type } from "@sinclair/typebox";
 
-import prisma from "#app/utils/prisma";
-import { canEditShiftBasic } from "#app/utils/permissions";
-import { getSessionUser } from "#app/utils/session";
-import { getChildAgeAtShiftStart } from "#app/utils/age";
-import { getCurrentCampYear } from "#app/utils/campYear";
+import prisma from "#app/lib/prisma";
+import { canEditShiftBasic } from "#app/lib/permissions";
+import { getSessionUser } from "#app/lib/session";
+import { getChildAgeAtShiftStart } from "#app/lib/age";
+import { getCurrentCampYear } from "#app/lib/camp-year";
 
 import { PatchRecordSchema, RecordParamsSchema } from "#app/schemas/record";
-import { RequestPermissionsFail } from "#app/schemas/responses";
-import type { JSendFail } from "#app/schemas/jsend";
-import { createFailResponse } from "#app/utils/jsend";
+import { RequestPermissionsFail } from "#app/lib/jsend";
+import type { JSendFail } from "#app/lib/jsend";
+import { createFailResponse } from "#app/lib/jsend";
 import type { Route } from "#app/schemas/route";
 
 type RecordCreateData = {

@@ -2,16 +2,16 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 import { StatusCodes } from "http-status-codes";
 import { Type } from "@sinclair/typebox";
 
-import prisma from "#app/utils/prisma";
-import { canViewShiftStaff } from "#app/utils/permissions";
-import { getSessionUser } from "#app/utils/session";
-import { createFailResponse, createSuccessResponse } from "#app/utils/jsend";
-import { getCurrentCampYear } from "#app/utils/campYear";
+import prisma from "#app/lib/prisma";
+import { canViewShiftStaff } from "#app/lib/permissions";
+import { getSessionUser } from "#app/lib/session";
+import { createFailResponse, createSuccessResponse } from "#app/lib/jsend";
+import { getCurrentCampYear } from "#app/lib/camp-year";
 
 import { ShiftResourceFetchParams } from "#app/schemas/shift";
 import { ShiftStaffMember, ShiftStaffSchema } from "#app/schemas/staff";
-import type { JSendResponse } from "#app/schemas/jsend";
-import { RequestPermissionsFail } from "#app/schemas/responses";
+import type { JSendResponse } from "#app/lib/jsend";
+import { RequestPermissionsFail } from "#app/lib/jsend";
 import type { Route } from "#app/schemas/route";
 
 export const FetchShiftStaffData = Type.Object({

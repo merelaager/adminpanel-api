@@ -8,9 +8,9 @@ import type {
 import { StatusCodes } from "http-status-codes";
 import { Type } from "@sinclair/typebox";
 
-import prisma from "#app/utils/prisma";
-import { getSessionUser } from "#app/utils/session";
-import { getCurrentCampYear } from "#app/utils/campYear";
+import prisma from "#app/lib/prisma";
+import { getSessionUser } from "#app/lib/session";
+import { getCurrentCampYear } from "#app/lib/camp-year";
 import {
   generateShiftCamperListPDF,
   PrintEntry,
@@ -18,25 +18,25 @@ import {
 import {
   canViewShiftBasic,
   canViewShiftPermissions,
-} from "#app/utils/permissions";
+} from "#app/lib/permissions";
 import {
   createErrorResponse,
   createFailResponse,
   createSuccessResponse,
-} from "#app/utils/jsend";
+} from "#app/lib/jsend";
 import { PermissionPrefixes, Permissions } from "#app/constants/permissions";
 
-import { fetchUserShiftPermissions } from "./registration/registrations.controller";
+import { fetchUserShiftPermissions } from "#app/lib/permissions";
+import { getRoleDisplayName } from "#app/constants/roles";
 
 import {
-  getRoleDisplayName,
   ShiftResourceFetchParams,
   type UserWithShiftRole,
   UserWithShiftRoleSchema,
 } from "#app/schemas/shift";
 import { CamperRecord, CamperRecordSchema } from "#app/schemas/user";
-import { RequestPermissionsFail } from "#app/schemas/responses";
-import type { JSendError, JSendFail, JSendResponse } from "#app/schemas/jsend";
+import { RequestPermissionsFail } from "#app/lib/jsend";
+import type { JSendError, JSendFail, JSendResponse } from "#app/lib/jsend";
 import { ParentBillSchema } from "#app/schemas/billing";
 import type { Route } from "#app/schemas/route";
 

@@ -25,8 +25,8 @@ import {
   ErrorResponseRef,
   FailResponse,
   SuccessResponse,
-} from "#app/schemas/jsend";
-import { getSessionUser } from "#app/utils/session";
+} from "#app/lib/jsend";
+import { getSessionUser } from "#app/lib/session";
 import type { Route } from "#app/schemas/route";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {

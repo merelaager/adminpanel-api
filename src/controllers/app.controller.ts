@@ -1,10 +1,10 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { StatusCodes } from "http-status-codes";
 
-import prisma from "#app/utils/prisma";
-import { createErrorResponse, createSuccessResponse } from "#app/utils/jsend";
+import prisma from "#app/lib/prisma";
+import { createErrorResponse, createSuccessResponse } from "#app/lib/jsend";
 
-import type { JSendError, JSendResponse } from "#app/schemas/jsend";
+import type { JSendError, JSendResponse } from "#app/lib/jsend";
 import { AppPlatformQuery, AppVersionData } from "#app/schemas/app";
 import type { Route } from "#app/schemas/route";
 

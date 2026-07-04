@@ -15,7 +15,7 @@ import {
   ErrorResponseRef,
   FailResponse,
   SuccessResponse,
-} from "#app/schemas/jsend";
+} from "#app/lib/jsend";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(

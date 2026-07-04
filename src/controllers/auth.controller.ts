@@ -2,16 +2,16 @@ import bcrypt from "bcrypt";
 import { FastifyReply, FastifyRequest, RouteGenericInterface } from "fastify";
 import { StatusCodes } from "http-status-codes";
 
-import prisma from "#app/utils/prisma";
-import { deleteUserSessions, getSessionUser } from "#app/utils/session";
+import prisma from "#app/lib/prisma";
+import { deleteUserSessions, getSessionUser } from "#app/lib/session";
 import type { User } from "#app/generated/prisma/client";
 
 import { SALT_ROUNDS } from "#app/constants/auth";
 import { CredentialsSchema, PasswordSchema } from "#app/schemas/auth";
 import type { UserInfo } from "#app/schemas/user";
-import type { JSendResponse } from "#app/schemas/jsend";
-import { UnknownData } from "#app/schemas/jsend";
-import { createFailResponse } from "#app/utils/jsend";
+import type { JSendResponse } from "#app/lib/jsend";
+import { UnknownData } from "#app/lib/jsend";
+import { createFailResponse } from "#app/lib/jsend";
 import { validatePasswordPolicy } from "./users.controller";
 import { Permissions } from "#app/constants/permissions";
 import type { Route } from "#app/schemas/route";

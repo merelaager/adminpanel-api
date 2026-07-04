@@ -1,43 +1,48 @@
-import type { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
+import fs from "fs";
+import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
+import { Type } from "@sinclair/typebox";
 import { StatusCodes } from "http-status-codes";
 
+import { requireRegistrationView, requireShiftPermission } from "#app/lib/guards";
+import { Permissions } from "#app/constants/permissions";
 import {
-  FetchShiftBillingData,
-  fetchShiftBillingHandler,
-  FetchShiftEmailsData,
-  fetchShiftEmailsHandler,
-  FetchShiftPdfFailData,
-  fetchShiftPdfHandler,
-  FetchShiftRecordsData,
-  fetchShiftRecordsHandler,
-  FetchShiftsData,
-  fetchShiftsHandler,
-  FetchShiftUsersData,
-  fetchShiftUsersHandler,
-} from "#app/controllers/shifts.controller";
-import {
-  fetchShiftStaff,
-  FetchShiftStaffData,
-} from "#app/controllers/staff/fetch.staff";
-import {
-  addGradeHandler,
-  fetchTentHandler,
-  FetchTentsData,
-  fetchTentsHandler,
-} from "#app/controllers/tent.controller";
+  createErrorResponse,
+  createFailResponse,
+  createSuccessResponse,
+  ErrorResponseRef,
+  FailResponse,
+  RequestPermissionsFail,
+  SuccessResponse,
+} from "#app/lib/jsend";
+import { generateShiftCamperListPDF } from "#app/services/shift-pdf.service";
 
 import {
   AddGradeSchema,
+  FetchShiftBillingData,
+  FetchShiftEmailsData,
+  FetchShiftPdfFailData,
+  FetchShiftRecordsData,
+  FetchShiftsData,
+  FetchShiftStaffData,
+  FetchShiftUsersData,
+  FetchTentsData,
   ShiftResourceFetchParams,
   ShiftTentQuerySchema,
-} from "#app/schemas/shift";
-import { TentInfoSchema, TentScoreSchema } from "#app/schemas/tent";
+  TentInfoSchema,
+  TentScoreSchema,
+} from "./shifts.schemas";
 import {
-  ErrorResponseRef,
-  FailResponse,
-  SuccessResponse,
-} from "#app/lib/jsend";
-import { RequestPermissionsFail } from "#app/lib/jsend";
+  addGrade,
+  fetchShiftBilling,
+  fetchShiftEmails,
+  fetchShiftPrintEntries,
+  fetchShiftRecords,
+  fetchShifts,
+  fetchShiftStaff,
+  fetchShiftUsers,
+  fetchTentInfo,
+  fetchTents,
+} from "./shifts.service";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(
@@ -49,25 +54,69 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         },
       },
     },
-    fetchShiftsHandler,
+    async (_request, reply) => {
+      const shifts = await fetchShifts();
+      return reply
+        .status(StatusCodes.OK)
+        .send(createSuccessResponse({ shifts }));
+    },
   );
+
   fastify.get(
     "/:shiftNr/pdf",
     {
+      preHandler: requireRegistrationView(
+        ["pii", "contact"],
+        "params",
+        "Puuduvad detailse nimekirja nägemise õigused.",
+      ),
       schema: {
         params: ShiftResourceFetchParams,
         response: {
+          [StatusCodes.OK]: Type.Unknown(),
           [StatusCodes.NOT_FOUND]: FailResponse(FetchShiftPdfFailData),
           [StatusCodes.FORBIDDEN]: FailResponse(RequestPermissionsFail),
           [StatusCodes.INTERNAL_SERVER_ERROR]: ErrorResponseRef,
         },
       },
     },
-    fetchShiftPdfHandler,
+    async (request, reply) => {
+      const { shiftNr } = request.params;
+
+      const printEntries = await fetchShiftPrintEntries(shiftNr);
+
+      if (printEntries.length === 0) {
+        return reply.status(StatusCodes.NOT_FOUND).send(
+          createFailResponse({
+            shift: "Vahetust ei ole olemas või puuduvad registreeritud lapsed.",
+          }),
+        );
+      }
+
+      const filePath = await generateShiftCamperListPDF(
+        shiftNr,
+        printEntries,
+        request.log,
+      );
+      if (!filePath) {
+        return reply
+          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .send(createErrorResponse("Viga PDFi genereerimisel."));
+      }
+
+      const stream = fs.createReadStream(filePath);
+      reply.status(StatusCodes.OK).type("application/pdf");
+      return reply.send(stream);
+    },
   );
+
   fastify.get(
     "/:shiftNr/users",
     {
+      preHandler: requireShiftPermission(
+        Permissions.VIEW_SHIFT_PERMISSIONS,
+        "params",
+      ),
       schema: {
         params: ShiftResourceFetchParams,
         response: {
@@ -76,11 +125,16 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         },
       },
     },
-    fetchShiftUsersHandler,
+    async (request, reply) => {
+      const users = await fetchShiftUsers(request.params.shiftNr);
+      return reply.status(StatusCodes.OK).send(createSuccessResponse({ users }));
+    },
   );
+
   fastify.get(
     "/:shiftNr/billing",
     {
+      preHandler: requireRegistrationView(["financial"], "params"),
       schema: {
         params: ShiftResourceFetchParams,
         response: {
@@ -89,11 +143,18 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         },
       },
     },
-    fetchShiftBillingHandler,
+    async (request, reply) => {
+      const records = await fetchShiftBilling(request.params.shiftNr);
+      return reply
+        .status(StatusCodes.OK)
+        .send(createSuccessResponse({ records }));
+    },
   );
+
   fastify.get(
     "/:shiftNr/records",
     {
+      preHandler: requireShiftPermission(Permissions.VIEW_SHIFT_BASIC, "params"),
       schema: {
         params: ShiftResourceFetchParams,
         response: {
@@ -102,11 +163,18 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         },
       },
     },
-    fetchShiftRecordsHandler,
+    async (request, reply) => {
+      const records = await fetchShiftRecords(request.params.shiftNr);
+      return reply
+        .status(StatusCodes.OK)
+        .send(createSuccessResponse({ records }));
+    },
   );
+
   fastify.get(
     "/:shiftNr/emails",
     {
+      preHandler: requireRegistrationView(["contact"], "params"),
       schema: {
         params: ShiftResourceFetchParams,
         response: {
@@ -115,11 +183,18 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         },
       },
     },
-    fetchShiftEmailsHandler,
+    async (request, reply) => {
+      const emails = await fetchShiftEmails(request.params.shiftNr);
+      return reply
+        .status(StatusCodes.OK)
+        .send(createSuccessResponse({ emails }));
+    },
   );
+
   fastify.get(
     "/:shiftNr/staff",
     {
+      preHandler: requireShiftPermission(Permissions.VIEW_SHIFT_STAFF, "params"),
       schema: {
         params: ShiftResourceFetchParams,
         response: {
@@ -128,11 +203,16 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         },
       },
     },
-    fetchShiftStaff,
+    async (request, reply) => {
+      const staff = await fetchShiftStaff(request.params.shiftNr);
+      return reply.status(StatusCodes.OK).send(createSuccessResponse({ staff }));
+    },
   );
+
   fastify.get(
     "/:shiftNr/tents/:tentNr",
     {
+      preHandler: requireShiftPermission(Permissions.VIEW_SHIFT_BASIC, "params"),
       schema: {
         params: ShiftTentQuerySchema,
         response: {
@@ -141,11 +221,17 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         },
       },
     },
-    fetchTentHandler,
+    async (request, reply) => {
+      const { shiftNr, tentNr } = request.params;
+      const tentInfo = await fetchTentInfo(shiftNr, tentNr);
+      return reply.status(StatusCodes.OK).send(createSuccessResponse(tentInfo));
+    },
   );
+
   fastify.get(
     "/:shiftNr/tents",
     {
+      preHandler: requireShiftPermission(Permissions.VIEW_SHIFT_BASIC, "params"),
       schema: {
         params: ShiftResourceFetchParams,
         response: {
@@ -154,21 +240,35 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         },
       },
     },
-    fetchTentsHandler,
+    async (request, reply) => {
+      const scores = await fetchTents(request.params.shiftNr);
+      return reply
+        .status(StatusCodes.OK)
+        .send(createSuccessResponse({ scores }));
+    },
   );
+
   fastify.post(
     "/:shiftNr/tents/:tentNr",
     {
+      preHandler: requireShiftPermission(Permissions.EDIT_SHIFT_BASIC, "params"),
       schema: {
         params: ShiftTentQuerySchema,
         body: AddGradeSchema,
         response: {
-          [StatusCodes.OK]: SuccessResponse(TentScoreSchema),
+          [StatusCodes.CREATED]: SuccessResponse(TentScoreSchema),
           [StatusCodes.FORBIDDEN]: FailResponse(RequestPermissionsFail),
         },
       },
     },
-    addGradeHandler,
+    async (request, reply) => {
+      const { shiftNr, tentNr } = request.params;
+      const { score } = request.body;
+      const tentScore = await addGrade(shiftNr, tentNr, score);
+      return reply
+        .status(StatusCodes.CREATED)
+        .send(createSuccessResponse(tentScore));
+    },
   );
 };
 

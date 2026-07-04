@@ -1,9 +1,5 @@
 import { Static, Type } from "@sinclair/typebox";
 
-export const SingleBillSendSchema = Type.Object({
-  email: Type.String({ format: "email" }),
-});
-
 export const ShiftResourceFetchParams = Type.Object({
   shiftNr: Type.Integer(),
 });

@@ -4,6 +4,7 @@ import fastifyCookie from "@fastify/cookie";
 import { PrismaSessionStore } from "@quixo3/prisma-session-store";
 
 import prisma from "#app/lib/prisma";
+import { requiresSecureCookies } from "#app/config/env";
 import type { Auth } from "#app/lib/session";
 
 declare module "fastify" {
@@ -20,7 +21,7 @@ export default fp(
     fastify.register(fastifySession, {
       secret: fastify.config.COOKIE_SECRET,
       cookie: {
-        secure: fastify.config.NODE_ENV !== "development",
+        secure: requiresSecureCookies(fastify.config.NODE_ENV),
         domain: fastify.config.COOKIE_DOMAIN,
         sameSite: "lax",
         httpOnly: true,

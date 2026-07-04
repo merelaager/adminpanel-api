@@ -45,3 +45,6 @@ declare module "fastify" {
     config: EnvConfig;
   }
 }
+
+export const requiresSecureCookies = (nodeEnv: string): boolean =>
+  nodeEnv !== "development";

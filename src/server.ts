@@ -1,11 +1,17 @@
 import { buildApp } from "./app";
 import prisma from "#app/lib/prisma";
+import { requiresSecureCookies } from "#app/config/env";
 
 const fastify = buildApp();
 
 const start = async () => {
   try {
     await fastify.ready();
+
+    const { NODE_ENV } = fastify.config;
+    const secureCookies = requiresSecureCookies(NODE_ENV);
+    fastify.log.info({ nodeEnv: NODE_ENV, secureCookies });
+
     await prisma.$connect();
     await fastify.listen({ port: fastify.config.PORT });
   } catch (err) {

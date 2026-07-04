@@ -10,9 +10,8 @@ const adapter = new PrismaMariaDb({
 });
 
 // Make prisma available as a standard import for use in services and utils.
-// Not everything has access to the plugin.
-// TODO: find a more elegant way to accomplish this.
-// The current approach seems to be a Fastify antipattern.
+// Stuff would not have access to it if we used a plugin.
+// Still, the current approach seems to be a Fastify antipattern.
 const prisma = new PrismaClient({ adapter });
 
 export default prisma;

@@ -15,6 +15,8 @@ export const RecordsFetchSchema = Type.Union([
   CamperRecordsFilterSchema,
 ]);
 
+export type RecordsFetchQuery = Static<typeof RecordsFetchSchema>;
+
 export const ForceSyncSchema = Type.Object({
   shiftNr: Type.Integer(),
   forceSync: Type.Boolean(), // Make intent explicit, just in case.
@@ -33,6 +35,10 @@ export const FlattenedRecordSchema = Type.Object({
   ageAtCamp: Type.Integer(),
   year: Type.Integer(),
   shiftNr: Type.Integer(),
+});
+
+export const FetchRecordsData = Type.Object({
+  records: Type.Array(FlattenedRecordSchema),
 });
 
 export const RecordParamsSchema = Type.Object({
@@ -55,3 +61,11 @@ export const PatchRecordSchema = Type.Partial(
     },
   ),
 );
+
+export type PatchRecordBody = Static<typeof PatchRecordSchema>;
+
+export const PatchRecordFailDataNF = Type.Object({
+  recordId: Type.String(),
+});
+
+export const PatchRecordFailDataUE = Type.Object({ teamId: Type.String() });

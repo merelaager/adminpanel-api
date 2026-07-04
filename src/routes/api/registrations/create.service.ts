@@ -67,6 +67,13 @@ export type CreateRegistrationsResult =
   | { status: "db-error" }
   | { status: "created"; registrationId: string };
 
+class RegistrationValidationError extends Error {
+  constructor(public failData: Record<string, string>) {
+    super("Registration validation failed");
+    this.name = "RegistrationValidationError";
+  }
+}
+
 export const createRegistrations = async (
   registrations: CreateRegistrationData[],
   currentOrder: number,
@@ -82,163 +89,173 @@ export const createRegistrations = async (
   const camperBasicInfo: EmailReceiptInfo[] = [];
   const registrationEmailChoices: boolean[] = [];
 
-  for (const [index, entry] of registrations.entries()) {
-    let { sex, dob } = entry;
+  try {
+    await prisma.$transaction(async (tx) => {
+      for (const [index, entry] of registrations.entries()) {
+        let { sex, dob } = entry;
 
-    // The ID code takes priority over explicit sex and birthday info.
-    if (entry.idCode) {
-      const parsedData = parseIdCode(entry.idCode);
-      if ("error" in parsedData) {
-        return {
-          status: "bad-request",
-          failData: { [`[${index}].idCode`]: parsedData.error },
-        };
-      }
+        // The ID code takes priority over explicit sex and birthday info.
+        if (entry.idCode) {
+          const parsedData = parseIdCode(entry.idCode);
+          if ("error" in parsedData) {
+            throw new RegistrationValidationError({
+              [`[${index}].idCode`]: parsedData.error,
+            });
+          }
 
-      // Override the sex and birthday info even if set.
-      sex = parsedData.sex;
-      dob = parsedData.dob;
-    } else if (sex === undefined || dob === undefined) {
-      // These should not be undefined since the request body has been validated.
-      // But check in any case.
-      const failData: { [key: string]: string } = {};
-      if (!sex) failData[`[${index}].sex`] = "property is required";
-      if (!dob) failData[`[${index}].dob`] = "property is required";
+          // Override the sex and birthday info even if set.
+          sex = parsedData.sex;
+          dob = parsedData.dob;
+        } else if (sex === undefined || dob === undefined) {
+          // These should not be undefined since the request body has been validated.
+          // But check in any case.
+          const failData: { [key: string]: string } = {};
+          if (!sex) failData[`[${index}].sex`] = "property is required";
+          if (!dob) failData[`[${index}].dob`] = "property is required";
 
-      return { status: "bad-request", failData };
-    }
+          throw new RegistrationValidationError(failData);
+        }
 
-    const childName = entry.name.trim().replace(/\s+/g, " ");
-    const birthYear = new Date(dob).getUTCFullYear();
-    const idCode = entry.idCode ? entry.idCode : null;
+        const childName = entry.name.trim().replace(/\s+/g, " ");
+        const birthYear = new Date(dob).getUTCFullYear();
+        const idCode = entry.idCode ? entry.idCode : null;
 
-    let childInstance: Child | null = null;
+        let childInstance: Child | null = null;
 
-    // As a first resort, try to use the ID code to check whether the child
-    // is already known in the camp database.
-    if (idCode !== null) {
-      childInstance = await prisma.child.findUnique({
-        where: { idCode },
-      });
+        // As a first resort, try to use the ID code to check whether the child
+        // is already known in the camp database.
+        if (idCode !== null) {
+          childInstance = await tx.child.findUnique({
+            where: { idCode },
+          });
 
-      if (childInstance !== null) {
-        if (childInstance.name !== childName) {
-          log.warn(
-            {
-              childId: childInstance.id,
-              oldName: childInstance.name,
-              newName: childName,
-            },
-            "Overwriting child name",
-          );
-          await prisma.child.update({
-            where: { id: childInstance.id },
-            data: { name: childName },
+          if (childInstance !== null) {
+            if (childInstance.name !== childName) {
+              log.warn(
+                {
+                  childId: childInstance.id,
+                  oldName: childInstance.name,
+                  newName: childName,
+                },
+                "Overwriting child name",
+              );
+              await tx.child.update({
+                where: { id: childInstance.id },
+                data: { name: childName },
+              });
+            }
+
+            // This should never happen, but better safe than sorry!
+            if (
+              childInstance.birthYear &&
+              childInstance.birthYear !== birthYear
+            ) {
+              log.warn(
+                { idCode: entry.idCode, childId: childInstance.id },
+                "ID code matches an existing child but the birth year is different",
+              );
+            }
+          }
+        }
+
+        // If the child was not found, then attempt to find one by name.
+        if (childInstance === null) {
+          childInstance = await tx.child.findFirst({
+            where: { name: childName, sex },
+          });
+
+          if (childInstance !== null) {
+            if (
+              childInstance.birthYear &&
+              childInstance.birthYear !== birthYear
+            ) {
+              log.warn(
+                {
+                  childId: childInstance.id,
+                  childName: childInstance.name,
+                  existingBirthYear: childInstance.birthYear,
+                  submittedBirthYear: birthYear,
+                },
+                "Found match for child by name with a different year of birth",
+              );
+            }
+          }
+        }
+
+        const knownChild = childInstance !== null;
+
+        // Finally, if no child instance was found,
+        // assume that the child is not known and create a new entry.
+        if (childInstance === null) {
+          childInstance = await tx.child.create({
+            data: { name: childName, sex, birthYear, idCode },
           });
         }
 
-        // This should never happen, but better safe than sorry!
-        if (childInstance.birthYear && childInstance.birthYear !== birthYear) {
-          log.warn(
-            { idCode: entry.idCode, childId: childInstance.id },
-            "ID code matches an existing child but the birth year is different",
-          );
+        // TODO: check that the shift number exists.
+        const isOld = !entry.isNew;
+
+        // TODO: get rid of this check once shift number checking is implemented.
+        // Here we know that the priceToPay must exist, as we compute it.
+        let priceToPay = computePrice(entry.shiftNr, isOld);
+        if (priceToPay < 0) {
+          priceToPay = 360;
+          log.error({ entry }, "Invalid shift identifier");
         }
-      }
-    }
 
-    // If the child was not found, then attempt to find one by name.
-    if (childInstance === null) {
-      childInstance = await prisma.child.findFirst({
-        where: { name: childName, sex },
-      });
-
-      if (childInstance !== null) {
-        if (childInstance.birthYear && childInstance.birthYear !== birthYear) {
-          log.warn(
-            {
-              childId: childInstance.id,
-              childName: childInstance.name,
-              existingBirthYear: childInstance.birthYear,
-              submittedBirthYear: birthYear,
-            },
-            "Found match for child by name with a different year of birth",
-          );
-        }
-      }
-    }
-
-    const knownChild = childInstance !== null;
-
-    // Finally, if no child instance was found,
-    // assume that the child is not known and create a new entry.
-    if (childInstance === null) {
-      childInstance = await prisma.child.create({
-        data: { name: childName, sex, birthYear, idCode },
-      });
-    }
-
-    // TODO: check that the shift number exists.
-    const isOld = !entry.isNew;
-
-    // TODO: get rid of this check once shift number checking is implemented.
-    // Here we know that the priceToPay must exist, as we compute it.
-    let priceToPay = computePrice(entry.shiftNr, isOld);
-    if (priceToPay < 0) {
-      priceToPay = 360;
-      log.error({ entry }, "Invalid shift identifier");
-    }
-
-    const registrationEntry: Prisma.RegistrationCreateManyInput = {
-      regOrder: currentOrder,
-      regId: registrationId,
-      childId: childInstance.id,
-      idCode: entry.idCode || null,
-      shiftNr: entry.shiftNr,
-      isOld: isOld,
-      birthday: dob,
-      tsSize: entry.shirtSize,
-      addendum: entry.addendum?.trim() || null,
-      road: entry.road.trim(),
-      city: entry.city.trim(),
-      county: entry.county.trim(),
-      country: entry.country.trim(),
-      contactName: entry.contactName.trim(),
-      contactNumber: entry.contactNumber.trim(),
-      contactEmail: entry.contactEmail.trim(),
-      backupTel: entry.backupTel?.trim() || null,
-      priceToPay: priceToPay,
-    };
-
-    // Do not double include the child in the list for that shift.
-    // However, we must not leak whether the child is already in the list.
-    if (knownChild) {
-      const existingRegistration = await prisma.registration.findFirst({
-        where: {
+        const registrationEntry: Prisma.RegistrationCreateManyInput = {
+          regOrder: currentOrder,
+          regId: registrationId,
           childId: childInstance.id,
+          idCode: entry.idCode || null,
           shiftNr: entry.shiftNr,
-        },
-      });
-      if (existingRegistration !== null) {
-        registrationEntry.visible = false;
+          isOld: isOld,
+          birthday: dob,
+          tsSize: entry.shirtSize,
+          addendum: entry.addendum?.trim() || null,
+          road: entry.road.trim(),
+          city: entry.city.trim(),
+          county: entry.county.trim(),
+          country: entry.country.trim(),
+          contactName: entry.contactName.trim(),
+          contactNumber: entry.contactNumber.trim(),
+          contactEmail: entry.contactEmail.trim(),
+          backupTel: entry.backupTel?.trim() || null,
+          priceToPay: priceToPay,
+        };
+
+        // Do not double include the child in the list for that shift.
+        // However, we must not leak whether the child is already in the list.
+        if (knownChild) {
+          const existingRegistration = await tx.registration.findFirst({
+            where: {
+              childId: childInstance.id,
+              shiftNr: entry.shiftNr,
+            },
+          });
+          if (existingRegistration !== null) {
+            registrationEntry.visible = false;
+          }
+        }
+
+        registrationEntries.push(registrationEntry);
+        camperBasicInfo.push({
+          name: entry.name,
+          shiftNr: entry.shiftNr,
+          contactEmail: entry.contactEmail,
+          registrationId: registrationId,
+        });
+        registrationEmailChoices.push(entry.sendEmail ?? false);
       }
-    }
 
-    registrationEntries.push(registrationEntry);
-    camperBasicInfo.push({
-      name: entry.name,
-      shiftNr: entry.shiftNr,
-      contactEmail: entry.contactEmail,
-      registrationId: registrationId,
-    });
-    registrationEmailChoices.push(entry.sendEmail ?? false);
-  }
-
-  try {
-    await prisma.registration.createMany({
-      data: registrationEntries,
+      await tx.registration.createMany({
+        data: registrationEntries,
+      });
     });
   } catch (err) {
+    if (err instanceof RegistrationValidationError) {
+      return { status: "bad-request", failData: err.failData };
+    }
     log.error({ err }, "Failed to create registrations");
     return { status: "db-error" };
   }

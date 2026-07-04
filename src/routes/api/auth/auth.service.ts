@@ -53,9 +53,7 @@ export const formatUserInfo = async (user: User): Promise<UserInfo> => {
   };
 };
 
-export const getUserInfo = async (
-  userId: number,
-): Promise<UserInfo | null> => {
+export const getUserInfo = async (userId: number): Promise<UserInfo | null> => {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) return null;
   return formatUserInfo(user);
@@ -106,14 +104,16 @@ export const setPassword = async (
 
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      password: passwordHash,
-    },
-  });
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: userId },
+      data: {
+        password: passwordHash,
+      },
+    });
 
-  await deleteUserSessions(userId, sessionId);
+    await deleteUserSessions(userId, sessionId, tx);
+  });
 
   return { status: "ok" };
 };

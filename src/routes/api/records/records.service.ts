@@ -81,25 +81,27 @@ export const forceSyncRecords = async (
     }
   });
 
-  if (childrenToRecord.size > 0) {
-    await prisma.record.createMany({
-      data: Array.from(childrenToRecord.values()),
-    });
-  }
+  await prisma.$transaction(async (tx) => {
+    if (childrenToRecord.size > 0) {
+      await tx.record.createMany({
+        data: Array.from(childrenToRecord.values()),
+      });
+    }
 
-  if (recordsToActivate.length > 0) {
-    await prisma.record.updateMany({
-      where: { id: { in: recordsToActivate } },
-      data: { isActive: true },
-    });
-  }
+    if (recordsToActivate.length > 0) {
+      await tx.record.updateMany({
+        where: { id: { in: recordsToActivate } },
+        data: { isActive: true },
+      });
+    }
 
-  if (recordsToDeactivate.length > 0) {
-    await prisma.record.updateMany({
-      where: { id: { in: recordsToDeactivate } },
-      data: { isActive: false },
-    });
-  }
+    if (recordsToDeactivate.length > 0) {
+      await tx.record.updateMany({
+        where: { id: { in: recordsToDeactivate } },
+        data: { isActive: false },
+      });
+    }
+  });
 
   return "synced";
 };
@@ -163,7 +165,10 @@ const fetchCamperRecords = async (
   );
 
   if (!isAuthorised) {
-    log.warn({ userId, childId }, "User not authorised to view historic records");
+    log.warn(
+      { userId, childId },
+      "User not authorised to view historic records",
+    );
     return null;
   }
 

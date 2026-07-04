@@ -68,13 +68,15 @@ export const confirmPasswordReset = async (
 
   const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
 
-  await prisma.user.update({
-    where: { id: tokenEntry.userId },
-    data: { password: passwordHash },
-  });
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: tokenEntry.userId },
+      data: { password: passwordHash },
+    });
 
-  await deleteUserSessions(tokenEntry.userId);
-  await prisma.resetToken.deleteMany({ where: { userId: tokenEntry.userId } });
+    await deleteUserSessions(tokenEntry.userId, undefined, tx);
+    await tx.resetToken.deleteMany({ where: { userId: tokenEntry.userId } });
+  });
 
   return { status: "ok" };
 };

@@ -1,4 +1,5 @@
 import type { FastifyRequest } from "fastify";
+import type { Prisma } from "#app/generated/prisma/client";
 
 import prisma from "#app/lib/prisma";
 
@@ -17,8 +18,9 @@ export const getSessionUser = (request: FastifyRequest): Auth => {
 export const deleteUserSessions = async (
   userId: number,
   exceptSessionId?: string,
+  tx: Prisma.TransactionClient = prisma,
 ): Promise<void> => {
-  const sessions = await prisma.session.findMany({
+  const sessions = await tx.session.findMany({
     select: { id: true, data: true },
   });
 
@@ -36,7 +38,7 @@ export const deleteUserSessions = async (
 
   if (staleSessionIds.length === 0) return;
 
-  await prisma.session.deleteMany({
+  await tx.session.deleteMany({
     where: { id: { in: staleSessionIds } },
   });
 };

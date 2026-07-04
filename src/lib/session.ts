@@ -1,6 +1,6 @@
 import type { FastifyRequest } from "fastify";
 
-import type { Auth } from "#app/schemas/auth";
+import type { Auth } from "#app/routes/api/auth/auth.schemas";
 import prisma from "#app/lib/prisma";
 
 export const getSessionUser = (request: FastifyRequest): Auth => {

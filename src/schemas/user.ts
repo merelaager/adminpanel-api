@@ -8,13 +8,3 @@ export const SignupSchema = Type.Object({
   password: Type.String(),
   token: Type.String(),
 });
-
-export const ResetPasswordSchema = Type.Union([
-  Type.Object({
-    email: Type.String(),
-  }),
-  Type.Object({
-    token: Type.String(),
-    password: Type.String(),
-  }),
-]);

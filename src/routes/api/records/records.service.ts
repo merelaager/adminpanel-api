@@ -1,8 +1,6 @@
-import type { FastifyReply, FastifyRequest } from "fastify";
-import { StatusCodes } from "http-status-codes";
-import { Type } from "@sinclair/typebox";
-
+import type { FastifyBaseLogger } from "fastify";
 import type { Prisma } from "#app/generated/prisma/client";
+
 import prisma from "#app/lib/prisma";
 import { getAgeAtDate } from "#app/lib/age";
 import { getCurrentCampYear } from "#app/lib/camp-year";
@@ -11,39 +9,21 @@ import {
   canViewShiftBasic,
   userHasShiftPermissionInAnyOf,
 } from "#app/lib/permissions";
-import { getSessionUser } from "#app/lib/session";
-import { createFailResponse, createSuccessResponse } from "#app/lib/jsend";
 import { Permissions } from "#app/constants/permissions";
 
-import {
+import type {
   FlattenedRecord,
-  FlattenedRecordSchema,
-  ForceSyncSchema,
-  RecordsFetchSchema,
-} from "#app/schemas/record";
-import { RequestPermissionsFail } from "#app/lib/jsend";
-import type { JSendResponse } from "#app/lib/jsend";
-import type { Route } from "#app/schemas/route";
+  PatchRecordBody,
+  RecordsFetchQuery,
+} from "./records.schemas";
 
-type IForceSyncHandler = Route<{ body: typeof ForceSyncSchema }> & {
-  Reply: void;
-};
+export type ForceSyncResult = "not-modified" | "shift-not-found" | "synced";
 
-export const forceSyncRecordsHandler = async (
-  req: FastifyRequest<IForceSyncHandler>,
-  res: FastifyReply<IForceSyncHandler>,
-): Promise<never> => {
-  const { userId } = getSessionUser(req);
-  const { shiftNr, forceSync } = req.body;
-
-  const isAuthorised = await canEditShiftBasic(userId, shiftNr);
-  if (!isAuthorised) {
-    return res
-      .status(StatusCodes.FORBIDDEN)
-      .send(createFailResponse({ permissions: "Puuduvad õigused päringuks." }));
-  }
-
-  if (!forceSync) return res.status(StatusCodes.NOT_MODIFIED).send();
+export const forceSyncRecords = async (
+  shiftNr: number,
+  forceSync: boolean,
+): Promise<ForceSyncResult> => {
+  if (!forceSync) return "not-modified";
 
   const year = getCurrentCampYear();
 
@@ -73,7 +53,7 @@ export const forceSyncRecordsHandler = async (
   });
 
   if (!shiftInfo) {
-    return res.status(StatusCodes.NOT_FOUND).send();
+    return "shift-not-found";
   }
 
   const shiftStartDate = shiftInfo.startDate;
@@ -120,20 +100,8 @@ export const forceSyncRecordsHandler = async (
     });
   }
 
-  return res.status(StatusCodes.NO_CONTENT).send();
+  return "synced";
 };
-
-export const FetchRecordsData = Type.Object({
-  records: Type.Array(FlattenedRecordSchema),
-});
-
-type IFetchRecordsHandler = Route<{
-  querystring: typeof RecordsFetchSchema;
-}> & {
-  Reply: JSendResponse<typeof FetchRecordsData, typeof RequestPermissionsFail>;
-};
-
-type FetchRecordsReply = FastifyReply<IFetchRecordsHandler>;
 
 const recordRelations = {
   child: { select: { name: true } },
@@ -157,19 +125,15 @@ const flattenRecord = (record: RecordWithRelations): FlattenedRecord => ({
   shiftNr: record.shiftNr,
 });
 
+// Returns null when the user is not authorised to view the shift's records.
 const fetchShiftRecords = async (
   shiftNr: number,
   userId: number,
-  res: FetchRecordsReply,
-): Promise<never> => {
+  log: FastifyBaseLogger,
+): Promise<FlattenedRecord[] | null> => {
   if (!(await canViewShiftBasic(userId, shiftNr))) {
-    res.log.warn(
-      { userId, shiftNr },
-      "User not authorised to view shift records",
-    );
-    return res
-      .status(StatusCodes.FORBIDDEN)
-      .send(createFailResponse({ permissions: "Ligipääsuõigused puuduvad" }));
+    log.warn({ userId, shiftNr }, "User not authorised to view shift records");
+    return null;
   }
 
   const records = await prisma.record.findMany({
@@ -177,16 +141,15 @@ const fetchShiftRecords = async (
     include: recordRelations,
   });
 
-  return res
-    .status(StatusCodes.OK)
-    .send(createSuccessResponse({ records: records.map(flattenRecord) }));
+  return records.map(flattenRecord);
 };
 
+// Returns null when the user is not authorised to view the camper's records.
 const fetchCamperRecords = async (
   childId: number,
   userId: number,
-  res: FetchRecordsReply,
-): Promise<never> => {
+  log: FastifyBaseLogger,
+): Promise<FlattenedRecord[] | null> => {
   const registrations = await prisma.registration.findMany({
     where: { childId },
     select: { shiftNr: true },
@@ -199,13 +162,8 @@ const fetchCamperRecords = async (
   );
 
   if (!isAuthorised) {
-    res.log.warn(
-      { userId, childId },
-      "User not authorised to view historic records",
-    );
-    return res
-      .status(StatusCodes.FORBIDDEN)
-      .send(createFailResponse({ permissions: "Ligipääsuõigused puuduvad" }));
+    log.warn({ userId, childId }, "User not authorised to view historic records");
+    return null;
   }
 
   const records = await prisma.record.findMany({
@@ -214,19 +172,59 @@ const fetchCamperRecords = async (
     orderBy: [{ year: "desc" }, { shiftNr: "asc" }],
   });
 
-  return res
-    .status(StatusCodes.OK)
-    .send(createSuccessResponse({ records: records.map(flattenRecord) }));
+  return records.map(flattenRecord);
 };
 
-export const fetchRecordsHandler = async (
-  req: FastifyRequest<IFetchRecordsHandler>,
-  res: FastifyReply<IFetchRecordsHandler>,
-): Promise<never> => {
-  const { userId } = getSessionUser(req);
-
-  if ("childId" in req.query) {
-    return fetchCamperRecords(req.query.childId, userId, res);
+export const fetchRecordsForQuery = async (
+  query: RecordsFetchQuery,
+  userId: number,
+  log: FastifyBaseLogger,
+): Promise<FlattenedRecord[] | null> => {
+  if ("childId" in query) {
+    return fetchCamperRecords(query.childId, userId, log);
   }
-  return fetchShiftRecords(req.query.shiftNr, userId, res);
+  return fetchShiftRecords(query.shiftNr, userId, log);
+};
+
+export type PatchRecordResult =
+  | "record-not-found"
+  | "forbidden"
+  | "team-not-found"
+  | "ok";
+
+export const patchRecord = async (
+  userId: number,
+  recordId: number,
+  patchData: PatchRecordBody,
+): Promise<PatchRecordResult> => {
+  const record = await prisma.record.findUnique({
+    where: { id: recordId },
+    select: { shiftNr: true },
+  });
+
+  if (record === null) return "record-not-found";
+
+  const isAuthorised = await canEditShiftBasic(userId, record.shiftNr);
+  if (!isAuthorised) return "forbidden";
+
+  const teamId = patchData.teamId;
+  if (teamId !== undefined && teamId !== null) {
+    // Only allow hooking to teams of current year and shift.
+    const team = await prisma.team.findUnique({
+      where: {
+        id: teamId,
+        shiftNr: record.shiftNr,
+        year: getCurrentCampYear(),
+      },
+      select: { id: true },
+    });
+    if (team === null) return "team-not-found";
+  }
+
+  await prisma.record.update({
+    where: { id: recordId },
+    data: patchData,
+  });
+
+  return "ok";
 };

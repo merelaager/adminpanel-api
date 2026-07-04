@@ -21,21 +21,6 @@ export const getRegistrationReceipt = async (campers: EmailReceiptInfo[]) => {
   // For grammar: is there more than one kid?
   const plural = campers.length > 1;
 
-  /*
-  // For grammar, is there more than one kid per shift?
-  let singleShift = true;
-  if (plural) {
-    const seenShifts: number[] = [];
-    for (const camper of campers) {
-      if (!seenShifts.includes(camper.shiftNr)) {
-        singleShift = false;
-        break;
-      }
-      seenShifts.push(camper.shiftNr);
-    }
-  }
-  */
-
   const receiptHtml = `
     ${getEmailRegistrationBodyPre()}
     <p>Tere!</p>

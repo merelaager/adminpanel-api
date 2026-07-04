@@ -14,7 +14,7 @@ import { getCurrentCampYear } from "#app/lib/camp-year";
 import {
   generateShiftCamperListPDF,
   PrintEntry,
-} from "#app/utils/shift-pdf-builder";
+} from "#app/services/shift-pdf.service";
 import {
   canViewShiftBasic,
   canViewShiftPermissions,

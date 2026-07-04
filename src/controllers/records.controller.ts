@@ -5,7 +5,6 @@ import { Type } from "@sinclair/typebox";
 import prisma from "#app/lib/prisma";
 import { canEditShiftBasic } from "#app/lib/permissions";
 import { getSessionUser } from "#app/lib/session";
-import { getChildAgeAtShiftStart } from "#app/lib/age";
 import { getCurrentCampYear } from "#app/lib/camp-year";
 
 import { PatchRecordSchema, RecordParamsSchema } from "#app/schemas/record";
@@ -13,40 +12,6 @@ import { RequestPermissionsFail } from "#app/lib/jsend";
 import type { JSendFail } from "#app/lib/jsend";
 import { createFailResponse } from "#app/lib/jsend";
 import type { Route } from "#app/schemas/route";
-
-type RecordCreateData = {
-  childId: number;
-  shiftNr: number;
-};
-
-export const toggleRecord = async (
-  recordBasis: RecordCreateData,
-  isRegistered: boolean,
-) => {
-  const { childId, shiftNr } = recordBasis;
-  const currentYear = getCurrentCampYear();
-
-  // If the record exists, toggle it on/off.
-  // Else, create the record, e.g. when the registration is first approved.
-  await prisma.record.upsert({
-    where: {
-      metaId: {
-        childId,
-        shiftNr,
-        year: currentYear,
-      },
-    },
-    update: {
-      isActive: isRegistered,
-    },
-    create: {
-      childId,
-      shiftNr,
-      year: currentYear,
-      ageAtCamp: await getChildAgeAtShiftStart(childId, shiftNr),
-    },
-  });
-};
 
 export const PatchRecordFailDataNF = Type.Object({
   recordId: Type.String(),

@@ -1,12 +1,13 @@
 import prisma from "#app/lib/prisma";
+import { escapeHtml } from "#app/lib/html";
 
 import {
   getEmailRegistrationBodyPost,
   getEmailRegistrationBodyPre,
-} from "./email/email-registration-html";
+} from "./email-layout";
 
 import type { EmailReceiptInfo } from "#app/schemas/registration";
-import type { CamperBillingInfo } from "#app/controllers/bills.controller";
+import type { CamperBillingInfo } from "#app/services/billing.service";
 
 export const getRegistrationReceipt = async (campers: EmailReceiptInfo[]) => {
   const shifts: number[] = [];
@@ -80,30 +81,11 @@ export const getConfirmationReceipt = async (
     ${getEmailRegistrationBodyPost()}`;
 };
 
-// const getTrackingLinkList = (campers: EmailReceiptInfo[]) => {
-//   const ids = Array.from(
-//     new Set(campers.map((camper) => camper.registrationId)),
-//   );
-//
-//   if (ids.length === 1) {
-//     return `Registreerimise olekut saate jälgida <a href="https://merelaager.ee/registreermine/${ids[0]}">siin</a>.`;
-//   }
-//
-//   let response =
-//     "<p>Registreerimise olekuid saate jälgida järgnevatel linkidel:</p><ul>";
-//   ids.forEach((id) => {
-//     response += `<li><a href="https://merelaager.ee/registreermine/${id}">https://merelaager.ee/registreermine/${id}</a>`;
-//   });
-//   response += "</ul>";
-//
-//   return response;
-// };
-
 const getFormattedChildList = (campers: EmailReceiptInfo[]) => {
   let response = "<ul>";
 
   campers.forEach((camper) => {
-    response += `<li>${camper.name} (${camper.shiftNr}. vahetus)</li>`;
+    response += `<li>${escapeHtml(camper.name)} (${camper.shiftNr}. vahetus)</li>`;
   });
   response += "</ul>";
 
@@ -116,7 +98,7 @@ const getFormattedRegistrationList = (campers: CamperBillingInfo[]) => {
   let response = "<ul>";
 
   campers.forEach((camper) => {
-    response += `<li>${camper.child.name} (${camper.shiftNr}. vahetus)</li>`;
+    response += `<li>${escapeHtml(camper.child.name)} (${camper.shiftNr}. vahetus)</li>`;
   });
 
   response += "</ul>";
@@ -130,7 +112,7 @@ const getFormattedReserveList = (campers: CamperBillingInfo[]) => {
   let response = "<ul>";
 
   campers.forEach((camper) => {
-    response += `<li>${camper.child.name} (${camper.shiftNr}. vahetus)</li>`;
+    response += `<li>${escapeHtml(camper.child.name)} (${camper.shiftNr}. vahetus)</li>`;
   });
 
   response += "</ul>";
@@ -154,7 +136,7 @@ const getStaffContacts = async (shiftNumbers: number[]) => {
   const contactStrings: string[] = [];
   shifts.forEach((shift) => {
     contactStrings.push(
-      `${shift.bossName} (${shift.bossEmail}, tel. ${shift.bossPhone})`,
+      `${escapeHtml(shift.bossName)} (${escapeHtml(shift.bossEmail)}, tel. ${escapeHtml(shift.bossPhone)})`,
     );
   });
 

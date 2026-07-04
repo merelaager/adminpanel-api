@@ -287,18 +287,19 @@ export const fetchTentInfo = async (
 ): Promise<TentInfo> => {
   const currentYear = getCurrentCampYear();
 
-  const records = await prisma.record.findMany({
-    where: { shiftNr, year: currentYear, tentNr, isActive: true },
-    select: { child: { select: { name: true } } },
-  });
+  const [records, tentScores] = await Promise.all([
+    prisma.record.findMany({
+      where: { shiftNr, year: currentYear, tentNr, isActive: true },
+      select: { child: { select: { name: true } } },
+    }),
+    prisma.tentScore.findMany({
+      where: { shiftNr, year: currentYear, tentNr },
+      select: { score: true, createdAt: true, tentNr: true, id: true },
+      orderBy: { createdAt: "asc" },
+    }),
+  ]);
 
   const childrenInTent = records.map((record) => record.child.name);
-
-  const tentScores = await prisma.tentScore.findMany({
-    where: { shiftNr, year: currentYear, tentNr },
-    select: { score: true, createdAt: true, tentNr: true, id: true },
-    orderBy: { createdAt: "asc" },
-  });
 
   return {
     campers: childrenInTent,

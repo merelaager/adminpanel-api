@@ -27,17 +27,27 @@ export const forceSyncRecords = async (
 
   const year = getCurrentCampYear();
 
-  const registrations = await prisma.registration.findMany({
-    where: { shiftNr },
-    select: { childId: true, isRegistered: true, birthday: true },
-    orderBy: [{ childId: "asc" }],
-  });
+  // These three reads are independent, so fetch them concurrently.
+  const [registrations, records, shiftInfo] = await Promise.all([
+    prisma.registration.findMany({
+      where: { shiftNr },
+      select: { childId: true, isRegistered: true, birthday: true },
+      orderBy: [{ childId: "asc" }],
+    }),
+    prisma.record.findMany({
+      where: { shiftNr, year },
+      select: { id: true, childId: true, isActive: true },
+      orderBy: [{ childId: "asc" }],
+    }),
+    prisma.shiftInfo.findUnique({
+      where: { id: shiftNr },
+      select: { startDate: true },
+    }),
+  ]);
 
-  const records = await prisma.record.findMany({
-    where: { shiftNr, year },
-    select: { id: true, childId: true, isActive: true },
-    orderBy: [{ childId: "asc" }],
-  });
+  if (!shiftInfo) {
+    return "shift-not-found";
+  }
 
   // Use a map to store the unique entries of children to record.
   // The records must be unique due to the database constraint.
@@ -46,15 +56,6 @@ export const forceSyncRecords = async (
 
   const recordsToActivate: number[] = [];
   const recordsToDeactivate: number[] = [];
-
-  const shiftInfo = await prisma.shiftInfo.findUnique({
-    where: { id: shiftNr },
-    select: { startDate: true },
-  });
-
-  if (!shiftInfo) {
-    return "shift-not-found";
-  }
 
   const shiftStartDate = shiftInfo.startDate;
 

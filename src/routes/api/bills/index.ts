@@ -1,4 +1,5 @@
 import fs from "fs";
+import type { FileHandle } from "fs/promises";
 import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import { Type } from "@sinclair/typebox";
 import { StatusCodes } from "http-status-codes";
@@ -45,13 +46,28 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       const billNr = request.params.billId;
       const billPath = `./data/arved/${billNr}.pdf`;
 
-      if (isNaN(billNr) || !fs.existsSync(billPath)) {
+      if (isNaN(billNr)) {
         return reply
           .status(StatusCodes.NOT_FOUND)
           .send(createFailResponse({ billId: "Arvet ei ole olemas." }));
       }
 
-      const stream = fs.createReadStream(billPath);
+      let handle: FileHandle;
+      try {
+        handle = await fs.promises.open(billPath, "r");
+      } catch (err) {
+        if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+          return reply
+            .status(StatusCodes.NOT_FOUND)
+            .send(createFailResponse({ billId: "Arvet ei ole olemas." }));
+        }
+        throw err;
+      }
+
+      const stream = handle.createReadStream();
+      stream.on("close", () => {
+        handle.close().catch(() => {});
+      });
       reply.status(StatusCodes.OK).type("application/pdf");
       return reply.send(stream);
     },

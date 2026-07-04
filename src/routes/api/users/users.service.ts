@@ -61,16 +61,17 @@ export const inviteUser = async (
   const currentYear = getCurrentCampYear();
 
   // Register the user as a staff member, if not already.
-  const staffMember = await prisma.shiftStaff.findUnique({
-    where: {
-      shiftNr_year_name: { shiftNr, year: currentYear, name: body.name },
-    },
-  });
-
-  const user = await prisma.user.findUnique({
-    where: { email: body.email },
-    select: { id: true },
-  });
+  const [staffMember, user] = await Promise.all([
+    prisma.shiftStaff.findUnique({
+      where: {
+        shiftNr_year_name: { shiftNr, year: currentYear, name: body.name },
+      },
+    }),
+    prisma.user.findUnique({
+      where: { email: body.email },
+      select: { id: true },
+    }),
+  ]);
 
   // Do not send an account creation email if the user already exists.
   if (user) {

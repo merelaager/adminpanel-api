@@ -8,7 +8,7 @@ import type { User } from "#app/generated/prisma/client";
 
 import { SALT_ROUNDS } from "#app/constants/auth";
 import { CredentialsSchema, PasswordSchema } from "#app/schemas/auth";
-import type { UserInfo } from "#app/schemas/user";
+import type { UserInfo } from "#app/routes/api/users/users.schemas";
 import type { JSendResponse } from "#app/lib/jsend";
 import { UnknownData } from "#app/lib/jsend";
 import { createFailResponse } from "#app/lib/jsend";

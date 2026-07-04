@@ -10,7 +10,8 @@ import {
 import { signupUserHandler } from "#app/controllers/users.controller";
 
 import { CredentialsSchema, PasswordSchema } from "#app/schemas/auth";
-import { SignupSchema, UserInfoSchema } from "#app/schemas/user";
+import { SignupSchema } from "#app/schemas/user";
+import { UserInfoSchema } from "#app/routes/api/users/users.schemas";
 import {
   ErrorResponseRef,
   FailResponse,

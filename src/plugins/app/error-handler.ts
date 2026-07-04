@@ -32,11 +32,15 @@ const errorHandlerPlugin: FastifyPluginAsync = fp(async (server) => {
     }
 
     req.log.error({ err: error }, "Unhandled error");
+    const message =
+      server.config.NODE_ENV === "production"
+        ? "Serveri viga."
+        : error.message || "Ootamatu viga.";
     return res
       .status(error.statusCode ?? StatusCodes.INTERNAL_SERVER_ERROR)
       .send({
         status: "error",
-        message: error.message || "Ootamatu viga.",
+        message,
       });
   });
 });

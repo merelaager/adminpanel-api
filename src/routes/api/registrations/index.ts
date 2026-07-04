@@ -86,12 +86,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
     const { userId } = getSessionUser(request);
     const { regId } = request.params;
 
-    const status = await patchRegistrationData(
-      userId,
-      regId,
-      request.body,
-      fastify.prisma,
-    );
+    const status = await patchRegistrationData(userId, regId, request.body);
 
     // Do not leak whether the reg does not exist or whether the
     // user has insufficient permissions.

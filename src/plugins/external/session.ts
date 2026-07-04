@@ -3,6 +3,7 @@ import fastifySession from "@fastify/session";
 import fastifyCookie from "@fastify/cookie";
 import { PrismaSessionStore } from "@quixo3/prisma-session-store";
 
+import prisma from "#app/lib/prisma";
 import type { Auth } from "#app/schemas/auth";
 
 declare module "fastify" {
@@ -27,7 +28,7 @@ export default fp(
       },
       saveUninitialized: false,
       rolling: true, // Constantly update the cookie, allowing for shorter TTL.
-      store: new PrismaSessionStore(fastify.prisma, {
+      store: new PrismaSessionStore(prisma, {
         checkPeriod: defaultTTL,
         dbRecordIdIsSessionId: true,
         dbRecordIdFunction: undefined,

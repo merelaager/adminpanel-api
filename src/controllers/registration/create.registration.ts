@@ -5,7 +5,7 @@ import { StatusCodes } from "http-status-codes";
 import { Type } from "@sinclair/typebox";
 import { type Child, Prisma } from "#app/generated/prisma/client";
 
-import MailService from "#app/services/mailService";
+import MailService from "#app/services/mail.service";
 
 import prisma from "#app/lib/prisma";
 import {

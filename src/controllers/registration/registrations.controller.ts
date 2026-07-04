@@ -12,7 +12,7 @@ import { getAgeAtDate } from "#app/lib/age";
 import { fetchUserShiftPermissions, isSuperRoot } from "#app/lib/permissions";
 import { Permissions, PermissionPrefixes } from "#app/constants/permissions";
 
-import { toggleRecord } from "#app/controllers/records.controller";
+import { toggleRecord } from "#app/services/camp-records.service";
 
 import {
   FilteredRegistrationSchema,

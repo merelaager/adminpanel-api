@@ -2,75 +2,18 @@ import fs from "fs";
 import { ReadStream } from "node:fs";
 import { FastifyReply, FastifyRequest } from "fastify";
 import { StatusCodes } from "http-status-codes";
-import { Prisma } from "#app/generated/prisma/client";
 
-import prisma from "#app/lib/prisma";
 import { canEditRegistrationPriceAnyShift } from "#app/lib/permissions";
 import { getSessionUser } from "#app/lib/session";
-import { generateBillPdf } from "#app/utils/bill-builder";
+import {
+  collectBillableCampers,
+  createAndAssignBill,
+} from "#app/services/billing.service";
 
 import type { JSendError, JSendResponse } from "#app/lib/jsend";
 import { UnknownData } from "#app/lib/jsend";
 import { BillCreationSchema, BillParamsSchema } from "#app/schemas/bill";
 import type { Route } from "#app/schemas/route";
-
-export const registrationInclude = {
-  child: {
-    select: { name: true },
-  },
-};
-
-export type CamperBillingInfo = Prisma.RegistrationGetPayload<{
-  include: typeof registrationInclude;
-}>;
-
-const createBillDatabaseEntry = async (
-  tx: Prisma.TransactionClient,
-  contactName: string,
-  billTotal: number,
-) => {
-  const newBill = await tx.bill.create({
-    data: { contactName, billTotal },
-  });
-  return newBill.id;
-};
-
-export const createAndAssignBill = async (
-  billNr: number,
-  billTotal: number,
-  registeredCampers: CamperBillingInfo[],
-) => {
-  const contact = {
-    name: registeredCampers[0].contactName,
-    email: registeredCampers[0].contactEmail,
-  };
-
-  await prisma.$transaction(async (tx) => {
-    if (isNaN(billNr)) {
-      billNr = await createBillDatabaseEntry(tx, contact.name, billTotal);
-    }
-
-    for (const camper of registeredCampers) {
-      if (camper.billId) continue;
-      await tx.registration.update({
-        where: { id: camper.id },
-        data: { billId: billNr },
-      });
-    }
-  });
-
-  const campersBillData = registeredCampers.map((reg) => {
-    return {
-      name: reg.child.name,
-      isOld: reg.isOld,
-      shiftNr: reg.shiftNr,
-      priceToPay: reg.priceToPay,
-    };
-  });
-
-  await generateBillPdf(campersBillData, contact, billNr);
-  return billNr;
-};
 
 type ICreateBillHandler = Route<{ body: typeof BillCreationSchema }> & {
   Reply: JSendResponse<typeof UnknownData, typeof UnknownData> | JSendError;
@@ -91,14 +34,9 @@ export const createBillHandler = async (
     });
   }
 
-  const registrations = await prisma.registration.findMany({
-    where: {
-      contactEmail: req.body.email,
-    },
-    include: registrationInclude,
-  });
+  const billable = await collectBillableCampers(req.body.email);
 
-  if (registrations.length === 0) {
+  if (billable === null) {
     return res.status(StatusCodes.NOT_FOUND).send({
       status: "fail",
       data: {
@@ -107,19 +45,7 @@ export const createBillHandler = async (
     });
   }
 
-  const registeredCampers: CamperBillingInfo[] = [];
-  let billTotal = 0;
-  let billNr = NaN;
-
-  registrations.forEach((child) => {
-    if (isNaN(billNr) && child.billId) billNr = child.billId;
-    if (child.isRegistered) {
-      registeredCampers.push(child);
-      billTotal += child.priceToPay;
-    }
-  });
-
-  if (registeredCampers.length === 0) {
+  if (billable.registered.length === 0) {
     return res.status(StatusCodes.NOT_FOUND).send({
       status: "fail",
       data: {
@@ -128,8 +54,13 @@ export const createBillHandler = async (
     });
   }
 
+  let billNr: number;
   try {
-    billNr = await createAndAssignBill(billNr, billTotal, registeredCampers);
+    billNr = await createAndAssignBill(
+      billable.billNr,
+      billable.billTotal,
+      billable.registered,
+    );
   } catch (err) {
     req.log.error({ err }, "Failed to create and assign bill");
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({

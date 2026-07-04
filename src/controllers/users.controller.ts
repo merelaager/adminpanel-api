@@ -14,7 +14,7 @@ import {
 import { getCurrentCampYear } from "#app/lib/camp-year";
 import prisma from "#app/lib/prisma";
 import { deleteUserSessions, getSessionUser } from "#app/lib/session";
-import MailService from "#app/services/mailService";
+import MailService from "#app/services/mail.service";
 
 import {
   CreateInviteSchema,

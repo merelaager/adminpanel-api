@@ -5,13 +5,11 @@ import prisma from "#app/lib/prisma";
 import { canEditRegistrationPriceAnyShift } from "#app/lib/permissions";
 import { getSessionUser } from "#app/lib/session";
 
-import MailService from "#app/services/mailService";
-
+import MailService from "#app/services/mail.service";
 import {
-  CamperBillingInfo,
+  collectBillableCampers,
   createAndAssignBill,
-  registrationInclude,
-} from "#app/controllers/bills.controller";
+} from "#app/services/billing.service";
 
 import { SingleBillSendSchema } from "#app/schemas/shift";
 import type { JSendError, JSendResponse } from "#app/lib/jsend";
@@ -44,14 +42,9 @@ export const sendBillHandler = async (
     });
   }
 
-  const registrations = await prisma.registration.findMany({
-    where: {
-      contactEmail: email,
-    },
-    include: registrationInclude,
-  });
+  const billable = await collectBillableCampers(email);
 
-  if (registrations.length === 0) {
+  if (billable === null) {
     return res.status(StatusCodes.NOT_FOUND).send({
       status: "fail",
       data: {
@@ -60,23 +53,7 @@ export const sendBillHandler = async (
     });
   }
 
-  const regCampers: CamperBillingInfo[] = [];
-  const resCampers: CamperBillingInfo[] = [];
-  const notifiedRegistrationIDs: number[] = [];
-
-  let billTotal = 0;
-  let billNr = NaN;
-
-  registrations.forEach((registration) => {
-    if (registration.isRegistered) {
-      if (isNaN(billNr) && registration.billId) billNr = registration.billId;
-      regCampers.push(registration);
-      notifiedRegistrationIDs.push(registration.id);
-      billTotal += registration.priceToPay;
-    } else resCampers.push(registration);
-  });
-
-  if (regCampers.length === 0) {
+  if (billable.registered.length === 0) {
     return res.status(StatusCodes.NOT_FOUND).send({
       status: "fail",
       data: {
@@ -85,8 +62,13 @@ export const sendBillHandler = async (
     });
   }
 
+  let billNr: number;
   try {
-    billNr = await createAndAssignBill(billNr, billTotal, regCampers);
+    billNr = await createAndAssignBill(
+      billable.billNr,
+      billable.billTotal,
+      billable.registered,
+    );
   } catch (err) {
     req.log.error({ err }, "Failed to create and assign bill");
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({
@@ -100,11 +82,16 @@ export const sendBillHandler = async (
     req.server.config.APP_URL,
   );
   try {
-    await mailService.sendBill(email, billNr, regCampers, resCampers);
+    await mailService.sendBill(
+      email,
+      billNr,
+      billable.registered,
+      billable.reserve,
+    );
 
     await prisma.registration.updateMany({
       where: {
-        id: { in: notifiedRegistrationIDs },
+        id: { in: billable.registeredIds },
       },
       data: {
         notifSent: true,

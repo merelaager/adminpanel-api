@@ -1,9 +1,15 @@
-import type { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
+import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import { StatusCodes } from "http-status-codes";
 
-import { fetchAppVersionHandler } from "#app/controllers/app.controller";
-import { AppPlatformQuery, AppVersionData } from "#app/schemas/app";
-import { ErrorResponseRef, SuccessResponse } from "#app/lib/jsend";
+import {
+  createErrorResponse,
+  createSuccessResponse,
+  ErrorResponseRef,
+  SuccessResponse,
+} from "#app/lib/jsend";
+
+import { AppPlatformQuery, AppVersionData } from "./app.schemas";
+import { fetchAppVersion } from "./app.service";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(
@@ -18,7 +24,19 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         },
       },
     },
-    fetchAppVersionHandler,
+    async (request, reply) => {
+      const { key, version } = await fetchAppVersion(request.query.platform);
+
+      if (version === null) {
+        return reply
+          .status(StatusCodes.NOT_FOUND)
+          .send(createErrorResponse(`Versiooniinfo puudub: ${key}`));
+      }
+
+      return reply
+        .status(StatusCodes.OK)
+        .send(createSuccessResponse({ version }));
+    },
   );
 };
 

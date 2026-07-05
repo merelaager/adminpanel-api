@@ -4,6 +4,8 @@ import { StatusCodes } from "http-status-codes";
 
 import { createErrorResponse, createFailResponse } from "#app/lib/jsend";
 
+const SERVER_ERROR_MIN: number = StatusCodes.INTERNAL_SERVER_ERROR;
+
 const fieldFromValidationError = (
   instancePath: string,
   params: Record<string, unknown>,
@@ -23,7 +25,7 @@ const errorHandlerPlugin: FastifyPluginAsync = fp(async (server) => {
           issue.instancePath,
           issue.params,
         );
-        data[field] = issue.message ?? "Väärtus ei ole lubatud.";
+        data[field] = issue.message ?? "Väärtus pole lubatud.";
       }
 
       return res
@@ -31,12 +33,10 @@ const errorHandlerPlugin: FastifyPluginAsync = fp(async (server) => {
         .send(createFailResponse(data));
     }
 
-    const statusCode = error.statusCode ?? StatusCodes.INTERNAL_SERVER_ERROR;
+    const statusCode: number =
+      error.statusCode ?? StatusCodes.INTERNAL_SERVER_ERROR;
 
-    // Intentional client errors (4xx, e.g. rate limiting) carry a curated, safe
-    // message — surface it directly with its status. Only unexpected server
-    // errors (5xx) are logged and masked to avoid leaking internals.
-    if (statusCode < StatusCodes.INTERNAL_SERVER_ERROR) {
+    if (statusCode < SERVER_ERROR_MIN) {
       return res
         .status(statusCode)
         .send(createErrorResponse(error.message || "Vigane päring."));
@@ -50,7 +50,7 @@ const errorHandlerPlugin: FastifyPluginAsync = fp(async (server) => {
     return res.status(statusCode).send(createErrorResponse(message));
   });
 
-  server.setNotFoundHandler((req, res) => {
+  server.setNotFoundHandler((_req, res) => {
     return res
       .status(StatusCodes.NOT_FOUND)
       .send(createFailResponse({ path: "Sellist teed pole olemas." }));

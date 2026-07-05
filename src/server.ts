@@ -20,7 +20,7 @@ const start = async () => {
   }
 };
 
-start();
+void start();
 
 const closeGracefully = async (signal: NodeJS.Signals) => {
   fastify.log.info(`Received ${signal}, shutting down gracefully`);
@@ -34,5 +34,5 @@ const closeGracefully = async (signal: NodeJS.Signals) => {
   }
 };
 
-process.on("SIGTERM", closeGracefully);
-process.on("SIGINT", closeGracefully);
+process.on("SIGTERM", (signal) => void closeGracefully(signal));
+process.on("SIGINT", (signal) => void closeGracefully(signal));

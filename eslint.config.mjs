@@ -21,4 +21,12 @@ export default tseslint.config(
       },
     },
   },
+  {
+    // Needed for Fastify.
+    // https://github.com/fastify/fastify/pull/6514
+    files: ["src/plugins/**/*.ts", "src/routes/**/*.ts"],
+    rules: {
+      "@typescript-eslint/require-await": "off",
+    },
+  },
 );

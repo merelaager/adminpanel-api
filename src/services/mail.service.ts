@@ -18,10 +18,13 @@ class MailService {
     this.appUrl = appUrl;
   }
 
-  async sendRegistrationReceipt(campers: EmailReceiptInfo[], email: string) {
+  async sendRegistrationReceipt(
+    campers: EmailReceiptInfo[],
+    email: string,
+  ): Promise<void> {
     const registrationReceipt = await getRegistrationReceipt(campers);
 
-    return this.transporter.sendMail({
+    await this.transporter.sendMail({
       from: {
         name: "Merelaager",
         address: "no-reply@info.merelaager.ee",
@@ -38,10 +41,10 @@ class MailService {
     billNr: number,
     regCampers: CamperBillingInfo[],
     resCampers: CamperBillingInfo[],
-  ) {
+  ): Promise<void> {
     const billPath = `./data/arved/${billNr}.pdf`;
 
-    return this.transporter.sendMail({
+    await this.transporter.sendMail({
       from: {
         name: "Merelaager",
         address: "no-reply@info.merelaager.ee",
@@ -59,9 +62,9 @@ class MailService {
     });
   }
 
-  async sendPasswordResetToken(email: string, token: string) {
+  async sendPasswordResetToken(email: string, token: string): Promise<void> {
     const link = `${this.appUrl}/password-reset?token=${token}`;
-    return this.transporter.sendMail({
+    await this.transporter.sendMail({
       from: {
         name: "Merelaager — süsteem",
         address: "no-reply@info.merelaager.ee",
@@ -74,11 +77,15 @@ class MailService {
     });
   }
 
-  async sendSignupToken(email: string, token: string, name: string) {
+  async sendSignupToken(
+    email: string,
+    token: string,
+    name: string,
+  ): Promise<void> {
     const safeEmail = encodeURIComponent(email);
     const safeName = encodeURIComponent(name);
     const link = `${this.appUrl}/signup?token=${token}&email=${safeEmail}&name=${safeName}`;
-    return this.transporter.sendMail({
+    await this.transporter.sendMail({
       from: {
         name: "Merelaager — süsteem",
         address: "no-reply@info.merelaager.ee",

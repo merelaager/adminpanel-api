@@ -28,7 +28,7 @@ export const deleteUserSessions = async (
     .filter((session) => {
       if (session.id === exceptSessionId) return false;
       try {
-        const parsed: { user?: Auth } = JSON.parse(session.data);
+        const parsed = JSON.parse(session.data) as { user?: Auth };
         return parsed.user?.userId === userId;
       } catch {
         return false;

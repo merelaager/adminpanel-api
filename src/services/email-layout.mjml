@@ -1,0 +1,23 @@
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="Helvetica, Arial, sans-serif" />
+      <mj-text font-weight="300" font-size="15px" line-height="24px" />
+    </mj-attributes>
+  </mj-head>
+  <mj-body background-color="#e8ebf3">
+    <mj-section>
+      <mj-column>
+        <mj-image width="72px" src="https://merelaager.ee/img/ml_logo_slim.png" />
+      </mj-column>
+    </mj-section>
+    <mj-section padding="0px">
+      <mj-column inner-background-color="#ffffff" padding="0px 10px 10px">
+        <mj-text>
+          @@BODY@@
+          <p style="font-size: 11px">Tegu on automaatvastusega, palume sellele meilile mitte vastata. Küsimuste või murede korral pöörduge palun vahetuse juhataja poole.</p>
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

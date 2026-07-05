@@ -6,6 +6,7 @@ export default tseslint.config(
     ignores: [
       "dist/**",
       "src/generated/**",
+      "scripts/**",
       "eslint.config.mjs",
       "ecosystem.config.js",
       "prisma.config.ts",

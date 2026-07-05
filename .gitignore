@@ -23,7 +23,7 @@ yarn-error.log*
 /out-tsc
 dist/
 
-# Prisma
+# Generated code
 src/generated
 
 # Yarn

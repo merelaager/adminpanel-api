@@ -4,7 +4,7 @@ import { escapeHtml } from "#app/lib/html";
 import {
   getEmailRegistrationBodyPost,
   getEmailRegistrationBodyPre,
-} from "./email-layout";
+} from "#app/generated/email-layout";
 
 import type { EmailReceiptInfo } from "#app/routes/api/registrations/registrations.schemas";
 import type { CamperBillingInfo } from "#app/services/billing.service";

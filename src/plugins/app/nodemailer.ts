@@ -18,7 +18,10 @@ const mailerPlugin: FastifyPluginAsync = fp(async (server) => {
     host: "api.eu.mailgun.net",
   };
 
-  const transporter = nodemailer.createTransport(mg(config));
+  const transporter: Transporter =
+    server.config.NODE_ENV === "test"
+      ? nodemailer.createTransport({ jsonTransport: true })
+      : nodemailer.createTransport(mg(config));
   server.decorate("mailer", transporter);
 
   if (server.config.NODE_ENV !== "test") {

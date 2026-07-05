@@ -12,7 +12,7 @@ export const ShiftTentQuerySchema = Type.Object({
 });
 
 export const AddGradeSchema = Type.Object({
-  score: Type.Integer(),
+  score: Type.Integer({ minimum: 0, maximum: 255 }),
 });
 
 export type UserWithShiftRole = Static<typeof UserWithShiftRoleSchema>;

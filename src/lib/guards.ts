@@ -18,8 +18,15 @@ const DEFAULT_MESSAGE = "Puuduvad õigused päringuks.";
 
 // body is parsed and validated before preHandler runs, so reading shiftNr from
 // any of these sources is safe.
-const getShiftNr = (request: FastifyRequest, source: ShiftNrSource): number =>
-  (request[source] as { shiftNr: number }).shiftNr;
+const getShiftNr = (request: FastifyRequest, source: ShiftNrSource): number => {
+  const value = (request[source] as { shiftNr?: unknown } | undefined)?.shiftNr;
+  if (typeof value !== "number" || !Number.isInteger(value)) {
+    throw new Error(
+      `Guard misconfiguration: request.${source} does not contain an integer shiftNr`,
+    );
+  }
+  return value;
+};
 
 // 403 with { status:"fail", data:{ permissions: message } } when the check fails.
 export const requireShiftPermission =

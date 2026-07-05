@@ -143,6 +143,20 @@ export type RegistrationViewFlags = {
   contact: boolean;
 };
 
+export const deriveRegistrationViewFlags = (
+  perms: ReadonlySet<string>,
+): RegistrationViewFlags => ({
+  pii:
+    perms.has(Permissions.VIEW_REGISTRATION_FULL) ||
+    perms.has(Permissions.VIEW_REGISTRATION_PERSONAL_INFO),
+  financial:
+    perms.has(Permissions.VIEW_REGISTRATION_FULL) ||
+    perms.has(Permissions.VIEW_REGISTRATION_PRICE),
+  contact:
+    perms.has(Permissions.VIEW_REGISTRATION_FULL) ||
+    perms.has(Permissions.VIEW_REGISTRATION_CONTACT),
+});
+
 export const getRegistrationViewFlags = async (
   userId: number,
   shiftNr: number,
@@ -153,17 +167,5 @@ export const getRegistrationViewFlags = async (
     PermissionPrefixes.REGISTRATION_VIEW,
   );
 
-  const pii =
-    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_FULL) ||
-    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_PERSONAL_INFO);
-
-  const financial =
-    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_FULL) ||
-    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_PRICE);
-
-  const contact =
-    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_FULL) ||
-    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_CONTACT);
-
-  return { pii, financial, contact };
+  return deriveRegistrationViewFlags(shiftViewPermissions);
 };

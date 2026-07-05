@@ -9,6 +9,7 @@ export interface EnvConfig {
   MAILGUN_API_KEY: string;
   EMAIL_SERV: string;
   DATABASE_HOST: string;
+  DATABASE_PORT: number;
   DATABASE_USER: string;
   DATABASE_PASSWORD: string;
   DATABASE_NAME: string;
@@ -34,6 +35,7 @@ export const envSchema: JSONSchemaType<EnvConfig> = {
     MAILGUN_API_KEY: { type: "string" },
     EMAIL_SERV: { type: "string" },
     DATABASE_HOST: { type: "string" },
+    DATABASE_PORT: { type: "number", default: 3306 },
     DATABASE_USER: { type: "string" },
     DATABASE_PASSWORD: { type: "string" },
     DATABASE_NAME: { type: "string" },

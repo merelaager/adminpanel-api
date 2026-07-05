@@ -59,13 +59,16 @@ export const getUserInfo = async (userId: number): Promise<UserInfo | null> => {
   return formatUserInfo(user);
 };
 
+const normaliseUsername = (username: string): string =>
+  username.trim().toLowerCase();
+
 export const authenticateUser = async (
   username: string,
   password: string,
 ): Promise<User | null> => {
   const user = await prisma.user.findUnique({
     where: {
-      username: username.trim().toLowerCase(),
+      username: normaliseUsername(username),
     },
   });
 
@@ -163,7 +166,7 @@ export const signupUser = async (
     await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
-          username: username.trim(),
+          username: normaliseUsername(username),
           currentShift: signupData.shiftNr,
           name: body.name.trim(),
           email: signupData.email,

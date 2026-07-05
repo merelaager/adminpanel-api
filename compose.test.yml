@@ -1,0 +1,17 @@
+services:
+  mariadb:
+    image: mariadb:11.4
+    environment:
+      MARIADB_DATABASE: ml_test
+      MARIADB_USER: ml_test
+      MARIADB_PASSWORD: ml_test
+      MARIADB_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+    tmpfs:
+      - /var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 12

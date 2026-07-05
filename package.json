@@ -8,6 +8,7 @@
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
     "seed": "tsx prisma/seed.ts",
+    "lint": "eslint .",
     "test": "NODE_ENV=test node --import tsx --test --test-force-exit test/*.test.ts"
   },
   "dependencies": {
@@ -45,14 +46,14 @@
     "@types/pdfkit": "^0.17.6",
     "@types/pdfmake": "^0.3.3",
     "dotenv": "^17.4.2",
-    "eslint": "^10.5.0",
+    "eslint": "^10.6.0",
     "prettier": "3.8.4",
     "prisma": "^7.8.0",
     "ts-node": "^10.9.2",
     "tsc-alias": "^1.8.17",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.61.0"
+    "typescript-eslint": "^8.62.0"
   },
   "private": true,
   "packageManager": "yarn@4.16.0"

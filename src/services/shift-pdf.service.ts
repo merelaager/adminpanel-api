@@ -13,10 +13,9 @@ const fonts: TFontDictionary = {
 
 pdfMake.setFonts(fonts);
 
-// Silence pdfmake's access policy warnings.
-// No policies are needed here. Hopefully....
-pdfMake.setUrlAccessPolicy(() => true);
-pdfMake.setLocalAccessPolicy(() => true);
+const allowedLocalResources = new Set<string>(Object.values(fonts.Helvetica));
+pdfMake.setLocalAccessPolicy((path) => allowedLocalResources.has(path));
+pdfMake.setUrlAccessPolicy(() => false);
 
 export interface PrintEntry {
   name: string;

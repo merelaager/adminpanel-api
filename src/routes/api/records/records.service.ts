@@ -148,32 +148,45 @@ const fetchShiftRecords = async (
 };
 
 // Returns null when the user is not authorised to view the camper's records.
+// With `shiftNr` set, results are limited to that shift and authorisation is
+// checked against that shift alone; otherwise a permission in any shift the
+// child was registered in grants access to the full history.
 const fetchCamperRecords = async (
   childId: number,
   userId: number,
   log: FastifyBaseLogger,
+  shiftNr?: number,
 ): Promise<FlattenedRecord[] | null> => {
-  const registrations = await prisma.registration.findMany({
-    where: { childId },
-    select: { shiftNr: true },
-  });
+  let isAuthorised: boolean;
+  if (shiftNr !== undefined) {
+    isAuthorised = await canViewShiftBasic(userId, shiftNr);
+  } else {
+    const registrations = await prisma.registration.findMany({
+      where: { childId },
+      select: { shiftNr: true },
+    });
 
-  const isAuthorised = await userHasShiftPermissionInAnyOf(
-    userId,
-    registrations.map((registration) => registration.shiftNr),
-    Permissions.VIEW_SHIFT_BASIC,
-  );
+    isAuthorised = await userHasShiftPermissionInAnyOf(
+      userId,
+      registrations.map((registration) => registration.shiftNr),
+      Permissions.VIEW_SHIFT_BASIC,
+    );
+  }
 
   if (!isAuthorised) {
     log.warn(
-      { userId, childId },
+      { userId, childId, shiftNr },
       "User not authorised to view historic records",
     );
     return null;
   }
 
   const records = await prisma.record.findMany({
-    where: { childId, isActive: true },
+    where: {
+      childId,
+      isActive: true,
+      ...(shiftNr !== undefined ? { shiftNr } : {}),
+    },
     include: recordRelations,
     orderBy: [{ year: "desc" }, { shiftNr: "asc" }],
   });
@@ -186,10 +199,16 @@ export const fetchRecordsForQuery = async (
   userId: number,
   log: FastifyBaseLogger,
 ): Promise<FlattenedRecord[] | null> => {
-  if ("childId" in query) {
-    return fetchCamperRecords(query.childId, userId, log);
+  const { childId, shiftNr } = query;
+  if (childId !== undefined) {
+    return fetchCamperRecords(childId, userId, log, shiftNr);
   }
-  return fetchShiftRecords(query.shiftNr, userId, log);
+  if (shiftNr !== undefined) {
+    return fetchShiftRecords(shiftNr, userId, log);
+  }
+  // Unreachable: the schema requires at least one filter. Denying is the safe
+  // fallback if that invariant is ever broken.
+  return null;
 };
 
 export type PatchRecordResult =

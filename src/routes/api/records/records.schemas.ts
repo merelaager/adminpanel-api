@@ -1,19 +1,17 @@
 import { Static, Type } from "@sinclair/typebox";
 
-const ShiftRecordsFilterSchema = Type.Object(
-  { shiftNr: Type.Integer() },
-  { additionalProperties: false },
+export const RecordsFetchSchema = Type.Object(
+  {
+    shiftNr: Type.Optional(Type.Integer()),
+    childId: Type.Optional(Type.Integer()),
+  },
+  {
+    additionalProperties: false,
+    description:
+      "Filter by shift (current year), by child (all years), or by both. At least one is required.",
+    anyOf: [{ required: ["shiftNr"] }, { required: ["childId"] }],
+  },
 );
-
-const CamperRecordsFilterSchema = Type.Object(
-  { childId: Type.Integer() },
-  { additionalProperties: false },
-);
-
-export const RecordsFetchSchema = Type.Union([
-  ShiftRecordsFilterSchema,
-  CamperRecordsFilterSchema,
-]);
 
 export type RecordsFetchQuery = Static<typeof RecordsFetchSchema>;
 

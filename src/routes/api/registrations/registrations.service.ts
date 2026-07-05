@@ -3,7 +3,7 @@ import type { Registration } from "#app/generated/prisma/client";
 import prisma from "#app/lib/prisma";
 import { getAgeAtDate } from "#app/lib/age";
 import { fetchUserShiftPermissions } from "#app/lib/permissions";
-import { Permissions, PermissionPrefixes } from "#app/constants/permissions";
+import { PermissionPrefixes, Permissions } from "#app/constants/permissions";
 import { toggleRecord } from "#app/services/camp-records.service";
 
 import type {
@@ -18,7 +18,7 @@ const objectHasAllowedKey = <
   obj: Patch,
   allowedKeys: readonly (keyof FullModel)[],
 ): boolean => {
-  return allowedKeys.some((key) => key in obj);
+  return allowedKeys.some((key) => Object.hasOwn(obj, key));
 };
 
 export type FetchRegistrationsResult =
@@ -177,7 +177,7 @@ export const patchRegistrationData = async (
     // If the child is registered, the camp record must be updated accordingly.
     // Likewise, if the child was de-registered.
     if (
-      isRegisteredKey in patchData &&
+      Object.hasOwn(patchData, isRegisteredKey) &&
       typeof patchData[isRegisteredKey] === "boolean"
     ) {
       await toggleRecord(

@@ -118,15 +118,13 @@ const getStaffContacts = async (shiftNumbers: number[]) => {
     },
   });
 
-  const contactStrings: string[] = [];
-  shifts.forEach((shift) => {
-    contactStrings.push(
-      `${escapeHtml(shift.bossName)} (${escapeHtml(shift.bossEmail)}, tel. ${escapeHtml(shift.bossPhone)})`,
-    );
-  });
-
   return {
     emails: shifts.map((value) => value.bossEmail),
-    html: contactStrings.join(", "),
+    html: shifts
+      .map(
+        (shift) =>
+          `${escapeHtml(shift.bossName)} (${escapeHtml(shift.bossEmail)}, tel. ${escapeHtml(shift.bossPhone)})`,
+      )
+      .join(", "),
   };
 };

@@ -32,21 +32,16 @@ export const fetchShiftPrintEntries = async (
     },
   });
 
-  const printEntries: PrintEntry[] = [];
-  activeRegistrations.forEach((registration) => {
-    printEntries.push({
-      name: registration.child.name,
-      sex: registration.child.sex,
-      dob: registration.birthday,
-      old: registration.isOld,
-      shirtSize: registration.tsSize,
-      contactName: registration.contactName,
-      contactEmail: registration.contactEmail,
-      contactNumber: registration.contactNumber,
-    });
-  });
-
-  return printEntries;
+  return activeRegistrations.map((registration) => ({
+    name: registration.child.name,
+    sex: registration.child.sex,
+    dob: registration.birthday,
+    old: registration.isOld,
+    shirtSize: registration.tsSize,
+    contactName: registration.contactName,
+    contactEmail: registration.contactEmail,
+    contactNumber: registration.contactNumber,
+  }));
 };
 
 export const fetchShiftUsers = async (
@@ -68,18 +63,13 @@ export const fetchShiftUsers = async (
     },
   });
 
-  const usersWithShiftRole: UserWithShiftRole[] = [];
-  rawUsersAndPermissions.forEach((obj) => {
-    usersWithShiftRole.push({
-      userId: obj.user.id,
-      name: obj.user.name,
-      shiftNr,
-      role: getRoleDisplayName(obj.role.roleName),
-      roleId: obj.role.id,
-    });
-  });
-
-  return usersWithShiftRole;
+  return rawUsersAndPermissions.map((entry) => ({
+    userId: entry.user.id,
+    name: entry.user.name,
+    shiftNr,
+    role: getRoleDisplayName(entry.role.roleName),
+    roleId: entry.role.id,
+  }));
 };
 
 export const fetchShiftRecords = async (
@@ -97,23 +87,18 @@ export const fetchShiftRecords = async (
     omit: { createdAt: true, updatedAt: true, isActive: true },
   });
 
-  const camperRecords: CamperRecord[] = [];
-  rawRecords.forEach((record) => {
-    camperRecords.push({
-      id: record.id,
-      childId: record.childId,
-      childName: record.child.name,
-      childSex: record.child.sex,
-      shiftNr: record.shiftNr,
-      year: record.year,
-      tentNr: record.tentNr,
-      teamId: record.teamId,
-      isPresent: record.isPresent,
-      ageAtCamp: record.ageAtCamp,
-    });
-  });
-
-  return camperRecords;
+  return rawRecords.map((record) => ({
+    id: record.id,
+    childId: record.childId,
+    childName: record.child.name,
+    childSex: record.child.sex,
+    shiftNr: record.shiftNr,
+    year: record.year,
+    tentNr: record.tentNr,
+    teamId: record.teamId,
+    isPresent: record.isPresent,
+    ageAtCamp: record.ageAtCamp,
+  }));
 };
 
 export const fetchShiftEmails = async (shiftNr: number): Promise<string[]> => {

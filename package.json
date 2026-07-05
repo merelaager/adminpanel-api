@@ -10,7 +10,12 @@
     "start": "node dist/server.js",
     "seed": "tsx prisma/seed.ts",
     "lint": "eslint .",
-    "test": "NODE_ENV=test node --import tsx --test --test-force-exit test/*.test.ts"
+    "test": "NODE_ENV=test node --import tsx --test --test-concurrency=1 --test-force-exit \"test/**/*.test.ts\"",
+    "test:db:up": "docker compose -f compose.test.yml up -d --wait",
+    "test:db:down": "docker compose -f compose.test.yml down -v",
+    "test:db:push": "DATABASE_URL=mysql://ml_test:ml_test@127.0.0.1:3307/ml_test prisma db push",
+    "test:full": "yarn test:db:up && yarn test:db:push && yarn gen:email && yarn test",
+    "typecheck": "tsc -p test/tsconfig.json && tsc -p prisma/tsconfig.json"
   },
   "dependencies": {
     "@fastify/autoload": "^6.3.1",

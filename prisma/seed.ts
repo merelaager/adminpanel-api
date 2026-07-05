@@ -1,4 +1,4 @@
-import prisma from "../src/utils/prisma";
+import prisma from "#app/lib/prisma";
 import { Permissions } from "#app/constants/permissions";
 import type { RoleName } from "#app/constants/roles";
 

@@ -36,11 +36,17 @@ export const resetDb = async (): Promise<void> => {
     );
   }
 
-  await prisma.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 0");
-  for (const table of TABLES) {
-    await prisma.$executeRawUnsafe(`TRUNCATE TABLE \`${table}\``);
-  }
-  await prisma.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 1");
+  // The MariaDB adapter pools connections, and `SET FOREIGN_KEY_CHECKS` is a
+  // per-connection session flag. Pin every statement to one connection via an
+  // interactive transaction so the disabled FK checks actually apply to the
+  // TRUNCATEs (which auto-commit but leave the session flag intact).
+  await prisma.$transaction(async (tx) => {
+    await tx.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 0");
+    for (const table of TABLES) {
+      await tx.$executeRawUnsafe(`TRUNCATE TABLE \`${table}\``);
+    }
+    await tx.$executeRawUnsafe("SET FOREIGN_KEY_CHECKS = 1");
+  });
 
   await seedRolesAndPermissions(prisma);
 };

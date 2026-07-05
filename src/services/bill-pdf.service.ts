@@ -3,6 +3,12 @@ import PDFDoc from "pdfkit";
 
 import prisma from "#app/lib/prisma";
 import {
+  addUTCDays,
+  formatUTCDate,
+  startOfUTCDay,
+  subUTCMonths,
+} from "#app/lib/date";
+import {
   REGISTRATION_FEE,
   SENIORITY_DISCOUNTS,
   SHIFT_PRICES,
@@ -68,11 +74,8 @@ const getBillDeadline = async (shiftNumbers: number[]) => {
     throw new Error(`Found no shift with number '${firstShift}'`);
   }
 
-  return new Date(
-    shiftStartDate.getUTCFullYear(),
-    shiftStartDate.getUTCMonth() - 1,
-    shiftStartDate.getUTCDate(), // It is fine if the date overflows by a day.
-  );
+  // One month before the shift start. Overflowing by a day is fine.
+  return subUTCMonths(shiftStartDate, 1);
 };
 
 /**
@@ -115,22 +118,18 @@ export const generateBillPdf = async (
   // Bill details
   const billTop = CONTENT_TOP + 80;
 
-  const today = new Date();
+  const today = startOfUTCDay(new Date());
   const finalDeadline = await getBillDeadline(
     registeredCampers.map((c) => c.shiftNr),
   );
-  const due = new Date();
-  due.setDate(today.getDate() + 3);
+  const due = addUTCDays(today, 3);
 
   // If bill coincides with final deadline.
   const lenientDeadline = due > finalDeadline;
 
-  const billDate = today.toLocaleDateString(DATE_LOCALE, DATE_OPTIONS);
-  const billDue = due.toLocaleDateString(DATE_LOCALE, DATE_OPTIONS);
-  const billDeadline = finalDeadline.toLocaleDateString(
-    DATE_LOCALE,
-    DATE_OPTIONS,
-  );
+  const billDate = formatUTCDate(today, DATE_LOCALE, DATE_OPTIONS);
+  const billDue = formatUTCDate(due, DATE_LOCALE, DATE_OPTIONS);
+  const billDeadline = formatUTCDate(finalDeadline, DATE_LOCALE, DATE_OPTIONS);
 
   const billNrLength = doc.widthOfString(`${billNr}`);
   const billDateLength = doc.widthOfString(billDate);

@@ -2,7 +2,7 @@ import type { FastifyError, FastifyPluginAsync } from "fastify";
 import fp from "fastify-plugin";
 import { StatusCodes } from "http-status-codes";
 
-import { createFailResponse } from "#app/lib/jsend";
+import { createErrorResponse, createFailResponse } from "#app/lib/jsend";
 
 const fieldFromValidationError = (
   instancePath: string,
@@ -31,17 +31,29 @@ const errorHandlerPlugin: FastifyPluginAsync = fp(async (server) => {
         .send(createFailResponse(data));
     }
 
+    const statusCode = error.statusCode ?? StatusCodes.INTERNAL_SERVER_ERROR;
+
+    // Intentional client errors (4xx, e.g. rate limiting) carry a curated, safe
+    // message — surface it directly with its status. Only unexpected server
+    // errors (5xx) are logged and masked to avoid leaking internals.
+    if (statusCode < StatusCodes.INTERNAL_SERVER_ERROR) {
+      return res
+        .status(statusCode)
+        .send(createErrorResponse(error.message || "Vigane päring."));
+    }
+
     req.log.error({ err: error }, "Unhandled error");
     const message =
       server.config.NODE_ENV === "production"
         ? "Serveri viga."
         : error.message || "Ootamatu viga.";
+    return res.status(statusCode).send(createErrorResponse(message));
+  });
+
+  server.setNotFoundHandler((req, res) => {
     return res
-      .status(error.statusCode ?? StatusCodes.INTERNAL_SERVER_ERROR)
-      .send({
-        status: "error",
-        message,
-      });
+      .status(StatusCodes.NOT_FOUND)
+      .send(createFailResponse({ path: "Sellist teed pole olemas." }));
   });
 });
 

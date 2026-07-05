@@ -63,6 +63,10 @@ export const buildApp = (opts: BuildAppOptions = {}): FastifyInstance => {
   if (enableRateLimit) {
     fastify.register(rateLimit, {
       global: false,
+      errorResponseBuilder: (_req, context) => ({
+        statusCode: context.statusCode,
+        message: "Liiga palju päringuid. Proovi hiljem uuesti.",
+      }),
     });
   }
 

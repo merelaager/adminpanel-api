@@ -2,7 +2,10 @@ import type { Registration } from "#app/generated/prisma/client";
 
 import prisma from "#app/lib/prisma";
 import { getAgeAtDate } from "#app/lib/age";
-import { fetchUserShiftPermissions } from "#app/lib/permissions";
+import {
+  deriveRegistrationViewFlags,
+  fetchUserShiftPermissions,
+} from "#app/lib/permissions";
 import { PermissionPrefixes, Permissions } from "#app/constants/permissions";
 import { toggleRecord } from "#app/services/camp-records.service";
 
@@ -43,17 +46,11 @@ export const fetchRegistrations = async (
     return { status: "ok", registrations: [] };
   }
 
-  const canViewPII =
-    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_FULL) ||
-    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_PERSONAL_INFO);
-
-  const canViewFinancial =
-    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_FULL) ||
-    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_PRICE);
-
-  const canViewContact =
-    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_FULL) ||
-    shiftViewPermissions.has(Permissions.VIEW_REGISTRATION_CONTACT);
+  const {
+    pii: canViewPII,
+    financial: canViewFinancial,
+    contact: canViewContact,
+  } = deriveRegistrationViewFlags(shiftViewPermissions);
 
   const rawRegistrations = await prisma.registration.findMany({
     where: { shiftNr, visible: true },

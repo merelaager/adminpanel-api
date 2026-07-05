@@ -71,8 +71,8 @@ export const PatchRegistrationSchema = Type.Object(
   {
     isRegistered: Type.Optional(Type.Boolean()),
     isOld: Type.Optional(Type.Boolean()),
-    pricePaid: Type.Optional(Type.Integer()),
-    priceToPay: Type.Optional(Type.Integer()),
+    pricePaid: Type.Optional(Type.Integer({ minimum: 0 })),
+    priceToPay: Type.Optional(Type.Integer({ minimum: 0 })),
   },
   {
     additionalProperties: false,

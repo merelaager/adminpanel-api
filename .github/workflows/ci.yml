@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    services:
+      mariadb:
+        image: mariadb:11.4
+        env:
+          MARIADB_DATABASE: ml_test
+          MARIADB_USER: ml_test
+          MARIADB_PASSWORD: ml_test
+          MARIADB_ROOT_PASSWORD: root
+        ports:
+          - 3307:3306
+        options: >-
+          --health-cmd "healthcheck.sh --connect --innodb_initialized"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      DATABASE_URL: mysql://ml_test:ml_test@127.0.0.1:3307/ml_test
+    steps:
+      - uses: actions/checkout@v4
+      - run: corepack enable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: yarn
+      - run: yarn install --immutable
+      - run: yarn gen:email
+      - run: yarn prisma generate
+      - run: yarn lint
+      - run: yarn build
+      - run: yarn typecheck
+      - run: yarn prisma db push
+      - run: yarn test

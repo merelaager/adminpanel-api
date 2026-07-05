@@ -1,3 +1,4 @@
+import "./test-env";
 import type { FastifyInstance } from "fastify";
 
 import { buildApp } from "#app/app";

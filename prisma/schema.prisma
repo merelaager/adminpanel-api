@@ -230,6 +230,7 @@ model Team {
   captain   Child?   @relation(fields: [captainId], references: [id])
   records   Record[]
 
+  @@unique([shiftNr, year, name], map: "team_name_unique")
   @@index([captainId], map: "captainId")
   @@map("teams")
 }
@@ -331,9 +332,6 @@ enum Sex {
 enum users_role {
   root
   std
-  master
-  op
-  camper
 }
 
 enum shift_staff_role {

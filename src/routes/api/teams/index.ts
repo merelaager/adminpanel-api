@@ -1,9 +1,11 @@
 import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
+import { Type } from "@sinclair/typebox";
 import { StatusCodes } from "http-status-codes";
 
 import { requireShiftPermission } from "#app/lib/guards";
 import { Permissions } from "#app/constants/permissions";
 import {
+  createFailResponse,
   createSuccessResponse,
   FailResponse,
   RequestPermissionsFail,
@@ -46,13 +48,25 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         body: TeamCreationSchema,
         response: {
           [StatusCodes.CREATED]: {},
+          [StatusCodes.CONFLICT]: FailResponse(
+            Type.Object({ name: Type.String() }),
+          ),
           [StatusCodes.FORBIDDEN]: FailResponse(RequestPermissionsFail),
         },
       },
     },
     async (request, reply) => {
       const { shiftNr, name } = request.body;
-      await createTeam(shiftNr, name);
+      const result = await createTeam(shiftNr, name);
+
+      if (result === "duplicate") {
+        return reply.status(StatusCodes.CONFLICT).send(
+          createFailResponse({
+            name: "Sellise nimega meeskond on juba olemas.",
+          }),
+        );
+      }
+
       return reply.status(StatusCodes.CREATED).send();
     },
   );

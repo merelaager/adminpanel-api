@@ -1,3 +1,5 @@
+import { Prisma } from "#app/generated/prisma/client";
+
 import prisma from "#app/lib/prisma";
 import { getCurrentCampYear } from "#app/lib/camp-year";
 
@@ -17,11 +19,24 @@ export const fetchTeams = async (shiftNr: number): Promise<TeamRecord[]> => {
   });
 };
 
+export type CreateTeamResult = "created" | "duplicate";
+
 export const createTeam = async (
   shiftNr: number,
   name: string,
-): Promise<void> => {
-  await prisma.team.create({
-    data: { shiftNr, name, year: getCurrentCampYear() },
-  });
+): Promise<CreateTeamResult> => {
+  try {
+    await prisma.team.create({
+      data: { shiftNr, name, year: getCurrentCampYear() },
+    });
+    return "created";
+  } catch (err) {
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2002"
+    ) {
+      return "duplicate";
+    }
+    throw err;
+  }
 };

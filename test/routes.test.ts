@@ -7,7 +7,7 @@ import { build } from "./helpers/build";
 
 const snapshotPath = path.join(__dirname, "routes.snapshot.txt");
 
-test("route table matches committed snapshot", async () => {
+void test("route table matches committed snapshot", async () => {
   const app = await build();
   const routes = app.printRoutes({ commonPrefix: false });
   await app.close();

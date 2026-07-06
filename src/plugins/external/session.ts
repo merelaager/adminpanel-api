@@ -15,7 +15,7 @@ declare module "fastify" {
 
 export default fp(
   async (fastify) => {
-    const defaultTTL = 1000 * 60 * 60 * 7;
+    const defaultTTL = 1000 * 60 * 60 * 24 * 7;
 
     fastify.register(fastifyCookie);
     fastify.register(fastifySession, {

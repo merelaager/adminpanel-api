@@ -8,6 +8,7 @@ import {
 } from "#app/lib/permissions";
 import { PermissionPrefixes, Permissions } from "#app/constants/permissions";
 import { toggleRecord } from "#app/services/camp-records.service";
+import { logChanges } from "#app/services/change-log.service";
 
 import type {
   FilteredRegistrationSchema,
@@ -125,7 +126,7 @@ export const patchRegistrationData = async (
   // Get the shift of the registration and the child the registration pertains to.
   const regShift = await prisma.registration.findUnique({
     where: { id: regId },
-    select: { shiftNr: true, childId: true },
+    select: { shiftNr: true, childId: true, isRegistered: true },
   });
 
   if (!regShift) {
@@ -185,6 +186,24 @@ export const patchRegistrationData = async (
         patchData[isRegisteredKey],
         tx,
       );
+
+      if (patchData[isRegisteredKey] !== regShift.isRegistered) {
+        await logChanges(
+          [
+            {
+              userId,
+              entity: "registration",
+              entityId: regId,
+              childId: regShift.childId,
+              shiftNr: regShift.shiftNr,
+              field: isRegisteredKey,
+              oldValue: regShift.isRegistered,
+              newValue: patchData[isRegisteredKey],
+            },
+          ],
+          tx,
+        );
+      }
     }
   });
 

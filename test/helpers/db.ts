@@ -7,6 +7,7 @@ import { seedRolesAndPermissions } from "../../prisma/seed-core";
 const TABLES = [
   "bills",
   "certificates",
+  "change_logs",
   "children",
   "documents",
   "event_info",

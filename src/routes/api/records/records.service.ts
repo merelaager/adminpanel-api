@@ -10,6 +10,7 @@ import {
   userHasShiftPermissionInAnyOf,
 } from "#app/lib/permissions";
 import { Permissions } from "#app/constants/permissions";
+import { logChanges } from "#app/services/change-log.service";
 
 import type {
   FlattenedRecord,
@@ -212,10 +213,7 @@ export const fetchRecordsForQuery = async (
 };
 
 export type PatchRecordResult =
-  | "record-not-found"
-  | "forbidden"
-  | "team-not-found"
-  | "ok";
+  "record-not-found" | "forbidden" | "team-not-found" | "ok";
 
 export const patchRecord = async (
   userId: number,
@@ -224,7 +222,7 @@ export const patchRecord = async (
 ): Promise<PatchRecordResult> => {
   const record = await prisma.record.findUnique({
     where: { id: recordId },
-    select: { shiftNr: true },
+    select: { shiftNr: true, childId: true, tentNr: true },
   });
 
   if (record === null) return "record-not-found";
@@ -246,9 +244,32 @@ export const patchRecord = async (
     if (team === null) return "team-not-found";
   }
 
-  await prisma.record.update({
-    where: { id: recordId },
-    data: patchData,
+  const tentNrChanged =
+    patchData.tentNr !== undefined && patchData.tentNr !== record.tentNr;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.record.update({
+      where: { id: recordId },
+      data: patchData,
+    });
+
+    if (tentNrChanged) {
+      await logChanges(
+        [
+          {
+            userId,
+            entity: "record",
+            entityId: recordId,
+            childId: record.childId,
+            shiftNr: record.shiftNr,
+            field: "tentNr",
+            oldValue: record.tentNr,
+            newValue: patchData.tentNr ?? null,
+          },
+        ],
+        tx,
+      );
+    }
   });
 
   return "ok";

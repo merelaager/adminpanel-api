@@ -273,6 +273,7 @@ model User {
   user_roles   UserRoles[]
   certificates Certificate[]
   changeLogs   ChangeLog[]
+  tentScores   TentScore[]
 
   @@map("users")
 }
@@ -312,7 +313,10 @@ model TentScore {
   year      Int      @db.UnsignedInt
   createdAt DateTime @default(now()) @db.DateTime(0)
   updatedAt DateTime @updatedAt @db.DateTime(0)
+  userId    Int?     @db.UnsignedInt
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 
+  @@index([userId], map: "userId")
   @@map("tent_scores")
 }
 

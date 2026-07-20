@@ -320,6 +320,7 @@ export const addGrade = async (
   shiftNr: number,
   tentNr: number,
   score: number,
+  userId: number,
 ) => {
   const currentYear = getCurrentCampYear();
   const result = await prisma.tentScore.create({
@@ -328,6 +329,7 @@ export const addGrade = async (
       tentNr,
       year: currentYear,
       score: score,
+      userId,
     },
     select: { score: true, createdAt: true, tentNr: true, id: true },
   });

@@ -18,6 +18,7 @@ import {
   SuccessResponse,
 } from "#app/lib/jsend";
 import { generateShiftCamperListPDF } from "#app/services/shift-pdf.service";
+import { getSessionUser } from "#app/lib/session";
 
 import {
   AddGradeSchema,
@@ -289,7 +290,8 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
     async (request, reply) => {
       const { shiftNr, tentNr } = request.params;
       const { score } = request.body;
-      const tentScore = await addGrade(shiftNr, tentNr, score);
+      const { userId } = getSessionUser(request);
+      const tentScore = await addGrade(shiftNr, tentNr, score, userId);
       return reply
         .status(StatusCodes.CREATED)
         .send(createSuccessResponse(tentScore));

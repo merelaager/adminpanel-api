@@ -6,7 +6,7 @@ export type ChangeLogEntry = {
   userId: number;
   entity: change_log_entity;
   entityId: number;
-  childId: number;
+  childId: number | null;
   shiftNr: number;
   field: string;
   oldValue: string | number | boolean | null;

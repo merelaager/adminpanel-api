@@ -2,7 +2,7 @@ import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import { Type } from "@sinclair/typebox";
 import { StatusCodes } from "http-status-codes";
 
-import { requireRoot } from "#app/lib/guards";
+import { requireRegistrationCreator, requireRoot } from "#app/lib/guards";
 import { getSessionUser } from "#app/lib/session";
 import {
   createErrorResponse,
@@ -79,14 +79,10 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.post(
     "/",
     {
-      config: {
-        public: true,
-        rateLimit: {
-          max: 10,
-          timeWindow: "1 minute",
-        },
-      },
+      config: { public: true },
+      onRequest: requireRegistrationCreator,
       schema: {
+        security: [{ serviceKey: [] }, { sessionCookie: [] }],
         body: RegistrationsCreationSchema,
         response: {
           [StatusCodes.CREATED]: SuccessResponse(FormRegistrationData),

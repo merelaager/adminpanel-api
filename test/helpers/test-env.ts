@@ -3,12 +3,16 @@
 // unconditional so a developer's `.env`/shell can never point tests at a real
 // database (dotenv never overrides already-set vars, in both lib/prisma.ts and
 // @fastify/env). Import this FIRST in every helper.
+export const TEST_REGISTRATION_API_KEY =
+  "test-registration-key-0123456789-0123456789";
+
 Object.assign(process.env, {
   NODE_ENV: "test",
   PORT: "0",
   APP_URL: "http://app.test.invalid",
   COOKIE_SECRET: "test-cookie-secret-0123456789-0123456789",
   MAILGUN_API_KEY: "test-key",
+  REGISTRATION_API_KEY: TEST_REGISTRATION_API_KEY,
   EMAIL_SERV: "mail.test.invalid",
   DATABASE_HOST: "127.0.0.1",
   DATABASE_PORT: "3307",

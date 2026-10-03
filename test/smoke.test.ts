@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import type { FastifyInstance } from "fastify";
 
 import { build } from "./helpers/build";
+import { TEST_REGISTRATION_API_KEY } from "./helpers/test-env";
 
 type JsendBody = { status: string };
 
@@ -46,6 +47,7 @@ void test("POST /api/registrations with empty body is a bad request", async () =
   const res = await app.inject({
     method: "POST",
     url: "/api/registrations",
+    headers: { authorization: `Bearer ${TEST_REGISTRATION_API_KEY}` },
     payload: {},
   });
   assert.equal(res.statusCode, 400);

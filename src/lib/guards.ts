@@ -1,4 +1,9 @@
-import type { FastifyRequest, preHandlerAsyncHookHandler } from "fastify";
+import { createHash, timingSafeEqual } from "node:crypto";
+import type {
+  FastifyRequest,
+  onRequestAsyncHookHandler,
+  preHandlerAsyncHookHandler,
+} from "fastify";
 import { StatusCodes } from "http-status-codes";
 
 import { createFailResponse } from "#app/lib/jsend";
@@ -84,5 +89,39 @@ export const requireRoot: preHandlerAsyncHookHandler = async (
   const { userId } = getSessionUser(request);
   if (!(await isSuperRoot(userId))) {
     return reply.status(StatusCodes.FORBIDDEN).send();
+  }
+};
+
+const sha256 = (value: string): Buffer =>
+  createHash("sha256").update(value).digest();
+
+const hasValidServiceKey = (request: FastifyRequest): boolean => {
+  const header = request.headers.authorization;
+  if (!header?.startsWith("Bearer ")) return false;
+  return timingSafeEqual(
+    sha256(header.slice("Bearer ".length)),
+    sha256(request.server.config.REGISTRATION_API_KEY),
+  );
+};
+
+export const requireRegistrationCreator: onRequestAsyncHookHandler = async (
+  request,
+  reply,
+) => {
+  if (hasValidServiceKey(request)) return;
+
+  const user = request.session.user;
+  if (!user) {
+    return reply
+      .status(StatusCodes.UNAUTHORIZED)
+      .send(
+        createFailResponse({ message: "Ligipääsuks pead olema autenditud" }),
+      );
+  }
+
+  if (!(await isSuperRoot(user.userId))) {
+    return reply
+      .status(StatusCodes.FORBIDDEN)
+      .send(createFailResponse({ permissions: DEFAULT_MESSAGE }));
   }
 };

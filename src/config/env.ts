@@ -7,6 +7,7 @@ export interface EnvConfig {
   COOKIE_SECRET: string;
   COOKIE_DOMAIN?: string;
   MAILGUN_API_KEY: string;
+  REGISTRATION_API_KEY: string;
   EMAIL_SERV: string;
   DATABASE_HOST: string;
   DATABASE_PORT: number;
@@ -20,6 +21,7 @@ export const envSchema: JSONSchemaType<EnvConfig> = {
   required: [
     "COOKIE_SECRET",
     "MAILGUN_API_KEY",
+    "REGISTRATION_API_KEY",
     "EMAIL_SERV",
     "DATABASE_HOST",
     "DATABASE_USER",
@@ -33,6 +35,7 @@ export const envSchema: JSONSchemaType<EnvConfig> = {
     COOKIE_SECRET: { type: "string" },
     COOKIE_DOMAIN: { type: "string", nullable: true },
     MAILGUN_API_KEY: { type: "string" },
+    REGISTRATION_API_KEY: { type: "string", minLength: 32 },
     EMAIL_SERV: { type: "string" },
     DATABASE_HOST: { type: "string" },
     DATABASE_PORT: { type: "number", default: 3306 },

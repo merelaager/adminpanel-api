@@ -1,4 +1,4 @@
-import "../helpers/test-env";
+import { TEST_REGISTRATION_API_KEY } from "../helpers/test-env";
 import { before, after, test } from "node:test";
 import assert from "node:assert/strict";
 import type { FastifyInstance } from "fastify";
@@ -33,7 +33,12 @@ const entry = (overrides: Record<string, unknown>): Record<string, unknown> => (
 });
 
 const post = (payload: unknown[]) =>
-  app.inject({ method: "POST", url: "/api/registrations", payload });
+  app.inject({
+    method: "POST",
+    url: "/api/registrations",
+    headers: { authorization: `Bearer ${TEST_REGISTRATION_API_KEY}` },
+    payload,
+  });
 
 interface CreateResponse {
   status: string;

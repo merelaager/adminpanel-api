@@ -82,6 +82,10 @@ export const buildApp = (opts: BuildAppOptions = {}): FastifyInstance => {
             in: "cookie",
             name: "sessionId",
           },
+          serviceKey: {
+            type: "http",
+            scheme: "bearer",
+          },
         },
       },
     },

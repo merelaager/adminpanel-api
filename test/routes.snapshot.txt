@@ -9,7 +9,7 @@
 ├── /api/bills (POST)
 │   └── / (POST)
 │       └── :billId (GET, HEAD)
-├── /api/grades/:gradeId (DELETE)
+├── /api/grades/:gradeId (DELETE, PATCH)
 ├── /api/notifications/bills (POST)
 ├── /api/records (GET, HEAD, POST)
 │   └── / (GET, HEAD, POST)

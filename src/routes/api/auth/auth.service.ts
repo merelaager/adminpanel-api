@@ -1,11 +1,14 @@
-import bcrypt from "bcrypt";
 import type { FastifyBaseLogger } from "fastify";
 import { Prisma, type User } from "#app/generated/prisma/client";
 
 import prisma from "#app/lib/prisma";
 import { deleteUserSessions } from "#app/lib/session";
-import { validatePasswordPolicy } from "#app/lib/password";
-import { SALT_ROUNDS, TOKEN_EXPIRY_HOURS } from "#app/constants/auth";
+import {
+  hashPassword,
+  validatePasswordPolicy,
+  verifyPassword,
+} from "#app/lib/password";
+import { TOKEN_EXPIRY_HOURS } from "#app/constants/auth";
 import { Permissions } from "#app/constants/permissions";
 
 import type { UserInfo } from "#app/routes/api/users/users.schemas";
@@ -62,9 +65,13 @@ export const getUserInfo = async (userId: number): Promise<UserInfo | null> => {
 const normaliseUsername = (username: string): string =>
   username.trim().toLowerCase();
 
+const DUMMY_HASH =
+  "$argon2id$v=19$m=65536,p=4,t=3$+lECixgMeULLX7vMdJ53GQ$6i2oRuEJHLVvvC/WmDJaws5+d4rBr+YukWcgRC+/R0c";
+
 export const authenticateUser = async (
   username: string,
   password: string,
+  log: FastifyBaseLogger,
 ): Promise<User | null> => {
   const user = await prisma.user.findUnique({
     where: {
@@ -72,13 +79,24 @@ export const authenticateUser = async (
     },
   });
 
-  const checkPassword = user
-    ? user.password
-    : "$2b$10$nOUIs5kJ7naTuTFkBy1veuK0kSxUFXfuaOKdOKf9xYT0KKIGSJwFa"; // Example value from the documentation
-  const isValid = await bcrypt.compare(password, checkPassword);
+  const { valid, needsRehash } = await verifyPassword(
+    user?.password ?? DUMMY_HASH,
+    password,
+  );
 
-  if (!isValid || !user) {
+  if (!valid || !user) {
     return null;
+  }
+
+  if (needsRehash) {
+    try {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { password: await hashPassword(password) },
+      });
+    } catch (err) {
+      log.error({ err, userId: user.id }, "Failed to rehash password");
+    }
   }
 
   return user;
@@ -96,7 +114,7 @@ export const setPassword = async (
   sessionId: string,
 ): Promise<SetPasswordResult> => {
   const user = await prisma.user.findUnique({ where: { id: userId } });
-  if (!user || !(await bcrypt.compare(currentPassword, user.password))) {
+  if (!user || !(await verifyPassword(user.password, currentPassword)).valid) {
     return { status: "wrong-password" };
   }
 
@@ -105,7 +123,7 @@ export const setPassword = async (
     return { status: "weak-password", reason: rejectReason };
   }
 
-  const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+  const passwordHash = await hashPassword(password);
 
   await prisma.$transaction(async (tx) => {
     await tx.user.update({
@@ -160,7 +178,7 @@ export const signupUser = async (
     return { status: "expired-token" };
   }
 
-  const passwordHash = await bcrypt.hash(body.password, SALT_ROUNDS);
+  const passwordHash = await hashPassword(body.password);
 
   try {
     await prisma.$transaction(async (tx) => {

@@ -1,12 +1,11 @@
 import { v4 as uuidv4 } from "uuid";
-import bcrypt from "bcrypt";
 import type { Transporter } from "nodemailer";
 import type { FastifyBaseLogger } from "fastify";
 
 import prisma from "#app/lib/prisma";
 import { deleteUserSessions } from "#app/lib/session";
-import { validatePasswordPolicy } from "#app/lib/password";
-import { SALT_ROUNDS, TOKEN_EXPIRY_MS } from "#app/constants/auth";
+import { hashPassword, validatePasswordPolicy } from "#app/lib/password";
+import { TOKEN_EXPIRY_MS } from "#app/constants/auth";
 import MailService from "#app/services/mail.service";
 
 // Always resolves without signalling whether the email exists (no enumeration).
@@ -66,7 +65,7 @@ export const confirmPasswordReset = async (
     return { status: "forbidden" };
   }
 
-  const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+  const passwordHash = await hashPassword(password);
 
   await prisma.$transaction(async (tx) => {
     await tx.user.update({

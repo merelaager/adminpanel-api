@@ -1,7 +1,6 @@
 import "./test-env";
 import { randomUUID } from "node:crypto";
 import assert from "node:assert/strict";
-import bcrypt from "bcrypt";
 import type { FastifyInstance } from "fastify";
 
 import {
@@ -13,11 +12,12 @@ import {
 } from "#app/generated/prisma/client";
 import type { RoleName } from "#app/constants/roles";
 import prisma from "#app/lib/prisma";
+import { hashPassword } from "#app/lib/password";
 
 export const TEST_PASSWORD = "test-password-123";
 
-// Cost 4 keeps the suite fast; bcrypt.compare does not care about the cost.
-const passwordHash = bcrypt.hashSync(TEST_PASSWORD, 4);
+let passwordHash: Promise<string> | undefined;
+const getPasswordHash = () => (passwordHash ??= hashPassword(TEST_PASSWORD));
 
 const daysFromNowUTCMidnight = (days: number): Date => {
   const now = new Date();
@@ -44,8 +44,7 @@ export const createShiftInfo = (
     },
   });
 
-// User + optional per-shift roles. Password is always TEST_PASSWORD hashed at
-// cost 4. `roles` looks up each Role by name and creates UserRoles rows.
+// User + optional per-shift roles. Password is always TEST_PASSWORD. `roles` looks up each Role by name and creates UserRoles rows.
 // `superRoot` sets User.role = "root". email defaults to
 // `${username}@test.invalid` (pass null explicitly for no email); currentShift
 // defaults to the first role's shiftNr, or 1.
@@ -67,7 +66,7 @@ export const createUser = async (opts: {
       name: opts.username,
       email,
       currentShift,
-      password: passwordHash,
+      password: await getPasswordHash(),
       role: opts.superRoot ? "root" : "std",
     },
   });

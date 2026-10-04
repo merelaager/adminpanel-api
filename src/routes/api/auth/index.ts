@@ -72,7 +72,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
     async (request, reply) => {
       const { username, password } = request.body;
 
-      const user = await authenticateUser(username, password);
+      const user = await authenticateUser(username, password, request.log);
       if (!user) {
         return reply
           .code(StatusCodes.UNAUTHORIZED)

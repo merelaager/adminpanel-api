@@ -97,7 +97,10 @@ void test("GET /api/auth/me returns the user info with a cookie, 401 without", a
   assert.equal(body.data.userId, aliceId);
   assert.ok("managedShifts" in body.data);
 
-  const withoutCookie = await app.inject({ method: "GET", url: "/api/auth/me" });
+  const withoutCookie = await app.inject({
+    method: "GET",
+    url: "/api/auth/me",
+  });
   assert.equal(withoutCookie.statusCode, 401);
 });
 
@@ -143,6 +146,15 @@ void test("password change: validation, session handling, and re-login", async (
     payload: { currentPassword: TEST_PASSWORD, password: "1234567" },
   });
   assert.equal(weak.statusCode, 422);
+
+  // New password too long.
+  const tooLong = await app.inject({
+    method: "POST",
+    url: "/api/auth/password",
+    headers: { cookie: cookieA },
+    payload: { currentPassword: TEST_PASSWORD, password: "a".repeat(129) },
+  });
+  assert.equal(tooLong.statusCode, 422);
 
   // Valid change.
   const ok = await app.inject({

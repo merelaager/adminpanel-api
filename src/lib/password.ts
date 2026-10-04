@@ -1,8 +1,11 @@
 import argon2 from "argon2";
 import bcrypt from "bcrypt";
 
+export const MAX_PASSWORD_LENGTH = 128;
+
 export const validatePasswordPolicy = (password: string): string | null => {
   if (password.length < 8) return "Salasõna on liiga lühike.";
+  if (password.length > MAX_PASSWORD_LENGTH) return "Salasõna on liiga pikk.";
   return null;
 };
 

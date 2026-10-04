@@ -21,6 +21,16 @@ void test("validatePasswordPolicy: an 8-character password passes (null)", () =>
   assert.equal(validatePasswordPolicy("12345678"), null);
 });
 
+void test("validatePasswordPolicy: a 128-character password passes (null)", () => {
+  assert.equal(validatePasswordPolicy("a".repeat(128)), null);
+});
+
+void test("validatePasswordPolicy: a 129-character password returns a message", () => {
+  const result = validatePasswordPolicy("a".repeat(129));
+  assert.equal(typeof result, "string");
+  assert.ok(result);
+});
+
 void test("hashPassword: produces an argon2id hash that verifies without needing a rehash", async () => {
   const hash = await hashPassword("test-password");
   assert.match(hash, /^\$argon2id\$/);

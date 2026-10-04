@@ -9,6 +9,7 @@
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
     "seed": "tsx prisma/seed.ts",
+    "rollover": "tsx prisma/rollover.ts",
     "lint": "eslint .",
     "test": "NODE_ENV=test node --import tsx --test --test-concurrency=1 --test-force-exit \"test/**/*.test.ts\"",
     "test:db:up": "docker compose -f compose.test.yml up -d --wait",

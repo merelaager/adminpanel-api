@@ -12,10 +12,8 @@ import { envSchema } from "./config/env";
 
 const CORS_METHODS = ["GET", "HEAD", "POST", "PATCH", "DELETE", "PUT"];
 
-const allowedStaticOrigins = [
-  "https://dev.merelaager.ee",
-  "https://sild.merelaager.ee",
-];
+const allowedStaticOrigins = ["https://sild.merelaager.ee"];
+// Local frontends for development.
 const allowedDomainPattern = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
 
 export interface BuildAppOptions {
@@ -24,10 +22,7 @@ export interface BuildAppOptions {
 }
 
 export const buildApp = (opts: BuildAppOptions = {}): FastifyInstance => {
-  const {
-    rateLimit: enableRateLimit = true,
-    docs: enableDocs = process.env.NODE_ENV !== "production",
-  } = opts;
+  const { rateLimit: enableRateLimit = true } = opts;
 
   const fastify = Fastify({
     logger: true,
@@ -47,7 +42,7 @@ export const buildApp = (opts: BuildAppOptions = {}): FastifyInstance => {
       if (
         !origin ||
         allowedStaticOrigins.includes(origin) ||
-        (fastify.config.NODE_ENV !== "production" &&
+        (fastify.config.NODE_ENV === "development" &&
           allowedDomainPattern.test(origin))
       ) {
         cb(null, true);
@@ -111,11 +106,13 @@ export const buildApp = (opts: BuildAppOptions = {}): FastifyInstance => {
     },
   });
 
-  if (enableDocs) {
-    fastify.register(fastifySwaggerUi, {
-      routePrefix: "/documentation",
-    });
-  }
+  fastify.register(async (instance) => {
+    if (opts.docs ?? instance.config.NODE_ENV === "development") {
+      await instance.register(fastifySwaggerUi, {
+        routePrefix: "/documentation",
+      });
+    }
+  });
 
   fastify.register(fastifyAutoload, {
     dir: path.join(__dirname, "plugins/external"),

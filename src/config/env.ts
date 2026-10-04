@@ -1,7 +1,10 @@
 import { JSONSchemaType } from "env-schema";
 
+export const NODE_ENVS = ["development", "test", "production"] as const;
+export type NodeEnv = (typeof NODE_ENVS)[number];
+
 export interface EnvConfig {
-  NODE_ENV: string;
+  NODE_ENV: NodeEnv;
   PORT: number;
   APP_URL: string;
   COOKIE_SECRET: string;
@@ -19,6 +22,7 @@ export interface EnvConfig {
 export const envSchema: JSONSchemaType<EnvConfig> = {
   type: "object",
   required: [
+    "NODE_ENV",
     "COOKIE_SECRET",
     "MAILGUN_API_KEY",
     "REGISTRATION_API_KEY",
@@ -29,7 +33,7 @@ export const envSchema: JSONSchemaType<EnvConfig> = {
     "DATABASE_NAME",
   ],
   properties: {
-    NODE_ENV: { type: "string", default: "development" },
+    NODE_ENV: { type: "string", enum: NODE_ENVS },
     PORT: { type: "number", default: 4000 },
     APP_URL: { type: "string", default: "https://sild.merelaager.ee" },
     COOKIE_SECRET: { type: "string" },

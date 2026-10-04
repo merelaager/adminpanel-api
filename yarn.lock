@@ -4176,16 +4176,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mariadb@npm:3.4.5":
-  version: 3.4.5
-  resolution: "mariadb@npm:3.4.5"
+"mariadb@npm:3.4.7":
+  version: 3.4.7
+  resolution: "mariadb@npm:3.4.7"
   dependencies:
     "@types/geojson": "npm:^7946.0.16"
     "@types/node": "npm:^24.0.13"
     denque: "npm:^2.1.0"
     iconv-lite: "npm:^0.6.3"
     lru-cache: "npm:^10.4.3"
-  checksum: 10c0/2b007083f992c1543e73ec9c4113528deeb418502dfee791bb2902c7c2e228d9e46c3ed7415c27f7d03850e34189ee4a8b5c54ef7d262abcfd5eb1848e8ca76e
+  checksum: 10c0/8bddc879a7959f5ea150d498c152dec461aeb00757d15c062d131518e1748d99cad2c1f9091e00f9912513096cce4a7e3bf3fdf37af38f25827a1d908aad5751
   languageName: node
   linkType: hard
 

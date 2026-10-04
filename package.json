@@ -63,6 +63,9 @@
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.70.1"
   },
+  "resolutions": {
+    "mariadb": "3.4.7"
+  },
   "private": true,
   "packageManager": "yarn@4.16.0"
 }

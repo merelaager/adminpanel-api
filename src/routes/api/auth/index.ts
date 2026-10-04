@@ -153,6 +153,13 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.post(
     "/password",
     {
+      config: {
+        rateLimit: {
+          max: 5,
+          timeWindow: "15 minutes",
+          keyGenerator: (request) => `user:${getSessionUser(request).userId}`,
+        },
+      },
       schema: {
         body: PasswordSchema,
         response: {

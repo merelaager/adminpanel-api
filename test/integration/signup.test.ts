@@ -4,7 +4,13 @@ import type { FastifyInstance } from "fastify";
 
 import { build } from "../helpers/build";
 import { resetDb, prisma } from "../helpers/db";
-import { TEST_PASSWORD, createShiftInfo, createUser } from "../helpers/fixtures";
+import {
+  TEST_PASSWORD,
+  createShiftInfo,
+  createUser,
+} from "../helpers/fixtures";
+import { captureMail, tokenFromMail, type MailCapture } from "../helpers/mail";
+import { createToken, hashToken } from "#app/lib/tokens";
 
 interface JsendResponse {
   status: string;
@@ -14,6 +20,9 @@ interface JsendResponse {
 let app: FastifyInstance;
 let bossCookie: string;
 let helperCookie: string;
+let mail: MailCapture;
+// The token emailed with the first invite.
+let inviteToken = "";
 
 before(async () => {
   await resetDb();
@@ -27,6 +36,7 @@ before(async () => {
     roles: [{ shiftNr: 1, roleName: "helper" }],
   });
   app = await build();
+  mail = captureMail(app);
 
   bossCookie = await login("boss1");
   helperCookie = await login("helper1");
@@ -62,10 +72,15 @@ void test("invite: boss creates a signup token and staff row", async () => {
   });
   assert.equal(res.statusCode, 204);
 
+  const message = await mail.next();
+  assert.equal(message.to, "new@test.invalid");
+  inviteToken = tokenFromMail(message);
+
   const token = await prisma.signupToken.findFirst({
     where: { email: "new@test.invalid" },
   });
   assert.ok(token, "a signup token row exists for the invited email");
+  assert.equal(token.tokenHash, hashToken(inviteToken));
   assert.ok(token.roleId, "the token carries a roleId");
 
   const staff = await prisma.shiftStaff.findFirst({
@@ -94,10 +109,6 @@ void test("invite: an unknown role value is rejected", async () => {
 });
 
 void test("signup: consumes the token, creates the user and role", async () => {
-  const token = await prisma.signupToken.findFirstOrThrow({
-    where: { email: "new@test.invalid" },
-  });
-
   const res = await app.inject({
     method: "POST",
     url: "/api/auth/signup",
@@ -106,7 +117,7 @@ void test("signup: consumes the token, creates the user and role", async () => {
       email: "new@test.invalid",
       name: "New Person",
       password: "longenough1",
-      token: token.token,
+      token: inviteToken,
     },
   });
   assert.equal(res.statusCode, 201);
@@ -130,17 +141,13 @@ void test("signup: consumes the token, creates the user and role", async () => {
   assert.equal(userRole.role.roleName, "instructor");
 
   const consumed = await prisma.signupToken.findUniqueOrThrow({
-    where: { token: token.token },
+    where: { tokenHash: hashToken(inviteToken) },
   });
   assert.equal(consumed.isExpired, true);
   assert.ok(consumed.usedDate);
 });
 
 void test("signup: a consumed token cannot be reused", async () => {
-  const token = await prisma.signupToken.findFirstOrThrow({
-    where: { email: "new@test.invalid" },
-  });
-
   const res = await app.inject({
     method: "POST",
     url: "/api/auth/signup",
@@ -149,7 +156,7 @@ void test("signup: a consumed token cannot be reused", async () => {
       email: "new@test.invalid",
       name: "New Person",
       password: "longenough1",
-      token: token.token,
+      token: inviteToken,
     },
   });
   assert.equal(res.statusCode, 403);
@@ -160,9 +167,10 @@ void test("signup: an expired token is rejected and marked expired", async () =>
   const role = await prisma.role.findUniqueOrThrow({
     where: { roleName: "instructor" },
   });
-  const created = await prisma.signupToken.create({
+  const { token, tokenHash } = createToken();
+  await prisma.signupToken.create({
     data: {
-      token: crypto.randomUUID(),
+      tokenHash,
       email: "expired@test.invalid",
       shiftNr: 1,
       roleId: role.id,
@@ -178,14 +186,14 @@ void test("signup: an expired token is rejected and marked expired", async () =>
       email: "expired@test.invalid",
       name: "Expired Person",
       password: "longenough1",
-      token: created.token,
+      token,
     },
   });
   assert.equal(res.statusCode, 403);
   assert.ok(res.json<JsendResponse>().data.token);
 
   const after = await prisma.signupToken.findUniqueOrThrow({
-    where: { token: created.token },
+    where: { tokenHash },
   });
   assert.equal(after.isExpired, true);
 });
@@ -194,9 +202,10 @@ void test("signup: a weak password is rejected before the token is consumed", as
   const role = await prisma.role.findUniqueOrThrow({
     where: { roleName: "instructor" },
   });
-  const created = await prisma.signupToken.create({
+  const { token, tokenHash } = createToken();
+  await prisma.signupToken.create({
     data: {
-      token: crypto.randomUUID(),
+      tokenHash,
       email: "weak@test.invalid",
       shiftNr: 1,
       roleId: role.id,
@@ -211,14 +220,14 @@ void test("signup: a weak password is rejected before the token is consumed", as
       email: "weak@test.invalid",
       name: "Weak Person",
       password: "1234567",
-      token: created.token,
+      token,
     },
   });
   assert.equal(res.statusCode, 422);
   assert.ok(res.json<JsendResponse>().data.password);
 
   const untouched = await prisma.signupToken.findUniqueOrThrow({
-    where: { token: created.token },
+    where: { tokenHash },
   });
   assert.equal(untouched.isExpired, false);
 });
@@ -227,9 +236,10 @@ void test("signup: a duplicate username is a conflict", async () => {
   const role = await prisma.role.findUniqueOrThrow({
     where: { roleName: "instructor" },
   });
-  const created = await prisma.signupToken.create({
+  const { token, tokenHash } = createToken();
+  await prisma.signupToken.create({
     data: {
-      token: crypto.randomUUID(),
+      tokenHash,
       email: "dupe@test.invalid",
       shiftNr: 1,
       roleId: role.id,
@@ -244,7 +254,7 @@ void test("signup: a duplicate username is a conflict", async () => {
       email: "dupe@test.invalid",
       name: "Dupe Person",
       password: "longenough1",
-      token: created.token,
+      token,
     },
   });
   assert.equal(res.statusCode, 409);

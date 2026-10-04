@@ -29,14 +29,15 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       },
     },
     async (request, reply) => {
-      // Always 202, regardless of whether the email exists or the mail send
-      // fails, to avoid user enumeration.
-      await requestPasswordReset(
+      // Fire and forget to avoid user detection side channels.
+      requestPasswordReset(
         request.body.email,
         request.server.mailer,
         request.server.config.APP_URL,
         request.log,
-      );
+      ).catch((err: unknown) => {
+        request.log.error({ err }, "Failed to process password reset request");
+      });
       return reply.status(StatusCodes.ACCEPTED).send();
     },
   );

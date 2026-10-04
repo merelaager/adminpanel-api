@@ -1,9 +1,9 @@
-import { v4 as uuidv4 } from "uuid";
 import type { Transporter } from "nodemailer";
 import type { FastifyBaseLogger } from "fastify";
 
 import prisma from "#app/lib/prisma";
 import { canViewShiftBasic } from "#app/lib/permissions";
+import { createToken } from "#app/lib/tokens";
 import { getCurrentCampYear } from "#app/lib/camp-year";
 import MailService from "#app/services/mail.service";
 
@@ -31,10 +31,7 @@ export const patchUser = async (
 };
 
 export type InviteResult =
-  | "invalid-role"
-  | "linked"
-  | "mail-failed"
-  | "invited";
+  "invalid-role" | "linked" | "mail-failed" | "invited";
 
 export const inviteUser = async (
   body: CreateInviteBody,
@@ -104,7 +101,7 @@ export const inviteUser = async (
     return "invalid-role";
   }
 
-  const token = uuidv4();
+  const { token, tokenHash } = createToken();
   await prisma.$transaction(async (tx) => {
     if (!staffMember) {
       await tx.shiftStaff.create({
@@ -119,7 +116,7 @@ export const inviteUser = async (
     }
 
     await tx.signupToken.create({
-      data: { token, email, shiftNr, displayRole, roleId: dbRole.id },
+      data: { tokenHash, email, shiftNr, displayRole, roleId: dbRole.id },
     });
   });
 

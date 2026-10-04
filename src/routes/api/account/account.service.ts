@@ -1,9 +1,9 @@
-import { v4 as uuidv4 } from "uuid";
 import type { Transporter } from "nodemailer";
 import type { FastifyBaseLogger } from "fastify";
 
 import prisma from "#app/lib/prisma";
 import { deleteUserSessions } from "#app/lib/session";
+import { createToken, hashToken } from "#app/lib/tokens";
 import { hashPassword, validatePasswordPolicy } from "#app/lib/password";
 import { TOKEN_EXPIRY_MS } from "#app/constants/auth";
 import MailService from "#app/services/mail.service";
@@ -24,9 +24,9 @@ export const requestPasswordReset = async (
     return;
   }
 
-  const token = uuidv4();
+  const { token, tokenHash } = createToken();
   await prisma.resetToken.create({
-    data: { token, userId: userData.id },
+    data: { tokenHash, userId: userData.id },
   });
 
   const mailService = new MailService(mailer, appUrl);
@@ -46,8 +46,9 @@ export const confirmPasswordReset = async (
   token: string,
   password: string,
 ): Promise<ConfirmPasswordResetResult> => {
+  const tokenHash = hashToken(token);
   const tokenEntry = await prisma.resetToken.findUnique({
-    where: { token },
+    where: { tokenHash },
   });
   if (!tokenEntry) {
     return { status: "forbidden" };
@@ -61,7 +62,7 @@ export const confirmPasswordReset = async (
   const isOlderThan24h =
     Date.now() - new Date(tokenEntry.createdAt).getTime() > TOKEN_EXPIRY_MS;
   if (isOlderThan24h) {
-    await prisma.resetToken.delete({ where: { token } });
+    await prisma.resetToken.delete({ where: { tokenHash } });
     return { status: "forbidden" };
   }
 

@@ -8,6 +8,7 @@ import {
   validatePasswordPolicy,
   verifyPassword,
 } from "#app/lib/password";
+import { hashToken } from "#app/lib/tokens";
 import { TOKEN_EXPIRY_HOURS } from "#app/constants/auth";
 import { Permissions } from "#app/constants/permissions";
 
@@ -151,10 +152,11 @@ export const signupUser = async (
   body: SignupBody,
   log: FastifyBaseLogger,
 ): Promise<SignupResult> => {
-  const { token, username, password } = body;
+  const { username, password } = body;
+  const tokenHash = hashToken(body.token);
 
   const signupData = await prisma.signupToken.findUnique({
-    where: { token, isExpired: false },
+    where: { tokenHash, isExpired: false },
   });
 
   if (!signupData) {
@@ -172,7 +174,7 @@ export const signupUser = async (
   const diffHours = diffMs / (1000 * 60 * 60);
   if (diffHours > TOKEN_EXPIRY_HOURS) {
     await prisma.signupToken.update({
-      where: { token },
+      where: { tokenHash },
       data: { isExpired: true },
     });
     return { status: "expired-token" };
@@ -194,7 +196,7 @@ export const signupUser = async (
       });
       // Consume the token.
       await tx.signupToken.update({
-        where: { token },
+        where: { tokenHash },
         data: { isExpired: true, usedDate: new Date() },
       });
       // Assign permissions

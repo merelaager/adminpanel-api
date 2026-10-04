@@ -120,7 +120,7 @@ model Registration {
 }
 
 model ResetToken {
-  token     String   @id @db.VarChar(255)
+  tokenHash String   @id @map("token") @db.VarChar(64)
   isExpired Boolean  @default(false)
   createdAt DateTime @default(now()) @db.DateTime(0)
   updatedAt DateTime @updatedAt @db.DateTime(0)
@@ -204,7 +204,7 @@ model ShiftInfo {
 }
 
 model SignupToken {
-  token       String           @id @db.Char(36)
+  tokenHash   String           @id @map("token") @db.Char(64)
   email       String           @db.VarChar(255)
   isExpired   Boolean          @default(false)
   shiftNr     Int              @db.UnsignedInt

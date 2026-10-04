@@ -66,19 +66,19 @@ before(async () => {
   await prisma.signupToken.createMany({
     data: [
       {
-        token: "00000000-0000-0000-0000-000000000001",
+        tokenHash: "1",
         email: "old@x.invalid",
         shiftNr: 1,
         createdAt: longAgo,
       },
       {
-        token: "00000000-0000-0000-0000-000000000002",
+        tokenHash: "2",
         email: "used@x.invalid",
         shiftNr: 1,
         usedDate: new Date(),
       },
       {
-        token: "00000000-0000-0000-0000-000000000003",
+        tokenHash: "3",
         email: "fresh@x.invalid",
         shiftNr: 1,
       },
@@ -86,8 +86,8 @@ before(async () => {
   });
   await prisma.resetToken.createMany({
     data: [
-      { token: "old", userId: boss.id, createdAt: longAgo },
-      { token: "fresh", userId: boss.id },
+      { tokenHash: "old", userId: boss.id, createdAt: longAgo },
+      { tokenHash: "fresh", userId: boss.id },
     ],
   });
 
@@ -200,7 +200,7 @@ void test("--apply deletes used and expired tokens and keeps fresh ones", async 
   );
   const resetTokens = await prisma.resetToken.findMany();
   assert.deepEqual(
-    resetTokens.map((token) => token.token),
+    resetTokens.map((token) => token.tokenHash),
     ["fresh"],
   );
 });

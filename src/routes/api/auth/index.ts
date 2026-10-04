@@ -211,7 +211,10 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
     },
     async (request, reply) => {
       await request.session.destroy();
-      reply.clearCookie("sessionId");
+      reply.clearCookie("sessionId", {
+        domain: request.server.config.COOKIE_DOMAIN,
+        path: "/",
+      });
       return reply.code(StatusCodes.NO_CONTENT).send();
     },
   );

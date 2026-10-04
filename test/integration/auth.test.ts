@@ -2,6 +2,7 @@ import { before, after, test } from "node:test";
 import assert from "node:assert/strict";
 import type { FastifyInstance } from "fastify";
 
+import { buildApp } from "#app/app";
 import { build } from "../helpers/build";
 import { resetDb } from "../helpers/db";
 import {
@@ -194,4 +195,31 @@ void test("password change: validation, session handling, and re-login", async (
     payload: { username: "alice", password: TEST_PASSWORD },
   });
   assert.equal(oldLogin.statusCode, 401);
+});
+
+void test("logout clears the cookie on the configured domain", async () => {
+  await createUser({ username: "bob" });
+  process.env.COOKIE_DOMAIN = "test.invalid";
+  const domainApp = buildApp({ rateLimit: false, docs: false });
+  try {
+    await domainApp.ready();
+    const cookie = await loginAs(domainApp, "bob");
+
+    const res = await domainApp.inject({
+      method: "POST",
+      url: "/api/auth/logout",
+      headers: { cookie },
+    });
+    assert.equal(res.statusCode, 204);
+
+    // A browser only deletes a cookie whose domain and path match.
+    const cleared = res.cookies.find((c) => c.name === "sessionId");
+    assert.ok(cleared);
+    assert.equal(cleared.value, "");
+    assert.equal(cleared.domain, "test.invalid");
+    assert.equal(cleared.path, "/");
+  } finally {
+    delete process.env.COOKIE_DOMAIN;
+    await domainApp.close();
+  }
 });

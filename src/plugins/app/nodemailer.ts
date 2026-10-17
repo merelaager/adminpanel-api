@@ -1,7 +1,8 @@
 import { FastifyPluginAsync } from "fastify";
 import fp from "fastify-plugin";
 import nodemailer, { Transporter } from "nodemailer";
-import mg from "nodemailer-mailgun-transport";
+
+import { createMailgunTransport } from "#app/lib/mailgun-transport";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -10,18 +11,16 @@ declare module "fastify" {
 }
 
 const mailerPlugin: FastifyPluginAsync = fp(async (server) => {
-  const config = {
-    auth: {
-      api_key: server.config.MAILGUN_API_KEY,
-      domain: server.config.EMAIL_SERV,
-    },
-    host: "api.eu.mailgun.net",
-  };
-
   const transporter: Transporter =
     server.config.NODE_ENV === "test"
       ? nodemailer.createTransport({ jsonTransport: true })
-      : nodemailer.createTransport(mg(config));
+      : nodemailer.createTransport(
+          createMailgunTransport({
+            apiKey: server.config.MAILGUN_API_KEY,
+            domain: server.config.EMAIL_SERV,
+            host: "api.eu.mailgun.net",
+          }),
+        );
   server.decorate("mailer", transporter);
 
   if (server.config.NODE_ENV !== "test") {

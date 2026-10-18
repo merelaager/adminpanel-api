@@ -14,6 +14,8 @@ export interface EnvConfig {
   EMAIL_SERV: string;
   // Send every email to this address instead.
   MAIL_REDIRECT_TO?: string;
+  // Folder for stored files, read by dataDir(). Defaults to ./data.
+  DATA_DIR?: string;
   DATABASE_HOST: string;
   DATABASE_PORT: number;
   DATABASE_USER: string;
@@ -44,6 +46,7 @@ export const envSchema: JSONSchemaType<EnvConfig> = {
     REGISTRATION_API_KEY: { type: "string", minLength: 32 },
     EMAIL_SERV: { type: "string" },
     MAIL_REDIRECT_TO: { type: "string", nullable: true },
+    DATA_DIR: { type: "string", nullable: true },
     DATABASE_HOST: { type: "string" },
     DATABASE_PORT: { type: "number", default: 3306 },
     DATABASE_USER: { type: "string" },

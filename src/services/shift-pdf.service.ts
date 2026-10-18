@@ -1,6 +1,10 @@
+import fs from "node:fs/promises";
+import path from "node:path";
 import type { TDocumentDefinitions, TFontDictionary } from "pdfmake/interfaces";
 import type { FastifyBaseLogger } from "fastify";
 import pdfMake from "pdfmake";
+
+import { dataDir } from "#app/lib/data-dir";
 
 const fonts: TFontDictionary = {
   Helvetica: {
@@ -75,10 +79,11 @@ export const generateShiftCamperListPDF = async (
   entries: PrintEntry[],
   log: FastifyBaseLogger,
 ): Promise<string> => {
-  const filename = `${shiftNr}v_nimekiri.pdf`;
-  const filepath = `data/files/${filename}`;
+  const dir = path.join(dataDir(), "files");
+  const filepath = path.join(dir, `${shiftNr}v_nimekiri.pdf`);
 
   try {
+    await fs.mkdir(dir, { recursive: true });
     await pdfMake.createPdf(createDoc(shiftNr, entries)).write(filepath);
 
     return filepath;

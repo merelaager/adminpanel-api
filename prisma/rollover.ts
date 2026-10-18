@@ -1,8 +1,8 @@
-import path from "node:path";
 import readline from "node:readline/promises";
 import { stdin, stdout } from "node:process";
 
 import prisma from "#app/lib/prisma";
+import { dataDir } from "#app/lib/data-dir";
 import { getCurrentCampYear } from "#app/lib/camp-year";
 import { runRollover, type RolloverResult } from "./rollover-core";
 
@@ -51,7 +51,7 @@ const confirmApply = async (databaseName: string): Promise<boolean> => {
 
 const main = async () => {
   const databaseName = process.env.DATABASE_NAME ?? "";
-  const options = { year, dataDir: path.resolve("data") };
+  const options = { year, dataDir: dataDir() };
 
   console.log(
     `Season ${year} rollover on ${databaseName}@${process.env.DATABASE_HOST}\n`,

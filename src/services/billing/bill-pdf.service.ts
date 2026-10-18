@@ -3,6 +3,7 @@ import path from "node:path";
 import PDFDoc from "pdfkit";
 
 import type { Prisma } from "#app/generated/prisma/client";
+import { dataDir } from "#app/lib/data-dir";
 import { formatUTCDate } from "#app/lib/date";
 import { formatEuros } from "#app/lib/money";
 import PDFDocument = PDFKit.PDFDocument;
@@ -50,8 +51,7 @@ const BILL_META: PDFDocumentOptions = {
   },
 };
 
-const billDir = (): string =>
-  path.resolve(process.env.DATA_DIR ?? "data", "arved");
+const billDir = (): string => path.join(dataDir(), "arved");
 
 const billPdfPath = (billNr: number): string =>
   path.join(billDir(), `${billNr}.pdf`);

@@ -1,8 +1,8 @@
 import { FastifyPluginAsync } from "fastify";
 import fp from "fastify-plugin";
-import nodemailer, { Transporter } from "nodemailer";
+import { Transporter } from "nodemailer";
 
-import { createMailgunTransport } from "#app/lib/mailgun-transport";
+import { createMailer, sendsRealMail } from "#app/lib/mailer";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -11,19 +11,10 @@ declare module "fastify" {
 }
 
 const mailerPlugin: FastifyPluginAsync = fp(async (server) => {
-  const transporter: Transporter =
-    server.config.NODE_ENV === "test"
-      ? nodemailer.createTransport({ jsonTransport: true })
-      : nodemailer.createTransport(
-          createMailgunTransport({
-            apiKey: server.config.MAILGUN_API_KEY,
-            domain: server.config.EMAIL_SERV,
-            host: "api.eu.mailgun.net",
-          }),
-        );
+  const transporter = createMailer(server.config, server.log);
   server.decorate("mailer", transporter);
 
-  if (server.config.NODE_ENV !== "test") {
+  if (sendsRealMail(server.config)) {
     try {
       await transporter.verify();
       server.log.info("Nodemailer transporter is ready");
@@ -31,6 +22,13 @@ const mailerPlugin: FastifyPluginAsync = fp(async (server) => {
       server.log.error(err, "Failed to configure Nodemailer transporter");
       throw err;
     }
+  }
+  if (server.config.MAIL_REDIRECT_TO) {
+    server.log.warn(
+      `All email is redirected to ${server.config.MAIL_REDIRECT_TO}`,
+    );
+  } else if (server.config.NODE_ENV === "development") {
+    server.log.warn("Email is only logged: set MAIL_REDIRECT_TO to receive it");
   }
 });
 

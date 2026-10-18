@@ -12,10 +12,35 @@ import {
   SuccessResponse,
 } from "#app/lib/jsend";
 
-import { PaymentRecordSchema } from "./payments.schemas";
-import { recordPayment } from "./payments.service";
+import { PayerAccountSchema, PaymentRecordSchema } from "./payments.schemas";
+import { fetchPayerAccounts, recordPayment } from "./payments.service";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
+  fastify.get(
+    "/accounts",
+    {
+      preHandler: requireAnyShiftPermission(
+        Permissions.RECORD_PAYMENTS,
+        "Puuduvad maksete vaatamise õigused.",
+      ),
+      schema: {
+        response: {
+          [StatusCodes.OK]: SuccessResponse(
+            Type.Object({ accounts: Type.Array(PayerAccountSchema) }),
+          ),
+          [StatusCodes.FORBIDDEN]: FailResponse(
+            Type.Object({ permissions: Type.String() }),
+          ),
+        },
+      },
+    },
+    async (_request, reply) => {
+      return reply
+        .status(StatusCodes.OK)
+        .send(createSuccessResponse({ accounts: await fetchPayerAccounts() }));
+    },
+  );
+
   fastify.post(
     "/",
     {

@@ -296,6 +296,12 @@ add("PATCH", () => `/api/registrations/${reserveRegId}`, { priceToPay: 300 }, [
   ["instructor", 404],
 ]);
 
+add("GET", "/api/payments/accounts", undefined, [
+  ["owner", 200],
+  ["boss", 403],
+  ["norole", 403],
+]);
+
 add("POST", "/api/payments", { reference: "999999", amountCents: 10000 }, [
   ["owner", 404],
   ["boss", 403],

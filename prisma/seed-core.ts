@@ -74,5 +74,15 @@ export const seedRolesAndPermissions = async (
         create: { roleId: role.id, permissionId },
       });
     }
+
+    // The lists above should be the authoritative permission sets.
+    await client.rolePermission.deleteMany({
+      where: {
+        roleId: role.id,
+        permission: {
+          permissionName: { notIn: [...ROLE_PERMISSIONS[roleName]] },
+        },
+      },
+    });
   }
 };

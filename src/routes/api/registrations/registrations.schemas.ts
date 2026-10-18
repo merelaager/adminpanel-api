@@ -1,5 +1,6 @@
 import { Static, Type } from "@sinclair/typebox";
 
+import { SHIFT_PRICES } from "#app/constants/pricing";
 import { BillSummarySchema } from "#app/routes/api/bills/bills.schemas";
 
 const STRING_MAX = 255;
@@ -12,7 +13,7 @@ export const RegistrationCreationSchema = Type.Object({
   sex: Type.Optional(Type.Union([Type.Literal("M"), Type.Literal("F")])),
   dob: Type.Optional(Type.String({ format: "date-time" })), // TypeBox uses ISO strings for date
   addendum: Type.Optional(Type.String({ maxLength: STRING_MAX })),
-  shiftNr: Type.Integer({ minimum: 1, maximum: 4 }), // TODO: make the shift max dynamic
+  shiftNr: Type.Integer({ minimum: 1, maximum: SHIFT_PRICES.length }),
   isNew: Type.Boolean(),
   shirtSize: Type.String({ maxLength: 10 }),
   road: Type.String({ maxLength: STRING_MAX }),

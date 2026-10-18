@@ -6,7 +6,7 @@ import type { FastifyInstance } from "fastify";
 import { build } from "../helpers/build";
 import { resetDb, prisma } from "../helpers/db";
 import { createShiftInfo } from "../helpers/fixtures";
-import { computePrice } from "#app/routes/api/registrations/create.service";
+import { computePrice } from "#app/constants/pricing";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DOB = new Date(Date.UTC(2015, 0, 2)).toISOString();

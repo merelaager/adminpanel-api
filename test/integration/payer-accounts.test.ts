@@ -5,7 +5,7 @@ import type { FastifyInstance } from "fastify";
 import "../helpers/test-env";
 
 import { getCurrentCampYear } from "#app/lib/camp-year";
-import { computePrice } from "#app/routes/api/registrations/create.service";
+import { computePrice } from "#app/constants/pricing";
 import type { PayerAccountData } from "#app/routes/api/payments/payments.schemas";
 
 import { build } from "../helpers/build";

@@ -3,6 +3,7 @@ import type { Transporter } from "nodemailer";
 import type { Prisma } from "#app/generated/prisma/client";
 import prisma from "#app/lib/prisma";
 import { getCurrentCampYear } from "#app/lib/camp-year";
+import { normalizeEmail } from "#app/lib/email";
 import { fetchShiftsWithPermission } from "#app/lib/permissions";
 import { Permissions } from "#app/constants/permissions";
 import { buildBillContent } from "#app/services/billing/bill-content.service";
@@ -33,9 +34,6 @@ const parentRegistrationSelect = {
 type ParentRegistration = Prisma.RegistrationGetPayload<{
   select: typeof parentRegistrationSelect;
 }>;
-
-export const normalizeEmail = (email: string): string =>
-  email.trim().toLowerCase();
 
 const fetchParentRegistrations = (email: string) =>
   prisma.registration.findMany({

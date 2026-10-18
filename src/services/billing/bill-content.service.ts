@@ -1,6 +1,5 @@
-import { REGISTRATION_FEE } from "#app/constants/pricing";
+import { computePrice, REGISTRATION_FEE } from "#app/constants/pricing";
 import { addUTCDays, startOfUTCDay, subUTCMonths } from "#app/lib/date";
-import { computePrice } from "#app/routes/api/registrations/create.service";
 
 const BOOKING_FEE_DAYS = 3;
 
@@ -61,10 +60,7 @@ export const buildBillContent = (
   const items: BillItemContent[] = [];
   for (const registration of sorted) {
     const { childName, shiftNr, isOld } = registration;
-    const listPrice = computePrice(shiftNr, isOld);
-    if (listPrice < 0) throw new Error(`No price for shift ${shiftNr}`);
-
-    const listCents = toCents(listPrice);
+    const listCents = toCents(computePrice(shiftNr, isOld));
     const priceCents = toCents(registration.priceToPay);
 
     items.push({

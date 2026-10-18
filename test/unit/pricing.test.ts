@@ -2,8 +2,11 @@ import "../helpers/test-env";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { computePrice } from "#app/routes/api/registrations/create.service";
-import { SHIFT_PRICES, SENIORITY_DISCOUNTS } from "#app/constants/pricing";
+import {
+  computePrice,
+  SHIFT_PRICES,
+  SENIORITY_DISCOUNTS,
+} from "#app/constants/pricing";
 
 // Expected values are derived from the pricing constants so they track any
 // future change to those tables rather than being independently hardcoded.
@@ -24,9 +27,9 @@ void test("computePrice: shift 2, returning camper (seniority discount)", () => 
 });
 
 void test("computePrice: shift 0 is out of range", () => {
-  assert.equal(computePrice(0, false), -1);
+  assert.throws(() => computePrice(0, false));
 });
 
 void test("computePrice: shift 5 is out of range", () => {
-  assert.equal(computePrice(5, false), -1);
+  assert.throws(() => computePrice(5, false));
 });

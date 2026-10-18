@@ -3,7 +3,7 @@ import { before, after, test } from "node:test";
 import assert from "node:assert/strict";
 import type { FastifyInstance } from "fastify";
 
-import { computePrice } from "#app/routes/api/registrations/create.service";
+import { computePrice } from "#app/constants/pricing";
 
 import { build } from "../helpers/build";
 import { resetDb, prisma } from "../helpers/db";

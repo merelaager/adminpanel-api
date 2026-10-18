@@ -9,9 +9,9 @@ import {
 import { PermissionPrefixes, Permissions } from "#app/constants/permissions";
 import { toggleRecord } from "#app/services/camp-records.service";
 import { logChanges } from "#app/services/change-log.service";
+import { computePrice } from "#app/constants/pricing";
 import { fetchBillSummaries } from "#app/services/billing/bill-status.service";
 
-import { computePrice } from "./create.service";
 import type {
   FilteredRegistrationSchema,
   PatchRegistrationBody,
@@ -135,10 +135,9 @@ const refreshPriceIfNeeded = (
   if (isOld === undefined || isOld === current.isOld) return patchData;
   if (patchData.priceToPay !== undefined) return patchData;
 
-  const currentListPrice = computePrice(current.shiftNr, current.isOld);
-  const hasListPrice =
-    currentListPrice >= 0 && current.priceToPay === currentListPrice;
-  if (!hasListPrice) return patchData;
+  if (current.priceToPay !== computePrice(current.shiftNr, current.isOld)) {
+    return patchData;
+  }
 
   return { ...patchData, priceToPay: computePrice(current.shiftNr, isOld) };
 };

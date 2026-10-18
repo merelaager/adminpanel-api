@@ -5,7 +5,7 @@ import { type Child, Prisma } from "#app/generated/prisma/client";
 
 import prisma from "#app/lib/prisma";
 import MailService from "#app/services/mail.service";
-import { SENIORITY_DISCOUNTS, SHIFT_PRICES } from "#app/constants/pricing";
+import { computePrice } from "#app/constants/pricing";
 
 import type {
   CreateRegistrationData,
@@ -48,18 +48,6 @@ export const parseIdCode = (code: string): IDCodeParseResult => {
 
   const sex: "M" | "F" = code[0] === "5" ? "M" : "F";
   return { sex, dob };
-};
-
-export const computePrice = (shiftNr: number, isOld: boolean) => {
-  // This should never happen.
-  if (shiftNr < 1 || shiftNr > SHIFT_PRICES.length) {
-    return -1;
-  }
-
-  // The shift number is 1-indexed.
-  let price = SHIFT_PRICES[shiftNr - 1];
-  if (isOld) price -= SENIORITY_DISCOUNTS[shiftNr - 1];
-  return price;
 };
 
 export type CreateRegistrationsResult =
@@ -195,13 +183,7 @@ export const createRegistrations = async (
         // TODO: check that the shift number exists.
         const isOld = !entry.isNew;
 
-        // TODO: get rid of this check once shift number checking is implemented.
-        // Here we know that the priceToPay must exist, as we compute it.
-        let priceToPay = computePrice(entry.shiftNr, isOld);
-        if (priceToPay < 0) {
-          priceToPay = 360;
-          log.error({ entry }, "Invalid shift identifier");
-        }
+        const priceToPay = computePrice(entry.shiftNr, isOld);
 
         const registrationEntry: Prisma.RegistrationCreateManyInput = {
           regOrder: currentOrder,

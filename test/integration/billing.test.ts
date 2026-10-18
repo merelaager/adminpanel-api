@@ -6,8 +6,7 @@ import type { FastifyInstance } from "fastify";
 
 import "../helpers/test-env";
 
-import { REGISTRATION_FEE } from "#app/constants/pricing";
-import { computePrice } from "#app/routes/api/registrations/create.service";
+import { computePrice, REGISTRATION_FEE } from "#app/constants/pricing";
 import { isValidReferenceNumber } from "#app/lib/reference-number";
 import type { BillSummary } from "#app/routes/api/bills/bills.schemas";
 

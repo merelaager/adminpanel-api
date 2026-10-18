@@ -1,5 +1,6 @@
 import prisma from "#app/lib/prisma";
 import { escapeHtml } from "#app/lib/html";
+import { REGISTRATION_FEE } from "#app/constants/pricing";
 
 import {
   getEmailRegistrationBodyPost,
@@ -57,7 +58,7 @@ export const getConfirmationReceipt = async (
     ${getFormattedRegistrationList(regCampers)}
     ${getFormattedReserveList(resCampers)}
     <p>Palume üle kanda ka koha broneerimise tasu (või kogu summa) kolme päeva jooksul. Makseteatise leiate manusest.</p>
-    <p>Tasuda: ${100 * regCampers.length} €. Kogusumma (k.a broneerimistasu): ${totalPrice} €.</p>
+    <p>Tasuda: ${REGISTRATION_FEE * regCampers.length} €. Kogusumma (k.a broneerimistasu): ${totalPrice} €.</p>
     <p style="font-family: monospace">MTÜ Noorte Mereklubi<br />Konto: EE862200221011493003<br />SWIFT kood/BIC: HABAEE2X<br />SWEDBANK</p>
     <p style="font-weight: bold">Kindlasti märkige selgitusse lapse nimi ja vahetus!</p>
     <p>Kui broneerimistasu pole kolme päeva jooksul meile laekunud, tõstame lapse tagasi reservnimekirja.</p>

@@ -13,7 +13,10 @@ import {
   FailResponse,
   SuccessResponse,
 } from "#app/lib/jsend";
-import { billingFailureMessage, sendBill } from "#app/services/billing.service";
+import {
+  billingFailureMessage,
+  sendBill,
+} from "#app/services/billing/billing.service";
 
 import { SingleBillSendSchema } from "./notifications.schemas";
 

@@ -6,7 +6,7 @@ import "../helpers/test-env";
 import {
   allocateAccountReference,
   allocateBillNumber,
-} from "#app/services/billing-numbers.service";
+} from "#app/services/billing/billing-numbers.service";
 
 import { resetDb, prisma } from "../helpers/db";
 

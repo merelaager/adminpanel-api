@@ -19,7 +19,7 @@ import {
   getBillPdf,
   issueBill,
   reissueBill,
-} from "#app/services/billing.service";
+} from "#app/services/billing/billing.service";
 
 import { BillCreationSchema, BillParamsSchema } from "./bills.schemas";
 

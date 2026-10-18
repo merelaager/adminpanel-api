@@ -9,7 +9,7 @@ import {
 import { PermissionPrefixes, Permissions } from "#app/constants/permissions";
 import { toggleRecord } from "#app/services/camp-records.service";
 import { logChanges } from "#app/services/change-log.service";
-import { fetchBillSummaries } from "#app/services/bill-status.service";
+import { fetchBillSummaries } from "#app/services/billing/bill-status.service";
 
 import { computePrice } from "./create.service";
 import type {

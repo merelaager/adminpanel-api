@@ -5,17 +5,17 @@ import prisma from "#app/lib/prisma";
 import { getCurrentCampYear } from "#app/lib/camp-year";
 import { fetchShiftsWithPermission } from "#app/lib/permissions";
 import { Permissions } from "#app/constants/permissions";
-import { buildBillContent } from "#app/services/bill-content.service";
+import { buildBillContent } from "#app/services/billing/bill-content.service";
 import {
   allocateAccountReference,
   allocateBillNumber,
-} from "#app/services/billing-numbers.service";
+} from "#app/services/billing/billing-numbers.service";
 import {
   billDocumentInclude,
   readBillPdf,
   storeBillPdf,
   type BillDocument,
-} from "#app/services/bill-pdf.service";
+} from "#app/services/billing/bill-pdf.service";
 import MailService from "#app/services/mail.service";
 
 const parentRegistrationSelect = {

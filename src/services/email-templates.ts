@@ -8,7 +8,7 @@ import {
 } from "#app/generated/email-layout";
 
 import type { EmailReceiptInfo } from "#app/routes/api/registrations/registrations.schemas";
-import type { BillDocument } from "#app/services/bill-pdf.service";
+import type { BillDocument } from "#app/services/billing/bill-pdf.service";
 
 export const getRegistrationReceipt = async (campers: EmailReceiptInfo[]) => {
   const shifts: number[] = [];

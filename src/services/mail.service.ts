@@ -6,7 +6,7 @@ import {
   type ChildInShift,
   type ChildOnOtherBill,
 } from "#app/services/email-templates";
-import type { BillDocument } from "#app/services/bill-pdf.service";
+import type { BillDocument } from "#app/services/billing/bill-pdf.service";
 
 import type { EmailReceiptInfo } from "#app/routes/api/registrations/registrations.schemas";
 

@@ -1,7 +1,7 @@
 import type { Prisma } from "#app/generated/prisma/client";
 import prisma from "#app/lib/prisma";
-import { fetchBillSummaries } from "#app/services/bill-status.service";
-import { normalizeEmail } from "#app/services/billing.service";
+import { fetchBillSummaries } from "#app/services/billing/bill-status.service";
+import { normalizeEmail } from "#app/services/billing/billing.service";
 import { getCurrentCampYear } from "#app/lib/camp-year";
 import { getRoleDisplayName } from "#app/constants/roles";
 import { PrintEntry } from "#app/services/shift-pdf.service";

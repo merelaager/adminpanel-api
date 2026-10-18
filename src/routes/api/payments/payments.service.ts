@@ -1,6 +1,6 @@
 import prisma from "#app/lib/prisma";
 import { getCurrentCampYear } from "#app/lib/camp-year";
-import { fetchAccountBilling } from "#app/services/bill-status.service";
+import { fetchAccountBilling } from "#app/services/billing/bill-status.service";
 
 import type { PayerAccountData, PaymentRecordBody } from "./payments.schemas";
 

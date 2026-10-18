@@ -6,7 +6,7 @@ import "../helpers/test-env";
 import {
   computeBillStandings,
   type BillForStatus,
-} from "#app/services/bill-status.service";
+} from "#app/services/billing/bill-status.service";
 
 // A bill for one child: 360 € in total, 100 € of it booking fee.
 const bill = (overrides: Partial<BillForStatus> = {}): BillForStatus => ({

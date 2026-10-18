@@ -12,7 +12,7 @@ import {
   buildBillContent,
   type BillableRegistration,
   type BillShift,
-} from "#app/services/bill-content.service";
+} from "#app/services/billing/bill-content.service";
 
 const cents = (euros: number) => euros * 100;
 const NEW_12 = cents(SHIFT_PRICES[1]);

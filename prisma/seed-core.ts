@@ -17,6 +17,7 @@ const ROLE_PERMISSIONS: Record<RoleName, readonly Permissions[]> = {
     Permissions.EDIT_REGISTRATION_IS_REGISTERED,
     Permissions.SEND_BILLS,
     Permissions.RECORD_PAYMENTS,
+    Permissions.REISSUE_BILLS,
     Permissions.DELETE_REGISTRATION,
     Permissions.VIEW_SHIFT_PERMISSIONS,
     Permissions.EDIT_SHIFT_MEMBERS,

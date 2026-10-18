@@ -355,3 +355,96 @@ void test("a missed booking-fee deadline shows the bill as overdue", async () =>
     "booking-fee-overdue",
   );
 });
+
+const reissue = (as: string, billNr: number) =>
+  app.inject({
+    method: "POST",
+    url: `/api/bills/${billNr}/reissue`,
+    headers: { cookie: cookies[as] },
+  });
+
+void test("reissuing replaces a bill with one at the corrected price", async () => {
+  await addChild("Mia", 1, "fix@test.invalid", true);
+  assert.equal((await send("boss1", "fix@test.invalid")).statusCode, 204);
+  await mail.next();
+  const old = await billOf(regIds.Mia);
+
+  await prisma.registration.update({
+    where: { id: regIds.Mia },
+    data: { priceToPay: computePrice(1, false) - 50 },
+  });
+  const res = await reissue("owner", old.number);
+  assert.equal(res.statusCode, 201);
+  const { billNr } = res.json<{ data: { billNr: number } }>().data;
+
+  const replacement = await billOf(regIds.Mia);
+  assert.equal(replacement.number, billNr);
+  assert.equal(replacement.replacesId, old.id);
+  assert.equal(replacement.accountId, old.accountId);
+  assert.equal(replacement.sentAt, null);
+  assert.deepEqual(
+    replacement.items.map((item) => [item.description, item.amount]),
+    [
+      ["7päevane vahetus uuele tulijale", computePrice(1, false) * 100],
+      ["Soodustus", -5000],
+    ],
+  );
+
+  const voided = await prisma.bill.findUniqueOrThrow({
+    where: { id: old.id },
+    include: { items: true },
+  });
+  assert.equal(voided.status, "void");
+  assert.ok(voided.items.every((item) => item.registrationId === null));
+});
+
+void test("sending after a reissue emails the replacement", async () => {
+  const replacement = await billOf(regIds.Mia);
+  const old = await prisma.bill.findUniqueOrThrow({
+    where: { id: replacement.replacesId ?? 0 },
+  });
+
+  assert.equal((await send("boss1", "fix@test.invalid")).statusCode, 204);
+  const message = await mail.next();
+  assert.ok(
+    (message.html as string).includes(
+      `See arve asendab arvet nr ${old.number}.`,
+    ),
+  );
+  assert.equal(
+    message.attachments?.[0].filename,
+    `arve_${replacement.number}.pdf`,
+  );
+});
+
+void test("a void bill can't be reissued again", async () => {
+  const replacement = await billOf(regIds.Mia);
+  const old = await prisma.bill.findUniqueOrThrow({
+    where: { id: replacement.replacesId ?? 0 },
+  });
+  assert.equal((await reissue("owner", old.number)).statusCode, 409);
+});
+
+void test("a bill without accepted children is only voided", async () => {
+  await addChild("Uku", 2, "gone@test.invalid", true);
+  const created = await post("boss2", "/api/bills", "gone@test.invalid");
+  const { billNr } = created.json<{ data: { billNr: number } }>().data;
+  await prisma.registration.update({
+    where: { id: regIds.Uku },
+    data: { isRegistered: false },
+  });
+
+  const res = await reissue("owner", billNr);
+  assert.equal(res.statusCode, 201);
+  assert.equal(res.json<{ data: { billNr: null } }>().data.billNr, null);
+  const bill = await prisma.bill.findUniqueOrThrow({
+    where: { number: billNr },
+  });
+  assert.equal(bill.status, "void");
+});
+
+void test("only the owner can reissue bills", async () => {
+  const bill = await billOf(regIds.Mia);
+  assert.equal((await reissue("boss1", bill.number)).statusCode, 403);
+  assert.equal((await reissue("owner", 999999)).statusCode, 404);
+});

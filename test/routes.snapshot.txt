@@ -9,6 +9,7 @@
 ├── /api/bills (POST)
 │   └── / (POST)
 │       └── :billNr (GET, HEAD)
+│           └── /reissue (POST)
 ├── /api/grades/:gradeId (DELETE, PATCH)
 ├── /api/notifications/bills (POST)
 ├── /api/payments (POST)

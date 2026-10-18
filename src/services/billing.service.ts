@@ -30,6 +30,10 @@ const parentRegistrationSelect = {
   billItem: { select: { bill: { select: { number: true } } } },
 } satisfies Prisma.RegistrationSelect;
 
+type ParentRegistration = Prisma.RegistrationGetPayload<{
+  select: typeof parentRegistrationSelect;
+}>;
+
 const normalizeEmail = (email: string): string => email.trim().toLowerCase();
 
 const fetchParentRegistrations = (email: string) =>
@@ -41,6 +45,54 @@ const fetchParentRegistrations = (email: string) =>
 
 const fetchShiftsUserCanBill = (userId: number): Promise<number[]> =>
   fetchShiftsWithPermission(userId, Permissions.SEND_BILLS);
+
+type NewBill = {
+  season: number;
+  accountId: number;
+  payerName: string;
+  payerEmail: string;
+  issuedById: number;
+  replacesId?: number;
+  registrations: ParentRegistration[];
+};
+
+const createBill = async (
+  tx: Prisma.TransactionClient,
+  { registrations, ...bill }: NewBill,
+): Promise<BillDocument> => {
+  const shifts = await tx.shiftInfo.findMany({
+    where: { id: { in: registrations.map((r) => r.shiftNr) } },
+    select: { id: true, startDate: true, length: true },
+  });
+
+  const now = new Date();
+  const content = buildBillContent(
+    registrations.map((r) => ({
+      id: r.id,
+      childName: r.child.name,
+      shiftNr: r.shiftNr,
+      isOld: r.isOld,
+      priceToPay: r.priceToPay,
+    })),
+    new Map(shifts.map((shift) => [shift.id, shift])),
+    now,
+  );
+
+  const created = await tx.bill.create({
+    data: {
+      ...bill,
+      number: await allocateBillNumber(tx, bill.season),
+      issuedAt: now,
+      bookingFeeDue: content.bookingFeeDue,
+      campFeeDue: content.campFeeDue,
+      items: { create: content.items },
+    },
+    include: billDocumentInclude,
+  });
+
+  await storeBillPdf(created);
+  return created;
+};
 
 export type IssueBillResult =
   | { status: "unknown-email" }
@@ -69,24 +121,6 @@ export const issueBill = async (
     return { status: "already-billed", billNr: Math.max(...billNrs) };
   }
 
-  const shifts = await prisma.shiftInfo.findMany({
-    where: { id: { in: toBill.map((r) => r.shiftNr) } },
-    select: { id: true, startDate: true, length: true },
-  });
-
-  const now = new Date();
-  const content = buildBillContent(
-    toBill.map((r) => ({
-      id: r.id,
-      childName: r.child.name,
-      shiftNr: r.shiftNr,
-      isOld: r.isOld,
-      priceToPay: r.priceToPay,
-    })),
-    new Map(shifts.map((shift) => [shift.id, shift])),
-    now,
-  );
-
   const season = getCurrentCampYear();
 
   // The newest registration has the most up-to-date contact details.
@@ -109,27 +143,62 @@ export const issueBill = async (
         },
       }));
 
-    const bill = await tx.bill.create({
-      data: {
-        number: await allocateBillNumber(tx, season),
-        season,
-        accountId: account.id,
-        payerName,
-        payerEmail,
-        issuedAt: now,
-        bookingFeeDue: content.bookingFeeDue,
-        campFeeDue: content.campFeeDue,
-        issuedById: userId,
-        items: { create: content.items },
-      },
-      include: billDocumentInclude,
+    return createBill(tx, {
+      season,
+      accountId: account.id,
+      payerName,
+      payerEmail,
+      issuedById: userId,
+      registrations: toBill,
     });
-
-    await storeBillPdf(bill);
-    return bill;
   });
 
   return { status: "issued", bill };
+};
+
+export type ReissueBillResult =
+  | { status: "not-found" }
+  | { status: "already-void" }
+  | { status: "reissued"; bill: BillDocument | null };
+
+// Voids the bill and generates a new one with updated prices.
+// If no children are still registered, the bill is voided.
+export const reissueBill = async (
+  userId: number,
+  billNr: number,
+): Promise<ReissueBillResult> => {
+  const old = await prisma.bill.findUnique({ where: { number: billNr } });
+  if (!old) return { status: "not-found" };
+
+  return prisma.$transaction(async (tx): Promise<ReissueBillResult> => {
+    const voided = await tx.bill.updateMany({
+      where: { id: old.id, status: "issued" },
+      data: { status: "void", voidedAt: new Date() },
+    });
+    if (voided.count === 0) return { status: "already-void" };
+
+    const registrations = await tx.registration.findMany({
+      where: { billItem: { billId: old.id }, isRegistered: true },
+      select: parentRegistrationSelect,
+      orderBy: { id: "asc" },
+    });
+    await tx.billItem.updateMany({
+      where: { billId: old.id },
+      data: { registrationId: null },
+    });
+    if (registrations.length === 0) return { status: "reissued", bill: null };
+
+    const bill = await createBill(tx, {
+      season: old.season,
+      accountId: old.accountId,
+      payerName: old.payerName,
+      payerEmail: old.payerEmail,
+      issuedById: userId,
+      replacesId: old.id,
+      registrations,
+    });
+    return { status: "reissued", bill };
+  });
 };
 
 const findUnsentBill = async (userId: number, email: string) =>

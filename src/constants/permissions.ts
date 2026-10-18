@@ -14,6 +14,7 @@ export enum Permissions {
   EDIT_SHIFT_MEMBERS = "shift.edit.members",
   SEND_BILLS = "bill.send",
   RECORD_PAYMENTS = "payment.record",
+  REISSUE_BILLS = "bill.reissue",
 }
 
 export enum PermissionPrefixes {

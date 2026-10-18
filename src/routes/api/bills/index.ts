@@ -18,6 +18,7 @@ import {
   billingFailureMessage,
   getBillPdf,
   issueBill,
+  reissueBill,
 } from "#app/services/billing.service";
 
 import { BillCreationSchema, BillParamsSchema } from "./bills.schemas";
@@ -107,6 +108,53 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       return reply
         .status(StatusCodes.CREATED)
         .send(createSuccessResponse({ billNr: result.bill.number }));
+    },
+  );
+
+  fastify.post(
+    "/:billNr/reissue",
+    {
+      preHandler: requireAnyShiftPermission(
+        Permissions.REISSUE_BILLS,
+        "Puuduvad arve muutmise õigused.",
+      ),
+      schema: {
+        params: BillParamsSchema,
+        response: {
+          [StatusCodes.CREATED]: SuccessResponse(
+            Type.Object({ billNr: Type.Union([Type.Null(), Type.Integer()]) }),
+          ),
+          [StatusCodes.FORBIDDEN]: FailResponse(
+            Type.Object({ permissions: Type.String() }),
+          ),
+          [StatusCodes.NOT_FOUND]: FailResponse(
+            Type.Object({ billNr: Type.String() }),
+          ),
+          [StatusCodes.CONFLICT]: FailResponse(
+            Type.Object({ billNr: Type.String() }),
+          ),
+        },
+      },
+    },
+    async (request, reply) => {
+      const { userId } = getSessionUser(request);
+      const result = await reissueBill(userId, request.params.billNr);
+
+      if (result.status === "not-found") {
+        return reply
+          .status(StatusCodes.NOT_FOUND)
+          .send(createFailResponse({ billNr: "Arvet ei ole olemas." }));
+      }
+      if (result.status === "already-void") {
+        return reply
+          .status(StatusCodes.CONFLICT)
+          .send(createFailResponse({ billNr: "Arve on juba tühistatud." }));
+      }
+
+      // Null when none of the bill's children are registered any more.
+      return reply
+        .status(StatusCodes.CREATED)
+        .send(createSuccessResponse({ billNr: result.bill?.number ?? null }));
     },
   );
 };

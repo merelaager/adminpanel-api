@@ -419,7 +419,7 @@ void test("reissuing replaces a bill with one at the corrected price", async () 
     where: { id: old.id },
     include: { items: true },
   });
-  assert.equal(voided.status, "void");
+  assert.notEqual(voided.voidedAt, null);
   assert.ok(voided.items.every((item) => item.registrationId === null));
 });
 
@@ -465,7 +465,7 @@ void test("a bill without accepted children is only voided", async () => {
   const bill = await prisma.bill.findUniqueOrThrow({
     where: { number: billNr },
   });
-  assert.equal(bill.status, "void");
+  assert.notEqual(bill.voidedAt, null);
 });
 
 void test("only the owner can reissue bills", async () => {

@@ -309,7 +309,6 @@ model PayerAccount {
   contactName String    @db.VarChar(255)
   reference   String    @unique @db.VarChar(20) // Viitenumber
   createdAt   DateTime  @default(now()) @db.DateTime(0)
-  updatedAt   DateTime  @updatedAt @db.DateTime(0)
   bills       Bill[]
   payments    Payment[]
 
@@ -320,19 +319,16 @@ model PayerAccount {
 model Bill {
   id            Int          @id @default(autoincrement()) @db.UnsignedInt
   number        Int          @unique @db.UnsignedInt
-  season        Int          @db.UnsignedInt
   accountId     Int          @db.UnsignedInt
   payerName     String       @db.VarChar(255)
   payerEmail    String       @db.VarChar(255)
   issuedAt      DateTime     @db.DateTime(0)
   bookingFeeDue DateTime     @db.Date
   campFeeDue    DateTime     @db.Date
-  status        bill_status  @default(issued)
   sentAt        DateTime?    @db.DateTime(0)
   voidedAt      DateTime?    @db.DateTime(0)
   replacesId    Int?         @unique @db.UnsignedInt
   issuedById    Int?         @db.UnsignedInt
-  createdAt     DateTime     @default(now()) @db.DateTime(0)
   account       PayerAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
   replaces      Bill?        @relation("BillReplacement", fields: [replacesId], references: [id], onDelete: Restrict)
   replacedBy    Bill?        @relation("BillReplacement")
@@ -363,18 +359,12 @@ model BillItem {
 
 model Payment {
   id           Int            @id @default(autoincrement()) @db.UnsignedInt
-  accountId    Int?           @db.UnsignedInt
+  accountId    Int            @db.UnsignedInt
   amount       Int
-  paidOn       DateTime       @db.Date
   method       payment_method
-  externalId   String?        @unique @db.VarChar(255)
-  reference    String?        @db.VarChar(255)
-  payerName    String?        @db.VarChar(255)
-  note         String?        @db.Text
   recordedById Int?           @db.UnsignedInt
   createdAt    DateTime       @default(now()) @db.DateTime(0)
-  updatedAt    DateTime       @updatedAt @db.DateTime(0)
-  account      PayerAccount?  @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  account      PayerAccount   @relation(fields: [accountId], references: [id], onDelete: Restrict)
   recordedBy   User?          @relation(fields: [recordedById], references: [id], onDelete: SetNull)
 
   @@index([accountId], map: "accountId")
@@ -450,11 +440,6 @@ enum change_log_entity {
   record
   registration
   grade
-}
-
-enum bill_status {
-  issued
-  void
 }
 
 enum payment_method {

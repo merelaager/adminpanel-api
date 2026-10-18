@@ -1,5 +1,4 @@
 import prisma from "#app/lib/prisma";
-import { startOfUTCDay } from "#app/lib/date";
 import { getCurrentCampYear } from "#app/lib/camp-year";
 import { fetchAccountBilling } from "#app/services/bill-status.service";
 
@@ -21,9 +20,7 @@ export const recordPayment = async (
     data: {
       accountId: account.id,
       amount: body.amountCents,
-      paidOn: startOfUTCDay(new Date()),
       method: "transfer",
-      reference,
       recordedById: userId,
     },
   });

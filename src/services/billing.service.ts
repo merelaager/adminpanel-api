@@ -59,7 +59,7 @@ type NewBill = {
 
 const createBill = async (
   tx: Prisma.TransactionClient,
-  { registrations, ...bill }: NewBill,
+  { season, registrations, ...bill }: NewBill,
 ): Promise<BillDocument> => {
   const shifts = await tx.shiftInfo.findMany({
     where: { id: { in: registrations.map((r) => r.shiftNr) } },
@@ -82,7 +82,7 @@ const createBill = async (
   const created = await tx.bill.create({
     data: {
       ...bill,
-      number: await allocateBillNumber(tx, bill.season),
+      number: await allocateBillNumber(tx, season),
       issuedAt: now,
       bookingFeeDue: content.bookingFeeDue,
       campFeeDue: content.campFeeDue,
@@ -168,13 +168,16 @@ export const reissueBill = async (
   userId: number,
   billNr: number,
 ): Promise<ReissueBillResult> => {
-  const old = await prisma.bill.findUnique({ where: { number: billNr } });
+  const old = await prisma.bill.findUnique({
+    where: { number: billNr },
+    include: { account: { select: { season: true } } },
+  });
   if (!old) return { status: "not-found" };
 
   return prisma.$transaction(async (tx): Promise<ReissueBillResult> => {
     const voided = await tx.bill.updateMany({
-      where: { id: old.id, status: "issued" },
-      data: { status: "void", voidedAt: new Date() },
+      where: { id: old.id, voidedAt: null },
+      data: { voidedAt: new Date() },
     });
     if (voided.count === 0) return { status: "already-void" };
 
@@ -190,7 +193,7 @@ export const reissueBill = async (
     if (registrations.length === 0) return { status: "reissued", bill: null };
 
     const bill = await createBill(tx, {
-      season: old.season,
+      season: old.account.season,
       accountId: old.accountId,
       payerName: old.payerName,
       payerEmail: old.payerEmail,
@@ -205,9 +208,8 @@ export const reissueBill = async (
 const findUnsentBills = async (userId: number, email: string) =>
   prisma.bill.findMany({
     where: {
-      season: getCurrentCampYear(),
-      account: { email: normalizeEmail(email) },
-      status: "issued",
+      account: { season: getCurrentCampYear(), email: normalizeEmail(email) },
+      voidedAt: null,
       sentAt: null,
       items: {
         some: { shiftNr: { in: await fetchShiftsUserCanBill(userId) } },

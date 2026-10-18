@@ -10,7 +10,7 @@ import {
 
 // A bill for one child: 360 € in total, 100 € of it booking fee.
 const bill = (overrides: Partial<BillForStatus> = {}): BillForStatus => ({
-  status: "issued",
+  voidedAt: null,
   bookingFeeDue: new Date("2027-01-04T00:00:00.000Z"),
   campFeeDue: new Date("2027-05-23T00:00:00.000Z"),
   items: [{ amount: 36000, bookingFee: 10000 }],
@@ -76,7 +76,7 @@ void test("payments fill the account's bills by due date", () => {
 
 void test("a void bill takes no payments", () => {
   const standings = computeBillStandings(
-    [bill({ status: "void" }), bill()],
+    [bill({ voidedAt: JANUARY }), bill()],
     36000,
     JANUARY,
   );

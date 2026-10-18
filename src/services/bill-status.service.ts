@@ -1,4 +1,4 @@
-import type { bill_status, Prisma } from "#app/generated/prisma/client";
+import type { Prisma } from "#app/generated/prisma/client";
 import prisma from "#app/lib/prisma";
 import { startOfUTCDay } from "#app/lib/date";
 import type {
@@ -7,7 +7,7 @@ import type {
 } from "#app/routes/api/bills/bills.schemas";
 
 export type BillForStatus = {
-  status: bill_status;
+  voidedAt: Date | null;
   bookingFeeDue: Date;
   campFeeDue: Date;
   items: { amount: number; bookingFee: number }[];
@@ -29,7 +29,7 @@ const statusOf = (
   paid: number,
   today: Date,
 ): BillStatus => {
-  if (bill.status === "void") return "void";
+  if (bill.voidedAt !== null) return "void";
   if (paid >= totalOf(bill)) return "paid";
   if (bill.campFeeDue < today) return "camp-fee-overdue";
   if (bill.bookingFeeDue < today && paid < bookingFeeOf(bill)) {
@@ -45,7 +45,7 @@ export const computeBillStandings = (
 ): BillStanding[] => {
   const parts = bills
     .flatMap((bill, i) =>
-      bill.status === "issued"
+      bill.voidedAt === null
         ? [
             { i, due: bill.bookingFeeDue, amount: bookingFeeOf(bill) },
             {
@@ -82,7 +82,7 @@ const accountBillingSelect = {
     select: {
       id: true,
       number: true,
-      status: true,
+      voidedAt: true,
       sentAt: true,
       issuedAt: true,
       bookingFeeDue: true,

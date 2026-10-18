@@ -15,13 +15,33 @@ import {
   SuccessResponse,
 } from "#app/lib/jsend";
 import {
-  billingFailureMessage,
   getBillPdf,
   issueBill,
   reissueBill,
+  sendBill,
+  type IssueBillResult,
 } from "#app/services/billing/billing.service";
 
-import { BillCreationSchema, BillParamsSchema } from "./bills.schemas";
+import {
+  BillingFailureSchema,
+  BillParamsSchema,
+  ParentEmailSchema,
+} from "./bills.schemas";
+
+const billingFailureMessage = (
+  result: Exclude<IssueBillResult, { status: "issued" }>,
+): { email: string } | { registrations: string } => {
+  switch (result.status) {
+    case "unknown-email":
+      return { email: "Tundmatu meiliaadress." };
+    case "none-accepted":
+      return { registrations: "Registreeritud lapsi pole." };
+    case "already-billed":
+      return {
+        registrations: `Kõik registreeritud lapsed on juba arvel (arve nr ${result.billNr}).`,
+      };
+  }
+};
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(
@@ -66,7 +86,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
         "Puuduvad arve loomise õigused",
       ),
       schema: {
-        body: BillCreationSchema,
+        body: ParentEmailSchema,
         response: {
           [StatusCodes.CREATED]: SuccessResponse(
             Type.Object({
@@ -76,12 +96,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
           [StatusCodes.FORBIDDEN]: FailResponse(
             Type.Object({ permissions: Type.String() }),
           ),
-          [StatusCodes.NOT_FOUND]: FailResponse(
-            Type.Union([
-              Type.Object({ email: Type.String() }),
-              Type.Object({ registrations: Type.String() }),
-            ]),
-          ),
+          [StatusCodes.NOT_FOUND]: FailResponse(BillingFailureSchema),
           [StatusCodes.INTERNAL_SERVER_ERROR]: ErrorResponseRef,
         },
       },
@@ -108,6 +123,58 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       return reply
         .status(StatusCodes.CREATED)
         .send(createSuccessResponse({ billNr: result.bill.number }));
+    },
+  );
+
+  fastify.post(
+    "/send",
+    {
+      preHandler: requireAnyShiftPermission(
+        Permissions.SEND_BILLS,
+        "Puuduvad arve saatmise õigused.",
+      ),
+      schema: {
+        body: ParentEmailSchema,
+        response: {
+          [StatusCodes.OK]: SuccessResponse(
+            Type.Object({ billNrs: Type.Array(Type.Integer()) }),
+          ),
+          [StatusCodes.FORBIDDEN]: FailResponse(
+            Type.Object({ permissions: Type.String() }),
+          ),
+          [StatusCodes.NOT_FOUND]: FailResponse(BillingFailureSchema),
+          [StatusCodes.INTERNAL_SERVER_ERROR]: ErrorResponseRef,
+        },
+      },
+    },
+    async (request, reply) => {
+      const { userId } = getSessionUser(request);
+      const { email } = request.body;
+
+      let result;
+      try {
+        result = await sendBill(
+          request.server.mailer,
+          request.server.config.APP_URL,
+          userId,
+          email,
+        );
+      } catch (err) {
+        request.log.error({ err, email }, "Failed to send bill");
+        return reply
+          .status(StatusCodes.INTERNAL_SERVER_ERROR)
+          .send(createErrorResponse("Ootamatu viga arve saatmisel."));
+      }
+
+      if (result.status !== "sent") {
+        return reply
+          .status(StatusCodes.NOT_FOUND)
+          .send(createFailResponse(billingFailureMessage(result)));
+      }
+
+      return reply
+        .status(StatusCodes.OK)
+        .send(createSuccessResponse({ billNrs: result.billNrs }));
     },
   );
 

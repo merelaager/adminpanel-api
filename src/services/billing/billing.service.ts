@@ -303,18 +303,3 @@ export const getBillPdf = async (
   const canSee = bill.items.some((item) => shifts.includes(item.shiftNr));
   return canSee ? readBillPdf(billNr) : null;
 };
-
-export const billingFailureMessage = (
-  result: Exclude<IssueBillResult, { status: "issued" }>,
-): { email: string } | { registrations: string } => {
-  switch (result.status) {
-    case "unknown-email":
-      return { email: "Tundmatu meiliaadress." };
-    case "none-accepted":
-      return { registrations: "Registreeritud lapsi pole." };
-    case "already-billed":
-      return {
-        registrations: `Kõik registreeritud lapsed on juba arvel (arve nr ${result.billNr}).`,
-      };
-  }
-};

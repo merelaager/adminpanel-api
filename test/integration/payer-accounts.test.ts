@@ -53,7 +53,7 @@ const request = (
 ) => app.inject({ method, url, headers: { cookie: cookies[as] }, payload });
 
 const sendBill = async (as: string, email: string): Promise<number> => {
-  const res = await request(as, "POST", "/api/notifications/bills", { email });
+  const res = await request(as, "POST", "/api/bills/send", { email });
   assert.equal(res.statusCode, 200);
   return res.json<{ data: { billNrs: number[] } }>().data.billNrs[0];
 };

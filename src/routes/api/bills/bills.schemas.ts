@@ -1,8 +1,13 @@
 import { Type, type Static } from "@sinclair/typebox";
 
-export const BillCreationSchema = Type.Object({
+export const ParentEmailSchema = Type.Object({
   email: Type.String({ format: "email" }),
 });
+
+export const BillingFailureSchema = Type.Union([
+  Type.Object({ email: Type.String() }),
+  Type.Object({ registrations: Type.String() }),
+]);
 
 export const BillParamsSchema = Type.Object({
   billNr: Type.Integer(),

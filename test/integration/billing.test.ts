@@ -91,8 +91,7 @@ const post = (as: string, url: string, email: string) =>
     payload: { email },
   });
 
-const send = (as: string, email: string) =>
-  post(as, "/api/notifications/bills", email);
+const send = (as: string, email: string) => post(as, "/api/bills/send", email);
 
 const billOf = (registrationId: number) =>
   prisma.bill.findFirstOrThrow({

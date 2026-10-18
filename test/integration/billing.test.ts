@@ -267,6 +267,8 @@ const fetchRegistration = async (shiftNr: number, regId: number) => {
 
 void test("the billing overview shows each child's bill", async () => {
   const bill = await billOf(regIds.Liis);
+  await addChild("Ilmar", 1, "Unbilled@test.invalid", true);
+  await addChild("Ilse", 1, "unbilled@test.invalid", true);
   const res = await app.inject({
     method: "GET",
     url: "/api/shifts/1/billing",
@@ -276,18 +278,28 @@ void test("the billing overview shows each child's bill", async () => {
 
   type Parent = {
     email: string;
+    reference: string | null;
     records: { childName: string; bill: BillSummary | null }[];
   };
-  const parent = res
-    .json<{ data: { records: Parent[] } }>()
-    .data.records.find((p) => p.email === PARENT);
+  const parents = res.json<{ data: { records: Parent[] } }>().data.records;
+  const parent = parents.find((p) => p.email === PARENT);
   assert.ok(parent);
+  assert.equal(parent.reference, bill.account.reference);
   assert.deepEqual(
     parent.records.map((r) => [r.childName, r.bill?.number, r.bill?.status]),
     [
       ["Liis", bill.number, "open"],
       ["Peeter", bill.number, "open"],
     ],
+  );
+
+  // Emails that differ only in case belong to one parent.
+  const unbilled = parents.filter(
+    (p) => p.email.toLowerCase() === "unbilled@test.invalid",
+  );
+  assert.deepEqual(
+    unbilled.map((p) => [p.reference, p.records.map((r) => r.childName)]),
+    [[null, ["Ilmar", "Ilse"]]],
   );
 });
 

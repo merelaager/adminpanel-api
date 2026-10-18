@@ -72,6 +72,7 @@ export const ChildBillSchema = Type.Object({
 export const ParentBillSchema = Type.Object({
   name: Type.String(),
   email: Type.String(),
+  reference: Type.Union([Type.Null(), Type.String()]),
   records: Type.Array(ChildBillSchema),
 });
 

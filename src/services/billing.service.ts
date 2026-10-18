@@ -34,7 +34,8 @@ type ParentRegistration = Prisma.RegistrationGetPayload<{
   select: typeof parentRegistrationSelect;
 }>;
 
-const normalizeEmail = (email: string): string => email.trim().toLowerCase();
+export const normalizeEmail = (email: string): string =>
+  email.trim().toLowerCase();
 
 const fetchParentRegistrations = (email: string) =>
   prisma.registration.findMany({

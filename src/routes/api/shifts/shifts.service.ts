@@ -1,6 +1,7 @@
 import type { Prisma } from "#app/generated/prisma/client";
 import prisma from "#app/lib/prisma";
 import { fetchBillSummaries } from "#app/services/bill-status.service";
+import { normalizeEmail } from "#app/services/billing.service";
 import { getCurrentCampYear } from "#app/lib/camp-year";
 import { getRoleDisplayName } from "#app/constants/roles";
 import { PrintEntry } from "#app/services/shift-pdf.service";
@@ -149,14 +150,16 @@ export const fetchShiftBilling = async (
 
   const parents = new Map<string, ParentBillData>();
   for (const registration of [...registrations, ...sameBillRegistrations]) {
-    let parent = parents.get(registration.contactEmail);
+    const email = normalizeEmail(registration.contactEmail);
+    let parent = parents.get(email);
     if (!parent) {
       parent = {
         name: registration.contactName,
         email: registration.contactEmail,
+        reference: null,
         records: [],
       };
-      parents.set(registration.contactEmail, parent);
+      parents.set(email, parent);
     }
 
     const billId = registration.billItem?.billId;
@@ -166,6 +169,15 @@ export const fetchShiftBilling = async (
       shiftNr: registration.shiftNr,
       bill: billId === undefined ? null : (bills.get(billId) ?? null),
     });
+  }
+
+  const accounts = await prisma.payerAccount.findMany({
+    where: { season: getCurrentCampYear(), email: { in: [...parents.keys()] } },
+    select: { email: true, reference: true },
+  });
+  for (const account of accounts) {
+    const parent = parents.get(account.email);
+    if (parent) parent.reference = account.reference;
   }
 
   return [...parents.values()];

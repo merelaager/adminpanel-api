@@ -346,7 +346,7 @@ add("GET", "/api/bills/999999", undefined, [["boss", 404]]);
 
 add("POST", "/api/notifications/bills", { email: "bill-parent@test.invalid" }, [
   ["outsider", 404],
-  ["boss", 204],
+  ["boss", 200],
   ["instructor", 403],
   ["helper", 403],
 ]);

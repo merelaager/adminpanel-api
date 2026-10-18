@@ -201,8 +201,8 @@ export const reissueBill = async (
   });
 };
 
-const findUnsentBill = async (userId: number, email: string) =>
-  prisma.bill.findFirst({
+const findUnsentBills = async (userId: number, email: string) =>
+  prisma.bill.findMany({
     where: {
       season: getCurrentCampYear(),
       account: { email: normalizeEmail(email) },
@@ -212,20 +212,20 @@ const findUnsentBill = async (userId: number, email: string) =>
         some: { shiftNr: { in: await fetchShiftsUserCanBill(userId) } },
       },
     },
-    orderBy: { number: "desc" },
+    orderBy: { number: "asc" },
     include: billDocumentInclude,
   });
 
 export type SendBillResult =
   | Exclude<IssueBillResult, { status: "issued" }>
-  | { status: "sent"; billNr: number };
+  | { status: "sent"; billNrs: number[] };
 
 const emailIssuedBill = async (
   mailer: Transporter,
   appUrl: string,
   email: string,
   bill: BillDocument,
-): Promise<SendBillResult> => {
+): Promise<boolean> => {
   const registrations = await fetchParentRegistrations(email);
   const onOtherBills = registrations.flatMap((r) => {
     const billNr = r.billItem?.bill.number;
@@ -241,9 +241,7 @@ const emailIssuedBill = async (
     where: { id: bill.id, sentAt: null },
     data: { sentAt: new Date() },
   });
-  if (claimed.count === 0) {
-    return { status: "already-billed", billNr: bill.number };
-  }
+  if (claimed.count === 0) return false;
 
   try {
     const pdf = await readBillPdf(bill.number);
@@ -262,7 +260,7 @@ const emailIssuedBill = async (
     throw err;
   }
 
-  return { status: "sent", billNr: bill.number };
+  return true;
 };
 
 export const sendBill = async (
@@ -272,13 +270,20 @@ export const sendBill = async (
   email: string,
 ): Promise<SendBillResult> => {
   const issued = await issueBill(userId, email);
-  if (issued.status === "issued") {
-    return emailIssuedBill(mailer, appUrl, email, issued.bill);
+  if (issued.status === "unknown-email" || issued.status === "none-accepted") {
+    return issued;
   }
-  if (issued.status !== "already-billed") return issued;
 
-  const unsent = await findUnsentBill(userId, email);
-  return unsent ? emailIssuedBill(mailer, appUrl, email, unsent) : issued;
+  const billNrs: number[] = [];
+  for (const bill of await findUnsentBills(userId, email)) {
+    if (await emailIssuedBill(mailer, appUrl, email, bill)) {
+      billNrs.push(bill.number);
+    }
+  }
+
+  if (billNrs.length > 0) return { status: "sent", billNrs };
+  if (issued.status === "already-billed") return issued;
+  return { status: "already-billed", billNr: issued.bill.number };
 };
 
 export const getBillPdf = async (

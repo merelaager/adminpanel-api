@@ -8,8 +8,10 @@ import { Permissions } from "#app/constants/permissions";
 import {
   createErrorResponse,
   createFailResponse,
+  createSuccessResponse,
   ErrorResponseRef,
   FailResponse,
+  SuccessResponse,
 } from "#app/lib/jsend";
 import { billingFailureMessage, sendBill } from "#app/services/billing.service";
 
@@ -26,7 +28,9 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       schema: {
         body: SingleBillSendSchema,
         response: {
-          [StatusCodes.NO_CONTENT]: {},
+          [StatusCodes.OK]: SuccessResponse(
+            Type.Object({ billNrs: Type.Array(Type.Integer()) }),
+          ),
           [StatusCodes.FORBIDDEN]: FailResponse(
             Type.Object({ permissions: Type.String() }),
           ),
@@ -65,7 +69,9 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
           .send(createFailResponse(billingFailureMessage(result)));
       }
 
-      return reply.status(StatusCodes.NO_CONTENT).send();
+      return reply
+        .status(StatusCodes.OK)
+        .send(createSuccessResponse({ billNrs: result.billNrs }));
     },
   );
 };

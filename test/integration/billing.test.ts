@@ -109,7 +109,7 @@ void test("a shift without accepted children has nothing to bill", async () => {
 
 void test("sending bills all accepted children of the parent, across shifts", async () => {
   const res = await send("boss1", PARENT);
-  assert.equal(res.statusCode, 204);
+  assert.equal(res.statusCode, 200);
 
   const bill = await billOf(regIds.Liis);
   assert.deepEqual(
@@ -185,7 +185,7 @@ void test("a later acceptance gets its own bill on the same account", async () =
     data: { isRegistered: true },
   });
 
-  assert.equal((await send("boss3", PARENT)).statusCode, 204);
+  assert.equal((await send("boss3", PARENT)).statusCode, 200);
   const second = await billOf(regIds.Mari);
 
   assert.equal(second.number, first.number + 1);
@@ -210,19 +210,29 @@ void test("an email without children in the sender's shifts is unknown", async (
   assert.ok("email" in res.json<FailBody>().data);
 });
 
-void test("a created bill is emailed by the next send instead of a new one", async () => {
+void test("sending emails every unsent bill of the parent", async () => {
   const created = await post("boss1", "/api/bills", "other@test.invalid");
   assert.equal(created.statusCode, 201);
   const { billNr } = created.json<{ data: { billNr: number } }>().data;
   assert.equal((await billOf(regIds.Aino)).sentAt, null);
+  await addChild("Oskar", 1, "other@test.invalid", true);
   const sentBefore = mail.sent.length;
 
-  assert.equal((await send("boss1", "other@test.invalid")).statusCode, 204);
-  assert.equal(mail.sent.length, sentBefore + 1);
-  const bill = await billOf(regIds.Aino);
-  assert.equal(bill.number, billNr);
-  assert.notEqual(bill.sentAt, null);
-  await mail.next();
+  const res = await send("boss1", "other@test.invalid");
+  assert.equal(res.statusCode, 200);
+  const newBill = await billOf(regIds.Oskar);
+  assert.deepEqual(res.json<{ data: { billNrs: number[] } }>().data.billNrs, [
+    billNr,
+    newBill.number,
+  ]);
+  assert.equal(mail.sent.length, sentBefore + 2);
+  assert.notEqual((await billOf(regIds.Aino)).sentAt, null);
+  assert.notEqual(newBill.sentAt, null);
+  const messages = [await mail.next(), await mail.next()];
+  assert.deepEqual(
+    messages.map((message) => message.attachments?.[0].filename),
+    [`arve_${billNr}.pdf`, `arve_${newBill.number}.pdf`],
+  );
 });
 
 void test("simultaneous sends issue and email one bill", async () => {
@@ -235,7 +245,7 @@ void test("simultaneous sends issue and email one bill", async () => {
     send("boss1", email),
     send("boss2", email),
   ]);
-  assert.equal(results.filter((res) => res.statusCode === 204).length, 1);
+  assert.equal(results.filter((res) => res.statusCode === 200).length, 1);
   assert.equal(await prisma.bill.count({ where: { payerEmail: email } }), 1);
   assert.equal(mail.sent.length, sentBefore + 1);
   await mail.next();
@@ -309,7 +319,10 @@ const recordPayment = (reference: string, amountCents: number) =>
   });
 
 void test("recorded payments count toward the parent's bill", async () => {
-  const bill = await billOf(regIds.Aino);
+  await addChild("Pille", 1, "pays@test.invalid", true);
+  assert.equal((await send("boss1", "pays@test.invalid")).statusCode, 200);
+  await mail.next();
+  const bill = await billOf(regIds.Pille);
   const total = computePrice(1, false) * 100;
   const bookingFee = REGISTRATION_FEE * 100;
 
@@ -319,20 +332,20 @@ void test("recorded payments count toward the parent's bill", async () => {
     bookingFee,
   );
   assert.equal(res.statusCode, 201);
-  const afterBookingFee = await fetchRegistration(1, regIds.Aino);
+  const afterBookingFee = await fetchRegistration(1, regIds.Pille);
   assert.deepEqual(pick(afterBookingFee), ["open", bookingFee]);
   const updatedAt = afterBookingFee.bill?.paymentsUpdatedAt;
   assert.ok(updatedAt && !Number.isNaN(Date.parse(updatedAt)));
 
   await recordPayment(bill.account.reference, total - bookingFee);
-  assert.deepEqual(pick(await fetchRegistration(1, regIds.Aino)), [
+  assert.deepEqual(pick(await fetchRegistration(1, regIds.Pille)), [
     "paid",
     total,
   ]);
 
   // A negative payment undoes one.
   await recordPayment(bill.account.reference, -(total - bookingFee));
-  assert.deepEqual(pick(await fetchRegistration(1, regIds.Aino)), [
+  assert.deepEqual(pick(await fetchRegistration(1, regIds.Pille)), [
     "open",
     bookingFee,
   ]);
@@ -365,7 +378,7 @@ const reissue = (as: string, billNr: number) =>
 
 void test("reissuing replaces a bill with one at the corrected price", async () => {
   await addChild("Mia", 1, "fix@test.invalid", true);
-  assert.equal((await send("boss1", "fix@test.invalid")).statusCode, 204);
+  assert.equal((await send("boss1", "fix@test.invalid")).statusCode, 200);
   await mail.next();
   const old = await billOf(regIds.Mia);
 
@@ -404,7 +417,7 @@ void test("sending after a reissue emails the replacement", async () => {
     where: { id: replacement.replacesId ?? 0 },
   });
 
-  assert.equal((await send("boss1", "fix@test.invalid")).statusCode, 204);
+  assert.equal((await send("boss1", "fix@test.invalid")).statusCode, 200);
   const message = await mail.next();
   assert.ok(
     (message.html as string).includes(

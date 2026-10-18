@@ -334,6 +334,7 @@ model Bill {
   bookingFeeDue DateTime     @db.Date
   campFeeDue    DateTime     @db.Date
   status        bill_status  @default(issued)
+  sentAt        DateTime?    @db.DateTime(0)
   voidedAt      DateTime?    @db.DateTime(0)
   replacesId    Int?         @unique @db.UnsignedInt
   issuedById    Int?         @db.UnsignedInt
@@ -353,8 +354,8 @@ model BillItem {
   id             Int           @id @default(autoincrement()) @db.UnsignedInt
   billId         Int           @db.UnsignedInt
   position       Int           @db.UnsignedInt
-  childName      String?       @db.VarChar(255)
-  shiftNr        Int?          @db.UnsignedInt
+  childName      String        @db.VarChar(255)
+  shiftNr        Int           @db.UnsignedInt
   description    String        @db.VarChar(255)
   amount         Int
   bookingFee     Int           @default(0) @db.UnsignedInt

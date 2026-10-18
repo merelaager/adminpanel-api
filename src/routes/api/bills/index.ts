@@ -1,10 +1,9 @@
-import fs from "fs";
-import type { FileHandle } from "fs/promises";
 import { FastifyPluginAsyncTypebox } from "@fastify/type-provider-typebox";
 import { Type } from "@sinclair/typebox";
 import { StatusCodes } from "http-status-codes";
 
 import { requireAnyShiftPermission } from "#app/lib/guards";
+import { getSessionUser } from "#app/lib/session";
 import { Permissions } from "#app/constants/permissions";
 import {
   BinaryResponse,
@@ -16,8 +15,9 @@ import {
   SuccessResponse,
 } from "#app/lib/jsend";
 import {
-  collectBillableCampers,
-  createAndAssignBill,
+  billingFailureMessage,
+  getBillPdf,
+  issueBill,
 } from "#app/services/billing.service";
 
 import { BillCreationSchema, BillParamsSchema } from "./bills.schemas";
@@ -44,33 +44,16 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       },
     },
     async (request, reply) => {
-      const billNr = request.params.billId;
-      const billPath = `./data/arved/${billNr}.pdf`;
+      const { userId } = getSessionUser(request);
+      const pdf = await getBillPdf(userId, request.params.billId);
 
-      if (isNaN(billNr)) {
+      if (!pdf) {
         return reply
           .status(StatusCodes.NOT_FOUND)
           .send(createFailResponse({ billId: "Arvet ei ole olemas." }));
       }
 
-      let handle: FileHandle;
-      try {
-        handle = await fs.promises.open(billPath, "r");
-      } catch (err) {
-        if ((err as NodeJS.ErrnoException).code === "ENOENT") {
-          return reply
-            .status(StatusCodes.NOT_FOUND)
-            .send(createFailResponse({ billId: "Arvet ei ole olemas." }));
-        }
-        throw err;
-      }
-
-      const stream = handle.createReadStream();
-      stream.on("close", () => {
-        handle.close().catch(() => {});
-      });
-      reply.status(StatusCodes.OK).type("application/pdf");
-      return reply.send(stream);
+      return reply.status(StatusCodes.OK).type("application/pdf").send(pdf);
     },
   );
 
@@ -103,39 +86,27 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       },
     },
     async (request, reply) => {
-      const billable = await collectBillableCampers(request.body.email);
+      const { userId } = getSessionUser(request);
 
-      if (billable === null) {
-        return reply
-          .status(StatusCodes.NOT_FOUND)
-          .send(createFailResponse({ email: "Tundmatu meiliaadress" }));
-      }
-
-      if (billable.registered.length === 0) {
-        return reply.status(StatusCodes.NOT_FOUND).send(
-          createFailResponse({
-            registrations: "Puuduvad registreeritud lapsed",
-          }),
-        );
-      }
-
-      let billNr: number;
+      let result;
       try {
-        billNr = await createAndAssignBill(
-          billable.billNr,
-          billable.billTotal,
-          billable.registered,
-        );
+        result = await issueBill(userId, request.body.email);
       } catch (err) {
-        request.log.error({ err }, "Failed to create and assign bill");
+        request.log.error({ err }, "Failed to issue bill");
         return reply
           .status(StatusCodes.INTERNAL_SERVER_ERROR)
-          .send(createErrorResponse("Ootamatu viga arve genereerimisel"));
+          .send(createErrorResponse("Ootamatu viga arve genereerimisel."));
+      }
+
+      if (result.status !== "issued") {
+        return reply
+          .status(StatusCodes.NOT_FOUND)
+          .send(createFailResponse(billingFailureMessage(result)));
       }
 
       return reply
         .status(StatusCodes.CREATED)
-        .send(createSuccessResponse({ billNr }));
+        .send(createSuccessResponse({ billNr: result.bill.number }));
     },
   );
 };

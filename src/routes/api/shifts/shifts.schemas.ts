@@ -65,6 +65,7 @@ export const ChildBillSchema = Type.Object({
   pricePaid: Type.Integer(),
   priceToPay: Type.Integer(),
   shiftNr: Type.Integer(),
+  billNr: Type.Union([Type.Null(), Type.Integer()]),
   billSent: Type.Boolean(),
 });
 

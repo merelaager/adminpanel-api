@@ -1,3 +1,7 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+
 // Side-effect module: unconditionally pins the test environment before any
 // module that transitively imports `#app/*` is loaded. Assignments are
 // unconditional so a developer's `.env`/shell can never point tests at a real
@@ -19,6 +23,7 @@ Object.assign(process.env, {
   DATABASE_USER: "ml_test",
   DATABASE_PASSWORD: "ml_test",
   DATABASE_NAME: "ml_test",
+  DATA_DIR: fs.mkdtempSync(path.join(os.tmpdir(), "ml-test-data-")),
 });
 delete process.env.COOKIE_DOMAIN;
 delete process.env.DATABASE_URL;

@@ -79,8 +79,9 @@ export const fetchRegistrations = async (
       // Financial permission needed
       pricePaid: canViewFinancial,
       priceToPay: canViewFinancial,
-      notifSent: canViewFinancial,
-      billId: canViewFinancial,
+      billItem: {
+        select: { bill: { select: { number: true, sentAt: true } } },
+      },
       // Contact permission needed
       contactName: canViewContact,
       contactNumber: canViewContact,
@@ -103,13 +104,18 @@ export const fetchRegistrations = async (
         ...registration.child,
         currentAge: getAgeAtDate(registration.birthday, currentDate),
       };
+      const { billItem, ...fields } = registration;
       const newRegistration: FilteredRegistrationSchema = {
-        ...registration,
+        ...fields,
         birthday: registration.birthday.toISOString(),
         child,
       };
       if (!canViewPII) {
         delete newRegistration.birthday;
+      }
+      if (canViewFinancial) {
+        newRegistration.billId = billItem?.bill.number ?? null;
+        newRegistration.notifSent = billItem?.bill.sentAt != null;
       }
       return newRegistration;
     },

@@ -325,6 +325,7 @@ add(
   { email: "bill-parent@test.invalid" },
   [
     ["boss", 201],
+    ["outsider", 404],
     ["instructor", 403],
     ["helper", 403],
     ["viewer", 403],
@@ -335,12 +336,14 @@ add(
 
 add("GET", () => `/api/bills/${capturedBillNr}`, undefined, [
   ["boss", 200],
+  ["outsider", 404],
   ["helper", 403],
 ]);
 
 add("GET", "/api/bills/999999", undefined, [["boss", 404]]);
 
 add("POST", "/api/notifications/bills", { email: "bill-parent@test.invalid" }, [
+  ["outsider", 404],
   ["boss", 204],
   ["instructor", 403],
   ["helper", 403],
@@ -481,9 +484,9 @@ void test("boss can download the shift PDF as a non-empty application/pdf", asyn
   assert.ok(res.rawPayload.length > 0);
 });
 
-void test("the bill notification marked the registration as notified", async () => {
-  const reg = await prisma.registration.findUniqueOrThrow({
-    where: { id: billRegId },
+void test("the bill notification marked the bill as sent", async () => {
+  const bill = await prisma.bill.findFirstOrThrow({
+    where: { items: { some: { registrationId: billRegId } } },
   });
-  assert.equal(reg.notifSent, true);
+  assert.notEqual(bill.sentAt, null);
 });

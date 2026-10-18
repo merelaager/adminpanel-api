@@ -1,13 +1,14 @@
-import fs from "fs";
 import { Transporter } from "nodemailer";
 
 import {
-  getConfirmationReceipt,
+  getBillEmail,
   getRegistrationReceipt,
+  type ChildInShift,
+  type ChildOnOtherBill,
 } from "#app/services/email-templates";
+import type { BillDocument } from "#app/services/bill-pdf.service";
 
 import type { EmailReceiptInfo } from "#app/routes/api/registrations/registrations.schemas";
-import type { CamperBillingInfo } from "#app/services/billing.service";
 
 class MailService {
   private transporter: Transporter;
@@ -37,26 +38,24 @@ class MailService {
   }
 
   async sendBill(
-    email: string,
-    billNr: number,
-    regCampers: CamperBillingInfo[],
-    resCampers: CamperBillingInfo[],
+    bill: BillDocument,
+    pdf: Buffer,
+    onOtherBills: ChildOnOtherBill[],
+    reserve: ChildInShift[],
   ): Promise<void> {
-    const billPath = `./data/arved/${billNr}.pdf`;
-
     await this.transporter.sendMail({
       from: {
         name: "Merelaager",
         address: "no-reply@info.merelaager.ee",
       },
-      to: email,
+      to: bill.payerEmail,
       subject: "Broneeringu kinnitus",
-      html: await getConfirmationReceipt(regCampers, resCampers),
+      html: await getBillEmail(bill, onOtherBills, reserve),
       attachments: [
         {
-          filename: `arve_${billNr}.pdf`,
+          filename: `arve_${bill.number}.pdf`,
           contentType: "application/pdf",
-          content: fs.createReadStream(billPath),
+          content: pdf,
         },
       ],
     });

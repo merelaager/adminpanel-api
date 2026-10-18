@@ -101,6 +101,24 @@ export const userHasPermissionInAnyShift = async (
   return userRole !== null;
 };
 
+export const fetchShiftsWithPermission = async (
+  userId: number,
+  permission: Permissions,
+): Promise<number[]> => {
+  const userRoles = await prisma.userRoles.findMany({
+    where: {
+      userId,
+      role: {
+        role_permissions: {
+          some: { permission: { permissionName: permission } },
+        },
+      },
+    },
+    select: { shiftNr: true },
+  });
+  return userRoles.map((userRole) => userRole.shiftNr);
+};
+
 export const fetchUserShiftPermissions = async (
   userId: number,
   shiftNr: number,

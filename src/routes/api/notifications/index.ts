@@ -3,6 +3,7 @@ import { Type } from "@sinclair/typebox";
 import { StatusCodes } from "http-status-codes";
 
 import { requireAnyShiftPermission } from "#app/lib/guards";
+import { getSessionUser } from "#app/lib/session";
 import { Permissions } from "#app/constants/permissions";
 import {
   createErrorResponse,
@@ -10,13 +11,9 @@ import {
   ErrorResponseRef,
   FailResponse,
 } from "#app/lib/jsend";
-import {
-  collectBillableCampers,
-  createAndAssignBill,
-} from "#app/services/billing.service";
+import { billingFailureMessage, sendBill } from "#app/services/billing.service";
 
 import { SingleBillSendSchema } from "./notifications.schemas";
-import { sendBillNotification } from "./notifications.service";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.post(
@@ -44,53 +41,28 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
       },
     },
     async (request, reply) => {
-      const email = request.body.email;
+      const { userId } = getSessionUser(request);
+      const { email } = request.body;
 
-      const billable = await collectBillableCampers(email);
-
-      if (billable === null) {
-        return reply
-          .status(StatusCodes.NOT_FOUND)
-          .send(createFailResponse({ email: "Tundmatu meiliaadress." }));
-      }
-
-      if (billable.registered.length === 0) {
-        return reply.status(StatusCodes.NOT_FOUND).send(
-          createFailResponse({
-            registrations: "Puuduvad registreeritud lapsed.",
-          }),
-        );
-      }
-
-      let billNr: number;
+      let result;
       try {
-        billNr = await createAndAssignBill(
-          billable.billNr,
-          billable.billTotal,
-          billable.registered,
-        );
-      } catch (err) {
-        request.log.error({ err }, "Failed to create and assign bill");
-        return reply
-          .status(StatusCodes.INTERNAL_SERVER_ERROR)
-          .send(createErrorResponse("Ootamatu viga arve genereerimisel."));
-      }
-
-      try {
-        await sendBillNotification(
+        result = await sendBill(
           request.server.mailer,
           request.server.config.APP_URL,
+          userId,
           email,
-          billNr,
-          billable.registered,
-          billable.reserve,
-          billable.registeredIds,
         );
       } catch (err) {
-        request.log.error({ err, email }, "Failed to send bill email");
+        request.log.error({ err, email }, "Failed to send bill");
         return reply
           .status(StatusCodes.INTERNAL_SERVER_ERROR)
           .send(createErrorResponse("Ootamatu viga arve saatmisel."));
+      }
+
+      if (result.status !== "sent") {
+        return reply
+          .status(StatusCodes.NOT_FOUND)
+          .send(createFailResponse(billingFailureMessage(result)));
       }
 
       return reply.status(StatusCodes.NO_CONTENT).send();

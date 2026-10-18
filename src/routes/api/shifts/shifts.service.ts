@@ -1,3 +1,4 @@
+import type { Prisma } from "#app/generated/prisma/client";
 import prisma from "#app/lib/prisma";
 import { getCurrentCampYear } from "#app/lib/camp-year";
 import { getRoleDisplayName } from "#app/constants/roles";
@@ -115,106 +116,65 @@ export const fetchShiftEmails = async (shiftNr: number): Promise<string[]> => {
   return Array.from(emails.values());
 };
 
+const billingRegistrationSelect = {
+  contactName: true,
+  contactEmail: true,
+  pricePaid: true,
+  priceToPay: true,
+  shiftNr: true,
+  child: { select: { name: true } },
+  billItem: {
+    select: { bill: { select: { id: true, number: true, sentAt: true } } },
+  },
+} satisfies Prisma.RegistrationSelect;
+
 export const fetchShiftBilling = async (
   shiftNr: number,
 ): Promise<ParentBillData[]> => {
-  type BillChildRecord = {
-    childName: string;
-    pricePaid: number;
-    priceToPay: number;
-    shiftNr: number;
-    billSent: boolean;
-  };
-
-  // Currently, an email should be associated with (at most) one bill number.
-  // Therefore, grouping by email includes bill groups as well, with the added
-  // benefit of including children based on whom the bill has not been issued/updated yet.
-  type EmailRecordGroup = {
-    name: string;
-    email: string;
-    billNr: number | null;
-    records: BillChildRecord[];
-  };
-
-  const rawRegistrations = await prisma.registration.findMany({
+  const registrations = await prisma.registration.findMany({
     where: { shiftNr, isRegistered: true },
-    select: {
-      billId: true,
-      contactName: true,
-      contactEmail: true,
-      pricePaid: true,
-      priceToPay: true,
-      shiftNr: true,
-      notifSent: true,
-      child: {
-        select: { name: true },
-      },
-    },
+    select: billingRegistrationSelect,
   });
 
-  const registrationMap = new Map<string, EmailRecordGroup>();
-  const relevantBillIds: number[] = [];
+  const billIds = registrations
+    .map((r) => r.billItem?.bill.id)
+    .filter((id) => id !== undefined);
+  const sameBillRegistrations = await prisma.registration.findMany({
+    where: {
+      shiftNr: { not: shiftNr },
+      billItem: { billId: { in: billIds } },
+    },
+    select: billingRegistrationSelect,
+  });
 
-  rawRegistrations.forEach((registration) => {
-    const data = {
-      childName: registration.child.name,
-      pricePaid: registration.pricePaid,
-      priceToPay: registration.priceToPay,
-      billNr: registration.billId,
-      shiftNr: registration.shiftNr,
-      billSent: registration.notifSent,
-    };
-
-    const childGroupWithoutActiveBill = registrationMap.get(
-      registration.contactEmail,
-    );
-
-    if (childGroupWithoutActiveBill) {
-      childGroupWithoutActiveBill.records.push(data);
-      if (registration.billId)
-        childGroupWithoutActiveBill.billNr = registration.billId;
-    } else {
-      registrationMap.set(registration.contactEmail, {
+  const parents = new Map<string, ParentBillData>();
+  for (const registration of [...registrations, ...sameBillRegistrations]) {
+    const bill = registration.billItem?.bill ?? null;
+    let parent = parents.get(registration.contactEmail);
+    if (!parent) {
+      parent = {
         name: registration.contactName,
         email: registration.contactEmail,
-        billNr: registration.billId,
-        records: [data],
-      });
+        billNr: null,
+        records: [],
+      };
+      parents.set(registration.contactEmail, parent);
     }
 
-    if (registration.billId !== null) relevantBillIds.push(registration.billId);
-  });
-
-  const addendumRegistrations = await prisma.registration.findMany({
-    where: { billId: { in: relevantBillIds }, shiftNr: { not: shiftNr } },
-    select: {
-      billId: true,
-      contactName: true,
-      contactEmail: true,
-      pricePaid: true,
-      priceToPay: true,
-      shiftNr: true,
-      notifSent: true,
-      child: {
-        select: { name: true },
-      },
-    },
-  });
-
-  addendumRegistrations.forEach((registration) => {
-    const childGroupWithoutActiveBill = registrationMap.get(
-      registration.contactEmail,
-    );
-    childGroupWithoutActiveBill?.records.push({
+    if (bill && (parent.billNr === null || bill.number > parent.billNr)) {
+      parent.billNr = bill.number;
+    }
+    parent.records.push({
       childName: registration.child.name,
       pricePaid: registration.pricePaid,
       priceToPay: registration.priceToPay,
       shiftNr: registration.shiftNr,
-      billSent: registration.notifSent,
+      billNr: bill?.number ?? null,
+      billSent: bill?.sentAt != null,
     });
-  });
+  }
 
-  return Array.from(registrationMap.values());
+  return [...parents.values()];
 };
 
 export const fetchShiftStaff = async (

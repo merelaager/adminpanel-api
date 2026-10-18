@@ -40,20 +40,7 @@ after(async () => {
   await app.close();
 });
 
-void test("negative pricePaid is a 400 keyed on the field", async () => {
-  const res = await app.inject({
-    method: "PATCH",
-    url: `/api/registrations/${regId}`,
-    headers: { cookie },
-    payload: { pricePaid: -5 },
-  });
-  assert.equal(res.statusCode, 400);
-  const body = res.json<FailResponse>();
-  assert.equal(body.status, "fail");
-  assert.ok("pricePaid" in body.data);
-});
-
-void test("negative priceToPay is a 400", async () => {
+void test("negative priceToPay is a 400 keyed on the field", async () => {
   const res = await app.inject({
     method: "PATCH",
     url: `/api/registrations/${regId}`,
@@ -61,7 +48,9 @@ void test("negative priceToPay is a 400", async () => {
     payload: { priceToPay: -1 },
   });
   assert.equal(res.statusCode, 400);
-  assert.equal(res.json<FailResponse>().status, "fail");
+  const body = res.json<FailResponse>();
+  assert.equal(body.status, "fail");
+  assert.ok("priceToPay" in body.data);
 });
 
 void test("an out-of-range tent score is a 400 on both bounds", async () => {

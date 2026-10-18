@@ -24,7 +24,7 @@ import { BillCreationSchema, BillParamsSchema } from "./bills.schemas";
 
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(
-    "/:billId",
+    "/:billNr",
     {
       preHandler: requireAnyShiftPermission(
         Permissions.SEND_BILLS,
@@ -38,19 +38,19 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
             Type.Object({ permissions: Type.String() }),
           ),
           [StatusCodes.NOT_FOUND]: FailResponse(
-            Type.Object({ billId: Type.String() }),
+            Type.Object({ billNr: Type.String() }),
           ),
         },
       },
     },
     async (request, reply) => {
       const { userId } = getSessionUser(request);
-      const pdf = await getBillPdf(userId, request.params.billId);
+      const pdf = await getBillPdf(userId, request.params.billNr);
 
       if (!pdf) {
         return reply
           .status(StatusCodes.NOT_FOUND)
-          .send(createFailResponse({ billId: "Arvet ei ole olemas." }));
+          .send(createFailResponse({ billNr: "Arvet ei ole olemas." }));
       }
 
       return reply.status(StatusCodes.OK).type("application/pdf").send(pdf);

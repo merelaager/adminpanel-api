@@ -9,6 +9,7 @@ import {
 import { PermissionPrefixes, Permissions } from "#app/constants/permissions";
 import { toggleRecord } from "#app/services/camp-records.service";
 import { logChanges } from "#app/services/change-log.service";
+import { fetchBillSummaries } from "#app/services/bill-status.service";
 
 import { computePrice } from "./create.service";
 import type {
@@ -77,11 +78,8 @@ export const fetchRegistrations = async (
       country: canViewPII,
       addendum: canViewPII,
       // Financial permission needed
-      pricePaid: canViewFinancial,
       priceToPay: canViewFinancial,
-      billItem: {
-        select: { bill: { select: { number: true, sentAt: true } } },
-      },
+      billItem: { select: { billId: true } },
       // Contact permission needed
       contactName: canViewContact,
       contactNumber: canViewContact,
@@ -91,6 +89,10 @@ export const fetchRegistrations = async (
   });
 
   const currentDate = new Date();
+  const billIds = rawRegistrations.flatMap((r) =>
+    r.billItem ? [r.billItem.billId] : [],
+  );
+  const bills = await fetchBillSummaries(canViewFinancial ? billIds : []);
 
   const registrations: FilteredRegistrationSchema[] = rawRegistrations.map(
     (registration) => {
@@ -114,8 +116,9 @@ export const fetchRegistrations = async (
         delete newRegistration.birthday;
       }
       if (canViewFinancial) {
-        newRegistration.billId = billItem?.bill.number ?? null;
-        newRegistration.notifSent = billItem?.bill.sentAt != null;
+        newRegistration.bill = billItem
+          ? (bills.get(billItem.billId) ?? null)
+          : null;
       }
       return newRegistration;
     },
@@ -175,7 +178,6 @@ export const patchRegistrationData = async (
     Permissions.EDIT_REGISTRATION_PRICE,
   );
   const priceEditKeys = [
-    "pricePaid",
     "priceToPay",
   ] as const satisfies readonly (keyof Registration)[];
   if (!canEditPrice && objectHasAllowedKey(patchData, priceEditKeys)) {

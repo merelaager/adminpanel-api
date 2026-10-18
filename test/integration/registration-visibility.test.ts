@@ -103,10 +103,8 @@ void test("boss sees every permission-gated field", async () => {
     "county",
     "country",
     "addendum",
-    "pricePaid",
     "priceToPay",
-    "notifSent",
-    "billId",
+    "bill",
     "contactName",
     "contactNumber",
     "contactEmail",
@@ -122,7 +120,7 @@ void test("instructor sees contact fields only", async () => {
   assert.ok("contactName" in reg);
   assert.ok("contactEmail" in reg);
   assert.ok("contactNumber" in reg);
-  for (const field of ["birthday", "road", "pricePaid", "priceToPay", "billId"]) {
+  for (const field of ["birthday", "road", "priceToPay", "bill"]) {
     assert.ok(!(field in reg), `instructor should not see ${field}`);
   }
 });
@@ -136,10 +134,8 @@ void test("helper sees basic fields only", async () => {
     "county",
     "country",
     "addendum",
-    "pricePaid",
     "priceToPay",
-    "notifSent",
-    "billId",
+    "bill",
     "contactName",
     "contactNumber",
     "contactEmail",
@@ -152,7 +148,7 @@ void test("helper sees basic fields only", async () => {
 void test("viewer sees basic fields only", async () => {
   const reg = await fetchFirst("viewer");
   assertBasics(reg);
-  for (const field of ["birthday", "road", "pricePaid", "contactEmail"]) {
+  for (const field of ["birthday", "road", "bill", "contactEmail"]) {
     assert.ok(!(field in reg), `viewer should not see ${field}`);
   }
 });

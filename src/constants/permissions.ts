@@ -13,6 +13,7 @@ export enum Permissions {
   EDIT_SHIFT_BASIC = "shift.edit.basic",
   EDIT_SHIFT_MEMBERS = "shift.edit.members",
   SEND_BILLS = "bill.send",
+  RECORD_PAYMENTS = "payment.record",
 }
 
 export enum PermissionPrefixes {

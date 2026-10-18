@@ -1,5 +1,7 @@
 import { Static, Type } from "@sinclair/typebox";
 
+import { BillSummarySchema } from "#app/routes/api/bills/bills.schemas";
+
 const STRING_MAX = 255;
 
 export type CreateRegistrationData = Static<typeof RegistrationCreationSchema>;
@@ -55,10 +57,8 @@ export const FilteredRegistrationSchema = Type.Object({
   county: Type.Optional(Type.String()),
   country: Type.Optional(Type.String()),
   addendum: Type.Optional(Type.Union([Type.Null(), Type.String()])),
-  pricePaid: Type.Optional(Type.Integer()),
   priceToPay: Type.Optional(Type.Integer()),
-  notifSent: Type.Optional(Type.Boolean()),
-  billId: Type.Optional(Type.Union([Type.Integer(), Type.Null()])),
+  bill: Type.Optional(Type.Union([Type.Null(), BillSummarySchema])),
   contactName: Type.Optional(Type.String()),
   contactNumber: Type.Optional(Type.String()),
   contactEmail: Type.Optional(Type.String()),
@@ -71,7 +71,6 @@ export const PatchRegistrationSchema = Type.Object(
   {
     isRegistered: Type.Optional(Type.Boolean()),
     isOld: Type.Optional(Type.Boolean()),
-    pricePaid: Type.Optional(Type.Integer({ minimum: 0 })),
     priceToPay: Type.Optional(Type.Integer({ minimum: 0 })),
   },
   {

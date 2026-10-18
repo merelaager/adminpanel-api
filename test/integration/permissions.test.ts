@@ -290,15 +290,17 @@ add(
   ],
 );
 
-add("PATCH", () => `/api/registrations/${reserveRegId}`, { pricePaid: 10 }, [
+add("PATCH", () => `/api/registrations/${reserveRegId}`, { priceToPay: 300 }, [
   ["owner", 204],
   ["boss", 404],
   ["instructor", 404],
 ]);
 
-add("PATCH", () => `/api/registrations/${reserveRegId}`, { priceToPay: 300 }, [
-  ["owner", 204],
-  ["boss", 404],
+add("POST", "/api/payments", { reference: "999999", amountCents: 10000 }, [
+  ["owner", 404],
+  ["boss", 403],
+  ["instructor", 403],
+  ["norole", 403],
 ]);
 
 add("PATCH", () => `/api/registrations/${reserveRegId}`, { isOld: false }, [

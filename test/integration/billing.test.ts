@@ -6,8 +6,10 @@ import type { FastifyInstance } from "fastify";
 
 import "../helpers/test-env";
 
+import { REGISTRATION_FEE } from "#app/constants/pricing";
 import { computePrice } from "#app/routes/api/registrations/create.service";
 import { isValidReferenceNumber } from "#app/lib/reference-number";
+import type { BillSummary } from "#app/routes/api/bills/bills.schemas";
 
 import { build } from "../helpers/build";
 import { resetDb, prisma } from "../helpers/db";
@@ -60,6 +62,10 @@ before(async () => {
       roles: [{ shiftNr, roleName: "boss" }],
     });
   }
+  await createUser({
+    username: "owner",
+    roles: [{ shiftNr: 1, roleName: "root" }],
+  });
 
   await addChild("Liis", 1, PARENT, true);
   await addChild("Peeter", 2, PARENT, true);
@@ -67,8 +73,8 @@ before(async () => {
 
   app = await build();
   mail = captureMail(app);
-  for (const shiftNr of [1, 2, 3]) {
-    cookies[`boss${shiftNr}`] = await loginAs(app, `boss${shiftNr}`);
+  for (const username of ["boss1", "boss2", "boss3", "owner"]) {
+    cookies[username] = await loginAs(app, username);
   }
 });
 
@@ -235,6 +241,20 @@ void test("simultaneous sends issue and email one bill", async () => {
   await mail.next();
 });
 
+const fetchRegistration = async (shiftNr: number, regId: number) => {
+  const res = await app.inject({
+    method: "GET",
+    url: `/api/registrations?shiftNr=${shiftNr}`,
+    headers: { cookie: cookies[`boss${shiftNr}`] },
+  });
+  type Registration = { id: number; bill: BillSummary | null };
+  const registration = res
+    .json<{ data: { registrations: Registration[] } }>()
+    .data.registrations.find((r) => r.id === regId);
+  assert.ok(registration);
+  return registration;
+};
+
 void test("the billing overview shows each child's bill", async () => {
   const bill = await billOf(regIds.Liis);
   const res = await app.inject({
@@ -246,34 +266,92 @@ void test("the billing overview shows each child's bill", async () => {
 
   type Parent = {
     email: string;
-    billNr: number | null;
-    records: { childName: string; billNr: number | null; billSent: boolean }[];
+    records: { childName: string; bill: BillSummary | null }[];
   };
   const parent = res
     .json<{ data: { records: Parent[] } }>()
     .data.records.find((p) => p.email === PARENT);
   assert.ok(parent);
   assert.deepEqual(
-    parent.records.map((r) => [r.childName, r.billNr, r.billSent]),
+    parent.records.map((r) => [r.childName, r.bill?.number, r.bill?.status]),
     [
-      ["Liis", bill.number, true],
-      ["Peeter", bill.number, true],
+      ["Liis", bill.number, "open"],
+      ["Peeter", bill.number, "open"],
     ],
   );
 });
 
-void test("registrations carry their bill number and sent status", async () => {
+void test("registrations carry their bill and its status", async () => {
   const bill = await billOf(regIds.Liis);
-  const res = await app.inject({
-    method: "GET",
-    url: "/api/registrations?shiftNr=1",
-    headers: { cookie: cookies.boss1 },
+  const registration = await fetchRegistration(1, regIds.Liis);
+  assert.deepEqual(registration.bill, {
+    number: bill.number,
+    sent: true,
+    status: "open",
+    paidCents: 0,
+    totalCents: (computePrice(1, false) + computePrice(2, false)) * 100,
+    paymentsUpdatedAt: null,
   });
-  type Registration = { id: number; billId: number | null; notifSent: boolean };
-  const liis = res
-    .json<{ data: { registrations: Registration[] } }>()
-    .data.registrations.find((r) => r.id === regIds.Liis);
-  assert.ok(liis);
-  assert.equal(liis.billId, bill.number);
-  assert.equal(liis.notifSent, true);
+  assert.equal((await fetchRegistration(1, regIds.Karl)).bill?.sent, true);
+});
+
+const pick = (registration: { bill: BillSummary | null }) => [
+  registration.bill?.status,
+  registration.bill?.paidCents,
+];
+
+const recordPayment = (reference: string, amountCents: number) =>
+  app.inject({
+    method: "POST",
+    url: "/api/payments",
+    headers: { cookie: cookies.owner },
+    payload: { reference, amountCents },
+  });
+
+void test("recorded payments count toward the parent's bill", async () => {
+  const bill = await billOf(regIds.Aino);
+  const total = computePrice(1, false) * 100;
+  const bookingFee = REGISTRATION_FEE * 100;
+
+  // Spaces in the reference are ignored.
+  const res = await recordPayment(
+    bill.account.reference.replace(/(\d{3})/, "$1 "),
+    bookingFee,
+  );
+  assert.equal(res.statusCode, 201);
+  const afterBookingFee = await fetchRegistration(1, regIds.Aino);
+  assert.deepEqual(pick(afterBookingFee), ["open", bookingFee]);
+  const updatedAt = afterBookingFee.bill?.paymentsUpdatedAt;
+  assert.ok(updatedAt && !Number.isNaN(Date.parse(updatedAt)));
+
+  await recordPayment(bill.account.reference, total - bookingFee);
+  assert.deepEqual(pick(await fetchRegistration(1, regIds.Aino)), [
+    "paid",
+    total,
+  ]);
+
+  // A negative payment undoes one.
+  await recordPayment(bill.account.reference, -(total - bookingFee));
+  assert.deepEqual(pick(await fetchRegistration(1, regIds.Aino)), [
+    "open",
+    bookingFee,
+  ]);
+});
+
+void test("a payment with an unknown reference is rejected", async () => {
+  const res = await recordPayment("111111", 1000);
+  assert.equal(res.statusCode, 404);
+  assert.ok("reference" in res.json<{ data: object }>().data);
+});
+
+void test("a missed booking-fee deadline shows the bill as overdue", async () => {
+  const bill = await billOf(regIds.Mari);
+  await prisma.bill.update({
+    where: { id: bill.id },
+    data: { bookingFeeDue: new Date("2020-01-04T00:00:00.000Z") },
+  });
+  assert.equal(
+    (await fetchRegistration(3, regIds.Mari)).bill?.status,
+    "booking-fee-overdue",
+  );
 });

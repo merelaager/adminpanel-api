@@ -1,5 +1,6 @@
 import type { Prisma } from "#app/generated/prisma/client";
 import prisma from "#app/lib/prisma";
+import { fetchBillSummaries } from "#app/services/bill-status.service";
 import { getCurrentCampYear } from "#app/lib/camp-year";
 import { getRoleDisplayName } from "#app/constants/roles";
 import { PrintEntry } from "#app/services/shift-pdf.service";
@@ -119,13 +120,10 @@ export const fetchShiftEmails = async (shiftNr: number): Promise<string[]> => {
 const billingRegistrationSelect = {
   contactName: true,
   contactEmail: true,
-  pricePaid: true,
   priceToPay: true,
   shiftNr: true,
   child: { select: { name: true } },
-  billItem: {
-    select: { bill: { select: { id: true, number: true, sentAt: true } } },
-  },
+  billItem: { select: { billId: true } },
 } satisfies Prisma.RegistrationSelect;
 
 export const fetchShiftBilling = async (
@@ -136,9 +134,9 @@ export const fetchShiftBilling = async (
     select: billingRegistrationSelect,
   });
 
-  const billIds = registrations
-    .map((r) => r.billItem?.bill.id)
-    .filter((id) => id !== undefined);
+  const billIds = registrations.flatMap((r) =>
+    r.billItem ? [r.billItem.billId] : [],
+  );
   const sameBillRegistrations = await prisma.registration.findMany({
     where: {
       shiftNr: { not: shiftNr },
@@ -147,30 +145,26 @@ export const fetchShiftBilling = async (
     select: billingRegistrationSelect,
   });
 
+  const bills = await fetchBillSummaries(billIds);
+
   const parents = new Map<string, ParentBillData>();
   for (const registration of [...registrations, ...sameBillRegistrations]) {
-    const bill = registration.billItem?.bill ?? null;
     let parent = parents.get(registration.contactEmail);
     if (!parent) {
       parent = {
         name: registration.contactName,
         email: registration.contactEmail,
-        billNr: null,
         records: [],
       };
       parents.set(registration.contactEmail, parent);
     }
 
-    if (bill && (parent.billNr === null || bill.number > parent.billNr)) {
-      parent.billNr = bill.number;
-    }
+    const billId = registration.billItem?.billId;
     parent.records.push({
       childName: registration.child.name,
-      pricePaid: registration.pricePaid,
       priceToPay: registration.priceToPay,
       shiftNr: registration.shiftNr,
-      billNr: bill?.number ?? null,
-      billSent: bill?.sentAt != null,
+      bill: billId === undefined ? null : (bills.get(billId) ?? null),
     });
   }
 

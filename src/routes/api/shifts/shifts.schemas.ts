@@ -1,5 +1,7 @@
 import { Static, Type } from "@sinclair/typebox";
 
+import { BillSummarySchema } from "#app/routes/api/bills/bills.schemas";
+
 // --- Params & body schemas (from schemas/shift.ts) ---
 
 export const ShiftResourceFetchParams = Type.Object({
@@ -62,17 +64,14 @@ export type TentInfo = Static<typeof TentInfoSchema>;
 
 export const ChildBillSchema = Type.Object({
   childName: Type.String(),
-  pricePaid: Type.Integer(),
   priceToPay: Type.Integer(),
   shiftNr: Type.Integer(),
-  billNr: Type.Union([Type.Null(), Type.Integer()]),
-  billSent: Type.Boolean(),
+  bill: Type.Union([Type.Null(), BillSummarySchema]),
 });
 
 export const ParentBillSchema = Type.Object({
   name: Type.String(),
   email: Type.String(),
-  billNr: Type.Union([Type.Null(), Type.Integer()]),
   records: Type.Array(ChildBillSchema),
 });
 

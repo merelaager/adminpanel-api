@@ -10,6 +10,7 @@ import { PermissionPrefixes, Permissions } from "#app/constants/permissions";
 import { toggleRecord } from "#app/services/camp-records.service";
 import { logChanges } from "#app/services/change-log.service";
 
+import { computePrice } from "./create.service";
 import type {
   FilteredRegistrationSchema,
   PatchRegistrationBody,
@@ -117,6 +118,22 @@ export const fetchRegistrations = async (
   return { status: "ok", registrations };
 };
 
+const refreshPriceIfNeeded = (
+  current: Pick<Registration, "shiftNr" | "isOld" | "priceToPay">,
+  patchData: PatchRegistrationBody,
+): PatchRegistrationBody => {
+  const { isOld } = patchData;
+  if (isOld === undefined || isOld === current.isOld) return patchData;
+  if (patchData.priceToPay !== undefined) return patchData;
+
+  const currentListPrice = computePrice(current.shiftNr, current.isOld);
+  const hasListPrice =
+    currentListPrice >= 0 && current.priceToPay === currentListPrice;
+  if (!hasListPrice) return patchData;
+
+  return { ...patchData, priceToPay: computePrice(current.shiftNr, isOld) };
+};
+
 export const patchRegistrationData = async (
   userId: number,
   regId: number,
@@ -126,7 +143,13 @@ export const patchRegistrationData = async (
   // Get the shift of the registration and the child the registration pertains to.
   const regShift = await prisma.registration.findUnique({
     where: { id: regId },
-    select: { shiftNr: true, childId: true, isRegistered: true },
+    select: {
+      shiftNr: true,
+      childId: true,
+      isRegistered: true,
+      isOld: true,
+      priceToPay: true,
+    },
   });
 
   if (!regShift) {
@@ -169,7 +192,7 @@ export const patchRegistrationData = async (
   await prisma.$transaction(async (tx) => {
     await tx.registration.update({
       where: { id: regId },
-      data: patchData,
+      data: refreshPriceIfNeeded(regShift, patchData),
     });
 
     // If the child is registered, the camp record must be updated accordingly.

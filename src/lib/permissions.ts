@@ -101,9 +101,6 @@ export const userHasPermissionInAnyShift = async (
   return userRole !== null;
 };
 
-export const canEditRegistrationPriceAnyShift = (userId: number) =>
-  userHasPermissionInAnyShift(userId, Permissions.EDIT_REGISTRATION_PRICE);
-
 export const fetchUserShiftPermissions = async (
   userId: number,
   shiftNr: number,

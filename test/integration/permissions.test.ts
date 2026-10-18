@@ -43,6 +43,10 @@ before(async () => {
     roles: [{ shiftNr: 1, roleName: "boss" }],
   });
   await createUser({
+    username: "owner",
+    roles: [{ shiftNr: 1, roleName: "root" }],
+  });
+  await createUser({
     username: "instructor",
     roles: [{ shiftNr: 1, roleName: "instructor" }],
   });
@@ -112,6 +116,7 @@ before(async () => {
   for (const username of [
     "superroot",
     "boss",
+    "owner",
     "instructor",
     "helper",
     "viewer",
@@ -271,17 +276,34 @@ add("GET", "/api/registrations?shiftNr=1", undefined, [
 ]);
 
 // Mutating registration rows: target the reserve registration.
-add("PATCH", () => `/api/registrations/${reserveRegId}`, { isRegistered: true }, [
-  ["boss", 204],
-  ["instructor", 404],
-  ["helper", 404],
-  ["viewer", 404],
-  ["outsider", 404],
-  ["norole", 404],
-]);
+add(
+  "PATCH",
+  () => `/api/registrations/${reserveRegId}`,
+  { isRegistered: true },
+  [
+    ["boss", 204],
+    ["instructor", 404],
+    ["helper", 404],
+    ["viewer", 404],
+    ["outsider", 404],
+    ["norole", 404],
+  ],
+);
 
 add("PATCH", () => `/api/registrations/${reserveRegId}`, { pricePaid: 10 }, [
+  ["owner", 204],
+  ["boss", 404],
+  ["instructor", 404],
+]);
+
+add("PATCH", () => `/api/registrations/${reserveRegId}`, { priceToPay: 300 }, [
+  ["owner", 204],
+  ["boss", 404],
+]);
+
+add("PATCH", () => `/api/registrations/${reserveRegId}`, { isOld: false }, [
   ["boss", 204],
+  ["instructor", 404],
 ]);
 
 add(
@@ -364,13 +386,17 @@ add("DELETE", () => `/api/grades/${tentScoreId}`, undefined, [
 
 add("DELETE", "/api/grades/999999", undefined, [["boss", 204]]);
 
-add("PATCH", () => `/api/users/${bossId}`, { currentShift: 1 }, [["boss", 204]]);
+add("PATCH", () => `/api/users/${bossId}`, { currentShift: 1 }, [
+  ["boss", 204],
+]);
 
 add("PATCH", () => `/api/users/${bossId}`, { currentShift: 1 }, [
   ["instructor", 403],
 ]);
 
-add("PATCH", () => `/api/users/${bossId}`, { currentShift: 2 }, [["boss", 403]]);
+add("PATCH", () => `/api/users/${bossId}`, { currentShift: 2 }, [
+  ["boss", 403],
+]);
 
 add("GET", () => `/api/records?childId=${billChildId}`, undefined, [
   ["boss", 200],
@@ -449,7 +475,9 @@ void test("boss can download the shift PDF as a non-empty application/pdf", asyn
     headers: { cookie: cookies.boss },
   });
   assert.equal(res.statusCode, 200);
-  assert.ok(res.headers["content-type"]?.toString().startsWith("application/pdf"));
+  assert.ok(
+    res.headers["content-type"]?.toString().startsWith("application/pdf"),
+  );
   assert.ok(res.rawPayload.length > 0);
 });
 

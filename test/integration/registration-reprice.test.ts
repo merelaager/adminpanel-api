@@ -20,6 +20,7 @@ const RETURNING_PRICE = computePrice(SHIFT, true);
 
 let app: FastifyInstance;
 let cookie = "";
+let ownerCookie = "";
 
 before(async () => {
   await resetDb();
@@ -28,9 +29,14 @@ before(async () => {
     username: "boss2",
     roles: [{ shiftNr: SHIFT, roleName: "boss" }],
   });
+  await createUser({
+    username: "owner2",
+    roles: [{ shiftNr: SHIFT, roleName: "root" }],
+  });
 
   app = await build();
   cookie = await loginAs(app, "boss2");
+  ownerCookie = await loginAs(app, "owner2");
 });
 
 after(async () => {
@@ -47,11 +53,11 @@ const createRegistration = async (isOld: boolean, priceToPay: number) => {
   return registration.id;
 };
 
-const patch = async (regId: number, payload: object) => {
+const patch = async (regId: number, payload: object, as = cookie) => {
   const res = await app.inject({
     method: "PATCH",
     url: `/api/registrations/${regId}`,
-    headers: { cookie },
+    headers: { cookie: as },
     payload,
   });
   assert.equal(res.statusCode, 204);
@@ -81,7 +87,7 @@ void test("a hand-set price is kept when isOld changes", async () => {
 
 void test("an explicit priceToPay in the same patch wins", async () => {
   const regId = await createRegistration(false, NEW_PRICE);
-  await patch(regId, { isOld: true, priceToPay: 200 });
+  await patch(regId, { isOld: true, priceToPay: 200 }, ownerCookie);
   assert.equal(await priceOf(regId), 200);
 });
 

@@ -23,7 +23,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
     "/bills",
     {
       preHandler: requireAnyShiftPermission(
-        Permissions.EDIT_REGISTRATION_PRICE,
+        Permissions.SEND_BILLS,
         "Puuduvad arve saatmise õigused.",
       ),
       schema: {

@@ -18,7 +18,7 @@ const createBillDatabaseEntry = async (
   contactName: string,
   billTotal: number,
 ) => {
-  const newBill = await tx.bill.create({
+  const newBill = await tx.legacyBill.create({
     data: { contactName, billTotal },
   });
   return newBill.id;
@@ -80,7 +80,10 @@ export const createAndAssignBill = async (
     // When reusing an existing bill, keep its total in sync with the current
     // camper set. The create path already sets billTotal on the new row.
     if (billNr !== null) {
-      await tx.bill.update({ where: { id: billNr }, data: { billTotal } });
+      await tx.legacyBill.update({
+        where: { id: billNr },
+        data: { billTotal },
+      });
     }
 
     for (const camper of registeredCampers) {

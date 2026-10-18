@@ -2,9 +2,8 @@ import "./test-env";
 import prisma from "#app/lib/prisma";
 import { seedRolesAndPermissions } from "../../prisma/seed-core";
 
-// Every app table, by its exact @@map name. Order is irrelevant because FK
-// checks are disabled during truncation.
 const TABLES = [
+  "billing_counters",
   "bills",
   "certificates",
   "change_logs",
@@ -12,6 +11,10 @@ const TABLES = [
   "documents",
   "event_info",
   "general_info",
+  "invoice_items",
+  "invoices",
+  "payer_accounts",
+  "payments",
   "permissions",
   "records",
   "registrations",
@@ -28,8 +31,7 @@ const TABLES = [
   "users",
 ] as const;
 
-// Truncates every app table and re-seeds roles/permissions. Guarded so it can
-// only ever run against the dedicated test database.
+// Truncates every app table and re-seeds roles/permissions.
 export const resetDb = async (): Promise<void> => {
   if (process.env.DATABASE_NAME !== "ml_test") {
     throw new Error(

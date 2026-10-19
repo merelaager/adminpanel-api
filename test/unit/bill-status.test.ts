@@ -40,8 +40,34 @@ void test("overpaying a bill counts only its total", () => {
   assert.equal(standingOf([bill()], 50000, JANUARY).paidCents, 36000);
 });
 
-void test("a paid booking fee keeps the bill open until the camp-fee deadline", () => {
-  assert.equal(standingOf([bill()], 10000, FEBRUARY).status, "open");
+void test("a paid booking fee shows until the camp-fee deadline", () => {
+  assert.equal(
+    standingOf([bill()], 10000, FEBRUARY).status,
+    "booking-fee-paid",
+  );
+});
+
+void test("a partly paid booking fee before its deadline is open", () => {
+  assert.equal(standingOf([bill()], 5000, JANUARY).status, "open");
+});
+
+void test("the booking fee counts as paid only once every child's is covered", () => {
+  const twoChildren = bill({
+    items: [
+      { amount: 36000, bookingFee: 10000 },
+      { amount: 36000, bookingFee: 10000 },
+    ],
+  });
+  assert.equal(standingOf([twoChildren], 10000, JANUARY).status, "open");
+  assert.equal(
+    standingOf([twoChildren], 20000, JANUARY).status,
+    "booking-fee-paid",
+  );
+});
+
+void test("a bill without booking fees is open until paid", () => {
+  const noBookingFee = bill({ items: [{ amount: 36000, bookingFee: 0 }] });
+  assert.equal(standingOf([noBookingFee], 0, JANUARY).status, "open");
 });
 
 void test("an unpaid booking fee after its deadline is overdue", () => {
@@ -71,7 +97,7 @@ void test("payments fill the account's bills by due date", () => {
     [standings[0].paidCents, standings[1].paidCents],
     [10000, 10000],
   );
-  assert.equal(standings[1].status, "open");
+  assert.equal(standings[1].status, "booking-fee-paid");
 });
 
 void test("a void bill takes no payments", () => {

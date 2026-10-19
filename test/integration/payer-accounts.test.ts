@@ -188,7 +188,14 @@ void test("payments fill the bills by due date", async () => {
     ]),
     [
       [bills.anuFirst, "paid", true, first.total, first.total, [1]],
-      [bills.anuSecond, "open", true, second.bookingFee, second.total, [2]],
+      [
+        bills.anuSecond,
+        "booking-fee-paid",
+        true,
+        second.bookingFee,
+        second.total,
+        [2],
+      ],
     ],
   );
   assert.deepEqual(

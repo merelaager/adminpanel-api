@@ -343,7 +343,7 @@ void test("recorded payments count toward the parent's bill", async () => {
   );
   assert.equal(res.statusCode, 201);
   const afterBookingFee = await fetchRegistration(1, regIds.Pille);
-  assert.deepEqual(pick(afterBookingFee), ["open", bookingFee]);
+  assert.deepEqual(pick(afterBookingFee), ["booking-fee-paid", bookingFee]);
   const updatedAt = afterBookingFee.bill?.paymentsUpdatedAt;
   assert.ok(updatedAt && !Number.isNaN(Date.parse(updatedAt)));
 
@@ -356,7 +356,7 @@ void test("recorded payments count toward the parent's bill", async () => {
   // A negative payment undoes one.
   await recordPayment(bill.account.reference, -(total - bookingFee));
   assert.deepEqual(pick(await fetchRegistration(1, regIds.Pille)), [
-    "open",
+    "booking-fee-paid",
     bookingFee,
   ]);
 });

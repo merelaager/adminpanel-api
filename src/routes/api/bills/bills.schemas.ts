@@ -16,6 +16,7 @@ export const BillParamsSchema = Type.Object({
 export const BillStatusSchema = Type.Union([
   Type.Literal("paid"),
   Type.Literal("open"),
+  Type.Literal("booking-fee-paid"),
   Type.Literal("booking-fee-overdue"),
   Type.Literal("camp-fee-overdue"),
   Type.Literal("void"),

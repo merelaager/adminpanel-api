@@ -32,9 +32,11 @@ const statusOf = (
   if (bill.voidedAt !== null) return "void";
   if (paid >= totalOf(bill)) return "paid";
   if (bill.campFeeDue < today) return "camp-fee-overdue";
-  if (bill.bookingFeeDue < today && paid < bookingFeeOf(bill)) {
+  const bookingFee = bookingFeeOf(bill);
+  if (bill.bookingFeeDue < today && paid < bookingFee) {
     return "booking-fee-overdue";
   }
+  if (bookingFee > 0 && paid >= bookingFee) return "booking-fee-paid";
   return "open";
 };
 
